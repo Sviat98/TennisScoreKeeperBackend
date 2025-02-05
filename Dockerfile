@@ -1,4 +1,7 @@
-# Копируем исходный код и файлы Gradle
+FROM gradle:latest AS build
+WORKDIR /app
+
+#Копируем исходный код и файлы Gradle
 COPY build.gradle.kts .
 COPY settings.gradle.kts .
 COPY gradle ./gradle
