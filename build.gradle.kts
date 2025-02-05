@@ -1,12 +1,8 @@
 
 plugins {
-//    alias(libs.plugins.kotlin.jvm)
-//    alias(libs.plugins.ktor)
-//    alias(libs.plugins.kotlin.plugin.serialization)
-
-    kotlin("jvm") version "2.1.0"
-    id("io.ktor.plugin") version "3.0.3"
-    id("org.jetbrains.kotlin.plugin.serialization") version "2.1.0"
+    alias(libs.plugins.kotlin.jvm)
+    alias(libs.plugins.ktor)
+    alias(libs.plugins.kotlin.plugin.serialization)
 }
 
 group = "com.bashkevich.tennisscorekeeperbackend"
@@ -47,7 +43,7 @@ dependencies {
 
 ktor {
     fatJar {
-        archiveFileName.set("tennisscorekeeperbackend-0.0.1.jar")
+        archiveFileName.set("tennisscorekeeperbackend.jar")
     }
 
     docker {
