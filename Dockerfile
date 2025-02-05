@@ -7,8 +7,8 @@ COPY settings.gradle.kts .
 COPY gradle ./gradle
 COPY src ./src
 
-# Собираем проект
-RUN gradle build --no-daemon
+# Собираем fat JAR
+RUN gradle buildFatJar --no-daemon
 
 # Используем легковесный образ для запуска приложения
 FROM amazoncorretto:22
