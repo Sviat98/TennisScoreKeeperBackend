@@ -9,7 +9,7 @@ group = "com.bashkevich.tennisscorekeeperbackend"
 version = "0.0.1"
 
 application {
-    mainClass.set("io.ktor.server.netty.EngineMain")
+    mainClass.set("com.bashkevich.tennisscorekeeperbackend.ApplicationKt")
 
     val isDevelopment: Boolean = project.ext.has("development")
     applicationDefaultJvmArgs = listOf("-Dio.ktor.development=$isDevelopment")
@@ -39,4 +39,26 @@ dependencies {
     implementation(libs.ktor.server.config.yaml)
     testImplementation(libs.ktor.server.test.host)
     testImplementation(libs.kotlin.test.junit)
+}
+
+ktor {
+    fatJar {
+        archiveFileName.set("tennisscorekeeperbackend-0.0.1.jar")
+    }
+
+    docker {
+        jreVersion.set(JavaVersion.VERSION_17)
+        localImageName.set("sample-docker-image")
+        imageTag.set("0.0.1-preview")
+        portMappings.set(
+            listOf(
+                io.ktor.plugin.features.DockerPortMapping(
+                    80,
+                    8080,
+                    io.ktor.plugin.features.DockerPortMappingProtocol.TCP
+                )
+            )
+        )
+
+    }
 }
