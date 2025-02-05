@@ -16,7 +16,7 @@ fun Application.configureDatabase() {
 
     val schemaName = "tennis_score_keeper"
 
-    val remotejdbcURL = "jdbc:postgresql://hattie.db.elephantsql.com/$cloudDB?currentSchema=$schemaName"
+    val remotejdbcURL = "jdbc:postgresql://ep-blue-fog-a2izbdkl-pooler.eu-central-1.aws.neon.tech/$cloudDB?sslmode=require"
 
     val localUsername = System.getenv("LOCAL_USERNAME")
 
@@ -44,6 +44,7 @@ fun Application.configureDatabase() {
 
 
     transaction {
+        exec("SET search_path TO $schemaName;")
         SchemaUtils.create(
             CounterTable
         )
