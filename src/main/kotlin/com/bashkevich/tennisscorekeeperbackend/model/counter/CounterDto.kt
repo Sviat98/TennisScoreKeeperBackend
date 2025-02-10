@@ -16,7 +16,15 @@ data class CounterDto(
 @Serializable
 data class CounterBodyDto(
     @SerialName(value = "name")
-    val name: String
+    val name: String,
+    @SerialName(value = "value")
+    val value: Int = 0,
+)
+
+@Serializable
+data class CounterDeltaDto(
+    @SerialName(value = "delta")
+    val delta: Int,
 )
 
 fun CounterEntity.toDto() = CounterDto(

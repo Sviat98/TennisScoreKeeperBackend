@@ -24,9 +24,18 @@ class CounterService(
         }
     }
 
-    suspend fun addCounter(counterName: String): CounterDto {
+    suspend fun addCounter(counterName: String, counterValue: Int): CounterDto {
         return dbQuery {
-            counterRepository.addCounter(counterName).toDto()
+            counterRepository.addCounter(counterName,counterValue).toDto()
+        }
+    }
+
+    suspend fun changeCounterValue(counterId: Int, counterDelta: Int): CounterDto {
+        return dbQuery {
+            if (counterId != 0) {
+                counterRepository.changeCounterValue(counterId,counterDelta)?.toDto()
+                    ?: throw NotFoundException("No counter found!")
+            } else throw BadRequestException("Incorrect id")
         }
     }
 }

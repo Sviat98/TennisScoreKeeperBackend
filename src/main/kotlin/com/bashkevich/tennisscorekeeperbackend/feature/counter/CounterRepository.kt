@@ -17,11 +17,19 @@ class CounterRepository {
         }
     }
 
-    suspend fun addCounter(counterName: String): CounterEntity {
+    suspend fun addCounter(counterName: String, counterValue: Int): CounterEntity {
         return dbQuery {
             CounterEntity.new {
                 name = counterName
-                value = 0
+                value = counterValue
+            }
+        }
+    }
+
+    suspend fun changeCounterValue(counterId: Int, counterDelta: Int): CounterEntity? {
+        return dbQuery {
+            CounterEntity.findByIdAndUpdate(counterId) {
+                it.value += counterDelta
             }
         }
     }
