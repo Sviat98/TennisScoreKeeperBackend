@@ -23,9 +23,12 @@ dependencies {
     implementation(libs.ktor.server.core)
     implementation(libs.ktor.server.content.negotiation)
     implementation(libs.ktor.server.websockets)
+    implementation(libs.ktor.server.cors)
+
     implementation(libs.koin.ktor)
     implementation(libs.koin.logger.slf4j)
     implementation(libs.ktor.server.call.logging)
+
     implementation(libs.ktor.serialization.kotlinx.json)
 
     implementation(libs.exposed.core)

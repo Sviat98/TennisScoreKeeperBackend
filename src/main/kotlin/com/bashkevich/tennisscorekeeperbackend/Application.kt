@@ -1,5 +1,6 @@
 package com.bashkevich.tennisscorekeeperbackend
 
+import com.bashkevich.tennisscorekeeperbackend.plugins.configureCors
 import com.bashkevich.tennisscorekeeperbackend.plugins.configureDatabase
 import com.bashkevich.tennisscorekeeperbackend.plugins.configureDependencyInjection
 import com.bashkevich.tennisscorekeeperbackend.plugins.configureMonitoring
@@ -15,6 +16,7 @@ fun main(args: Array<String>) {
 
 fun Application.module() {
     configureSerialization()
+    configureCors()
     configureSockets()
     configureDependencyInjection()
     configureMonitoring()
