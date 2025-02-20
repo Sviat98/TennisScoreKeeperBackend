@@ -52,9 +52,9 @@ fun Route.counterRoutes() {
 
                 val bodyWithDelta = call.receive(CounterDeltaDto::class)
 
-                val counter = counterService.changeCounterValue(counterId = id, counterDelta = bodyWithDelta.delta)
+                counterService.changeCounterValue(counterId = id, counterDelta = bodyWithDelta.delta)
 
-                call.respond(counter)
+                call.respond(HttpStatusCode.OK,"Counter successfully changed")
             }
             webSocket {
                 val id = call.parameters["id"]?.toIntOrNull() ?: 0
