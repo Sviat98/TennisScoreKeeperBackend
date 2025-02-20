@@ -2,6 +2,7 @@ package com.bashkevich.tennisscorekeeperbackend.feature.counter
 
 import com.bashkevich.tennisscorekeeperbackend.plugins.dbQuery
 import com.bashkevich.tennisscorekeeperbackend.model.counter.CounterEntity
+import com.bashkevich.tennisscorekeeperbackend.model.counter.CounterObserver
 
 class CounterRepository {
 
@@ -28,9 +29,15 @@ class CounterRepository {
 
     suspend fun changeCounterValue(counterId: Int, counterDelta: Int): CounterEntity? {
         return dbQuery {
-            CounterEntity.findByIdAndUpdate(counterId) {
+            val counter = CounterEntity.findByIdAndUpdate(counterId) {
                 it.value += counterDelta
             }
+
+            counter?.let {
+                CounterObserver.notifyChange(it)
+            }
+
+            counter
         }
     }
 }

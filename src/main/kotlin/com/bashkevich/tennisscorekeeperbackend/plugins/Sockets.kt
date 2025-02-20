@@ -1,9 +1,12 @@
 package com.bashkevich.tennisscorekeeperbackend.plugins
 
+import io.ktor.serialization.kotlinx.KotlinxWebsocketSerializationConverter
 import io.ktor.server.application.*
 import io.ktor.server.routing.*
 import io.ktor.server.websocket.*
 import io.ktor.websocket.*
+import kotlinx.serialization.SerialFormat
+import kotlinx.serialization.json.Json
 import kotlin.time.Duration.Companion.seconds
 
 fun Application.configureSockets() {
@@ -12,6 +15,7 @@ fun Application.configureSockets() {
         timeout = 15.seconds
         maxFrameSize = Long.MAX_VALUE
         masking = false
+        contentConverter = KotlinxWebsocketSerializationConverter(format = Json)
     }
     routing {
         webSocket("/ws") { // websocketSession
