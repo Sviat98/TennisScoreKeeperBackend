@@ -29,8 +29,10 @@ fun Application.configureDatabase() {
 
     val driverClassName = "org.postgresql.Driver"
 
+    val schema = Schema(schemaName)
+
     val databaseConfig = DatabaseConfig {
-        //keepLoadedReferencesOutOfTransaction = true
+        defaultSchema = schema
     }
 
     Database.connect(
@@ -44,7 +46,6 @@ fun Application.configureDatabase() {
 
 
     transaction {
-        SchemaUtils.setSchema(Schema(schemaName))
         SchemaUtils.create(
             CounterTable
         )
