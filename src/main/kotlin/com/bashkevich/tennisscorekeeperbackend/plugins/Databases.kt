@@ -38,13 +38,13 @@ fun Application.configureDatabase() {
         driver = driverClassName,
         user = cloudUsername,
         password = cloudPassword,
-        databaseConfig = databaseConfig
+        databaseConfig = databaseConfig,
     )
     //Database.connect(url = localjdbcURL, driver = driverClassName, user = localUsername, password = localPassword, databaseConfig = databaseConfig)
 
 
     transaction {
-        exec("SET search_path TO $schemaName;")
+        SchemaUtils.setSchema(Schema(schemaName))
         SchemaUtils.create(
             CounterTable
         )
