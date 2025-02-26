@@ -7,12 +7,13 @@ import io.ktor.server.websocket.*
 import io.ktor.websocket.*
 import kotlinx.serialization.SerialFormat
 import kotlinx.serialization.json.Json
+import kotlin.time.Duration.Companion.hours
 import kotlin.time.Duration.Companion.seconds
 
 fun Application.configureSockets() {
     install(WebSockets) {
         pingPeriod = 15.seconds
-        timeout = 15.seconds
+        timeout = 24.hours
         maxFrameSize = Long.MAX_VALUE
         masking = false
         contentConverter = KotlinxWebsocketSerializationConverter(format = Json)
