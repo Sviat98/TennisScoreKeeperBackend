@@ -67,8 +67,12 @@ fun Route.counterRoutes() {
                 CounterConnectionManager.addConnection(id, this)
                 val isUpdater = CounterConnectionManager.getFirstConnection(id) == this
 
+                println("replay cache: ${CounterObserver.counterFlow.replayCache}")
+
                 // Only fetch from DB if there are no existing updates in counterFlow
                 val hasUpdates = CounterObserver.counterFlow.replayCache.isNotEmpty()
+
+                println("hasUpdates = $hasUpdates")
 
                 if (!hasUpdates) {
                     val initialCounter = counterService.getCounterById(id)
