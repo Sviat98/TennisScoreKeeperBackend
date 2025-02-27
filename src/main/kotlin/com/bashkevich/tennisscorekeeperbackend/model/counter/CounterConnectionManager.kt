@@ -10,6 +10,7 @@ object CounterConnectionManager {
         connections.compute(counterId) { _, list ->
             (list ?: mutableListOf()).apply { add(session) }
         }
+        println("Connection added. There are ${connections.size} active connections for counterId = $counterId")
     }
 
     fun removeConnection(counterId: Int, session: DefaultWebSocketServerSession) {
@@ -18,6 +19,7 @@ object CounterConnectionManager {
             if (list.isEmpty()) {
                 connections.remove(counterId)
             }
+            println("Connection removed. There are ${connections.size} active connections for counterId = $counterId")
         }
     }
 
