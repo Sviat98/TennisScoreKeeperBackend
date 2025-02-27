@@ -22,6 +22,7 @@ import io.ktor.websocket.close
 import io.ktor.websocket.readText
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.filter
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 import org.koin.ktor.ext.inject
 
@@ -54,7 +55,7 @@ fun Route.counterRoutes() {
 
                 counterService.changeCounterValue(counterId = id, counterDelta = bodyWithDelta.delta)
 
-                call.respond(HttpStatusCode.OK,"Counter successfully changed")
+                call.respond(HttpStatusCode.OK, "Counter successfully changed")
             }
             webSocket {
                 val id = call.parameters["id"]?.toIntOrNull() ?: 0
@@ -67,10 +68,12 @@ fun Route.counterRoutes() {
                 CounterConnectionManager.addConnection(id, this)
                 val isUpdater = CounterConnectionManager.getFirstConnection(id) == this
 
-                println("replay cache: ${CounterObserver.counterFlow.replayCache}")
+                val counterFlow = CounterObserver.getCounterFlow(id)
+
+                println("replay cache: ${counterFlow.replayCache}")
 
                 // Only fetch from DB if there are no existing updates in counterFlow
-                val hasUpdates = CounterObserver.counterFlow.replayCache.isNotEmpty()
+                val hasUpdates = counterFlow.replayCache.isNotEmpty()
 
                 println("hasUpdates = $hasUpdates")
 
@@ -81,11 +84,9 @@ fun Route.counterRoutes() {
                 }
 
                 val job = launch {
-                    CounterObserver.counterFlow.filter { (counterId, _) -> counterId == id }
-                        .collectLatest { (_, counter) ->
-                            val counterDto = counter.toDto()
-                            sendSerialized(counterDto) // Send JSON response
-                        }
+                    counterFlow.map { counterEntity -> counterEntity.toDto() }.collectLatest { counterDto ->
+                        sendSerialized(counterDto) // Send JSON response
+                    }
                 }
 
                 try {

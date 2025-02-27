@@ -14,6 +14,8 @@ fun Application.configureDatabase() {
 
     val cloudDB = System.getenv("CLOUD_DB")
 
+    val defaultSchemaName = "public"
+
     val schemaName = "tennis_score_keeper"
 
     val remotejdbcURL = "jdbc:postgresql://ep-blue-fog-a2izbdkl-pooler.eu-central-1.aws.neon.tech/$cloudDB?sslmode=require"
@@ -29,8 +31,9 @@ fun Application.configureDatabase() {
 
     val driverClassName = "org.postgresql.Driver"
 
-    val schema = Schema(schemaName)
+    //val schema = Schema(schemaName) // напоянтная ошибка с переключением схем БД, пока убрал это
 
+    val schema = Schema(defaultSchemaName)
     val databaseConfig = DatabaseConfig {
         defaultSchema = schema
     }
