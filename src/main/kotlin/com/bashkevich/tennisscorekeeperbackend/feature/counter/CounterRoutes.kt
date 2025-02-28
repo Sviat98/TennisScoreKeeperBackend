@@ -14,6 +14,7 @@ import io.ktor.server.routing.get
 import io.ktor.server.routing.patch
 import io.ktor.server.routing.post
 import io.ktor.server.routing.route
+import io.ktor.server.websocket.DefaultWebSocketServerSession
 import io.ktor.server.websocket.sendSerialized
 import io.ktor.server.websocket.webSocket
 import io.ktor.websocket.CloseReason
@@ -21,8 +22,12 @@ import io.ktor.websocket.Frame
 import io.ktor.websocket.close
 import io.ktor.websocket.readText
 import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.onEmpty
+import kotlinx.coroutines.flow.onStart
+import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import org.koin.ktor.ext.inject
 
@@ -73,40 +78,44 @@ fun Route.counterRoutes() {
                 println("replay cache: ${counterFlow.replayCache}")
 
                 // Only fetch from DB if there are no existing updates in counterFlow
-                val hasUpdates = counterFlow.replayCache.isNotEmpty()
-
-                println("hasUpdates = $hasUpdates")
-
-                if (!hasUpdates) {
-                    val initialCounter = counterService.getCounterById(id)
-
-                    sendSerialized(initialCounter)
-                }
+//                val hasUpdates = counterFlow.replayCache.isNotEmpty()
+//
+//                println("hasUpdates = $hasUpdates")
+//
+//                if (!hasUpdates) {
+//                    val initialCounter = counterService.getCounterById(id)
+//
+//                    sendSerialized(initialCounter)
+//                }
 
                 val job = launch {
-                    counterFlow.map { counterEntity -> counterEntity.toDto() }.collectLatest { counterDto ->
+                    counterFlow.map { counterEntity -> counterEntity.toDto() }.onStart {
+                        if(counterFlow.replayCache.isEmpty()){
+                            val initialCounter = counterService.getCounterById(id)
+                            emit(initialCounter)
+                        }
+                    }.collectLatest { counterDto ->
                         sendSerialized(counterDto) // Send JSON response
                     }
                 }
 
                 try {
                     for (frame in incoming) {
-                        if (frame is Frame.Text) {
-                            val text = frame.readText()
-                            if (text == "close") {
-                                close(CloseReason(CloseReason.Codes.NORMAL, "Client closed connection"))
-                                break
-                            }
+                        if (frame is Frame.Close) {
+                            close(CloseReason(CloseReason.Codes.NORMAL, "Client closed connection"))
+                            break
                         }
                     }
                 } finally {
                     job.cancel() // Cancel the coroutine when WebSocket is closed
                     CounterConnectionManager.removeConnection(id, this)
+                    if (isActive) {
+                        close(CloseReason(CloseReason.Codes.GOING_AWAY, "Server is closing the connection"))
+                    }
                 }
 
             }
         }
     }
-
 
 }
