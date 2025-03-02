@@ -11,11 +11,11 @@ fun Application.configureCors(){
         anyHost()
         allowHeader(HttpHeaders.ContentType)
         allowHeader(HttpHeaders.AccessControlAllowOrigin)
-        allowMethod(HttpMethod.Delete)
-        allowMethod(HttpMethod.Get)
-        allowMethod(HttpMethod.Put)
-        allowMethod(HttpMethod.Post)
+        //By default, the CORS plugin allows the GET, POST and HEAD HTTP methods
         allowMethod(HttpMethod.Options)
+        allowMethod(HttpMethod.Put)
+        allowMethod(HttpMethod.Patch)
+        allowMethod(HttpMethod.Delete)
         allowSameOrigin
     }
 }
