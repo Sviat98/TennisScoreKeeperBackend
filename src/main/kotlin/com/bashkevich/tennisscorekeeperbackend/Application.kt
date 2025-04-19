@@ -7,6 +7,7 @@ import com.bashkevich.tennisscorekeeperbackend.plugins.configureMonitoring
 import com.bashkevich.tennisscorekeeperbackend.plugins.configureRouting
 import com.bashkevich.tennisscorekeeperbackend.plugins.configureSerialization
 import com.bashkevich.tennisscorekeeperbackend.plugins.configureSockets
+import com.bashkevich.tennisscorekeeperbackend.plugins.configureValidation
 import io.ktor.server.application.*
 import io.ktor.server.netty.EngineMain
 
@@ -22,4 +23,5 @@ fun Application.module() {
     configureMonitoring()
     configureDatabase()
     configureRouting()
+    configureValidation()
 }

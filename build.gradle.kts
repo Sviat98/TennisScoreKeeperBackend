@@ -24,6 +24,8 @@ dependencies {
     implementation(libs.ktor.server.content.negotiation)
     implementation(libs.ktor.server.websockets)
     implementation(libs.ktor.server.cors)
+    implementation(libs.ktor.server.request.validation)
+
 
     implementation(libs.koin.ktor)
     implementation(libs.koin.logger.slf4j)

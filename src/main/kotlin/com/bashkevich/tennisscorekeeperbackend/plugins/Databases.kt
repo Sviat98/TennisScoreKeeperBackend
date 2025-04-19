@@ -1,6 +1,9 @@
 package com.bashkevich.tennisscorekeeperbackend.plugins
 
 import com.bashkevich.tennisscorekeeperbackend.model.counter.CounterTable
+import com.bashkevich.tennisscorekeeperbackend.model.match.MatchLogTable
+import com.bashkevich.tennisscorekeeperbackend.model.match.MatchTable
+import com.bashkevich.tennisscorekeeperbackend.model.player.PlayerTable
 import io.ktor.server.application.*
 import kotlinx.coroutines.Dispatchers
 import org.jetbrains.exposed.sql.*
@@ -50,7 +53,7 @@ fun Application.configureDatabase() {
 
     transaction {
         SchemaUtils.create(
-            CounterTable
+            CounterTable, PlayerTable, MatchTable, MatchLogTable
         )
     }
 }

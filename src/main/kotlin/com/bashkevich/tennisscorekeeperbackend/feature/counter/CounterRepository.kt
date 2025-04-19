@@ -12,20 +12,14 @@ class CounterRepository {
         }
     }
 
-    suspend fun getCounterById(id: Int): CounterEntity? {
-        return dbQuery {
+    suspend fun getCounterById(id: Int): CounterEntity? =
             CounterEntity.findById(id)
-        }
-    }
 
-    suspend fun addCounter(counterName: String, counterValue: Int): CounterEntity {
-        return dbQuery {
+    suspend fun addCounter(counterName: String, counterValue: Int): CounterEntity =
             CounterEntity.new {
                 name = counterName
                 value = counterValue
             }
-        }
-    }
 
     suspend fun changeCounterValue(counterId: Int, counterDelta: Int): CounterEntity? {
         return dbQuery {
