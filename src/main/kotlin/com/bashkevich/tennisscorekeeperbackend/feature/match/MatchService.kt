@@ -1,11 +1,13 @@
 package com.bashkevich.tennisscorekeeperbackend.feature.match
 
+import com.bashkevich.tennisscorekeeperbackend.feature.match.match_log.MatchLogRepository
+import com.bashkevich.tennisscorekeeperbackend.feature.match.set_template.SetTemplateRepository
 import com.bashkevich.tennisscorekeeperbackend.feature.match.websocket.MatchObserver
 import com.bashkevich.tennisscorekeeperbackend.feature.player.PlayerRepository
 import com.bashkevich.tennisscorekeeperbackend.model.match.ChangeScoreBody
 import com.bashkevich.tennisscorekeeperbackend.model.match.MatchBody
 import com.bashkevich.tennisscorekeeperbackend.model.match.MatchDto
-import com.bashkevich.tennisscorekeeperbackend.model.match.MatchLogEvent
+import com.bashkevich.tennisscorekeeperbackend.model.match_log.MatchLogEvent
 import com.bashkevich.tennisscorekeeperbackend.model.match.ScoreType
 import com.bashkevich.tennisscorekeeperbackend.model.match.ServeBody
 import com.bashkevich.tennisscorekeeperbackend.model.match.TennisGameDto
@@ -21,14 +23,11 @@ import io.ktor.server.plugins.NotFoundException
 class MatchService(
     private val matchRepository: MatchRepository,
     private val matchLogRepository: MatchLogRepository,
+    private val setTemplateRepository: SetTemplateRepository,
     private val playerRepository: PlayerRepository,
 ) {
     suspend fun addMatch(matchBody: MatchBody) {
         return dbQuery {
-
-            val firstPlayerId = matchBody.firstPlayerId
-
-            val secondPlayerId = matchBody.secondPlayerId
 
 
 //            validateBody(matchBody) {
@@ -39,7 +38,7 @@ class MatchService(
 //                firstPlayer != null && secondPlayer != null
 //            }
 
-            matchRepository.addMatch(firstPlayerId, secondPlayerId)
+            matchRepository.addMatch(matchBody)
         }
     }
 
@@ -93,7 +92,7 @@ class MatchService(
                 ?.toPlayerInMatchDto(currentServe)
                 ?: throw NotFoundException("Player with id = ${matchEntity.secondPlayerId} not found")
 
-            val lastGame = matchLogRepository.getCurrentSet(matchId,setNumber)
+            val lastGame = matchLogRepository.getCurrentSet(matchId, setNumber)
 
             val currentSet =
                 if (lastPoint?.scoreType == ScoreType.SET) TennisSetDto(0, 0) else lastGame?.toTennisSetDto()
@@ -127,10 +126,19 @@ class MatchService(
 
                 val matchEntity = matchRepository.getMatchById(matchId) ?: throw NotFoundException("No match found!")
 
+                val setsToWin = matchEntity.setsToWin
 
                 val lastPoint = matchLogRepository.getLastPoint(matchId)
 
                 var setNumber = lastPoint?.setNumber ?: 1
+
+                val isDecidingSet = setNumber == 2 * setsToWin - 1
+
+                val currentSetTemplate = if (isDecidingSet) {
+                    setTemplateRepository.getSetTemplateById(matchEntity.decidingSet)
+                } else {
+                    setTemplateRepository.getSetTemplateById(matchEntity.regularSet)
+                } ?: throw NotFoundException("No set template found!")
 
                 var pointNumber = lastPoint?.pointNumber ?: 0
 
@@ -143,7 +151,7 @@ class MatchService(
                 var scoreType = ScoreType.POINT
 
 
-                if (lastPoint?.scoreType == ScoreType.SET){
+                if (lastPoint?.scoreType == ScoreType.SET) {
                     setNumber++
                 }
 
@@ -159,9 +167,9 @@ class MatchService(
                     else -> throw BadRequestException("Wrong player id in request")
                 }
 
-                val isFirstPlayerWonGame =
+                val isFirstPlayerWonGame = if (currentSetTemplate.decidingPoint) firstPlayerPoints == 4 else
                     (firstPlayerPoints == 4 && secondPlayerPoints < 3) || (firstPlayerPoints > 4 && firstPlayerPoints - secondPlayerPoints == 2)
-                val isSecondPlayerWonGame =
+                val isSecondPlayerWonGame = if (currentSetTemplate.decidingPoint) secondPlayerPoints == 4 else
                     (secondPlayerPoints == 4 && firstPlayerPoints < 3) || (secondPlayerPoints > 4 && secondPlayerPoints - firstPlayerPoints == 2)
 
 
@@ -181,12 +189,14 @@ class MatchService(
                         secondPlayerPoints++
                     }
 
-                    val isFirstPlayerWonSet =
-                        (firstPlayerPoints == 6 && secondPlayerPoints < 5) || (firstPlayerPoints ==7 && secondPlayerPoints == 5)
-                    val isSecondPlayerWonSet =
-                        (secondPlayerPoints == 6 && firstPlayerPoints < 5) || (secondPlayerPoints ==7 && firstPlayerPoints == 5)
+                    val gamesToWin = currentSetTemplate.gamesToWin
 
-                    if (isFirstPlayerWonSet || isSecondPlayerWonSet){
+                    val isFirstPlayerWonSet =
+                        (firstPlayerPoints == gamesToWin && secondPlayerPoints < gamesToWin - 1) || (firstPlayerPoints > gamesToWin && firstPlayerPoints - secondPlayerPoints == 2)
+                    val isSecondPlayerWonSet =
+                        (secondPlayerPoints == gamesToWin && firstPlayerPoints < gamesToWin - 1) || (secondPlayerPoints > gamesToWin && secondPlayerPoints - firstPlayerPoints == 2)
+
+                    if (isFirstPlayerWonSet || isSecondPlayerWonSet) {
                         scoreType = ScoreType.SET
                     }
 

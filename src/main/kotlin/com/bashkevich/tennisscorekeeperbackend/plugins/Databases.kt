@@ -1,8 +1,9 @@
 package com.bashkevich.tennisscorekeeperbackend.plugins
 
 import com.bashkevich.tennisscorekeeperbackend.model.counter.CounterTable
-import com.bashkevich.tennisscorekeeperbackend.model.match.MatchLogTable
+import com.bashkevich.tennisscorekeeperbackend.model.match_log.MatchLogTable
 import com.bashkevich.tennisscorekeeperbackend.model.match.MatchTable
+import com.bashkevich.tennisscorekeeperbackend.model.set_template.SetTemplateTable
 import com.bashkevich.tennisscorekeeperbackend.model.player.PlayerTable
 import io.ktor.server.application.*
 import kotlinx.coroutines.Dispatchers
@@ -53,8 +54,28 @@ fun Application.configureDatabase() {
 
     transaction {
         SchemaUtils.create(
-            CounterTable, PlayerTable, MatchTable, MatchLogTable
+            CounterTable, PlayerTable, MatchTable, MatchLogTable, SetTemplateTable
         )
+
+//        SetTemplateTable.insert {
+//            it[gamesToWin] = 6
+//            it[decidingPoint] = false
+//            it[tiebreakMode] = TiebreakMode.LATE
+//            it[tiebreakPointsToWin] = 7
+//        }
+//        SetTemplateTable.insert {
+//            it[gamesToWin] = 6
+//            it[decidingPoint] = true
+//            it[tiebreakMode] = TiebreakMode.LATE
+//            it[tiebreakPointsToWin] = 7
+//        }
+//        // Супер-тай-брейк до 10
+//        SetTemplateTable.insert {
+//            it[gamesToWin] = 1
+//            it[decidingPoint] = false
+//            it[tiebreakMode] = TiebreakMode.EARLY
+//            it[tiebreakPointsToWin] = 10
+//        }
     }
 }
 

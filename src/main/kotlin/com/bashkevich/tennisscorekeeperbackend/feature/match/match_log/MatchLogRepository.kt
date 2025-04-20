@@ -1,7 +1,7 @@
-package com.bashkevich.tennisscorekeeperbackend.feature.match
+package com.bashkevich.tennisscorekeeperbackend.feature.match.match_log
 
-import com.bashkevich.tennisscorekeeperbackend.model.match.MatchLogEvent
-import com.bashkevich.tennisscorekeeperbackend.model.match.MatchLogTable
+import com.bashkevich.tennisscorekeeperbackend.model.match_log.MatchLogEvent
+import com.bashkevich.tennisscorekeeperbackend.model.match_log.MatchLogTable
 import com.bashkevich.tennisscorekeeperbackend.model.match.ScoreType
 import org.jetbrains.exposed.sql.SortOrder
 import org.jetbrains.exposed.sql.and

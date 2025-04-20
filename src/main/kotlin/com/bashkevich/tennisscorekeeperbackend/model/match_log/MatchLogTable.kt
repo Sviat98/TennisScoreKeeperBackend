@@ -1,5 +1,7 @@
-package com.bashkevich.tennisscorekeeperbackend.model.match
+package com.bashkevich.tennisscorekeeperbackend.model.match_log
 
+import com.bashkevich.tennisscorekeeperbackend.model.match.MatchTable
+import com.bashkevich.tennisscorekeeperbackend.model.match.ScoreType
 import com.bashkevich.tennisscorekeeperbackend.model.player.PlayerTable
 import org.jetbrains.exposed.dao.id.IntIdTable
 

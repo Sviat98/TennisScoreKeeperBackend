@@ -1,4 +1,6 @@
-package com.bashkevich.tennisscorekeeperbackend.model.match
+package com.bashkevich.tennisscorekeeperbackend.model.match_log
+
+import com.bashkevich.tennisscorekeeperbackend.model.match.ScoreType
 
 data class MatchLogEvent(
     val matchId: Int,

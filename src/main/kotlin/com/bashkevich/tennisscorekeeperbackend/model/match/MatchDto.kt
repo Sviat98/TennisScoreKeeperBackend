@@ -1,5 +1,6 @@
 package com.bashkevich.tennisscorekeeperbackend.model.match
 
+import com.bashkevich.tennisscorekeeperbackend.model.match_log.MatchLogEvent
 import com.bashkevich.tennisscorekeeperbackend.model.player.PlayerInMatchDto
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
