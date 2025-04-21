@@ -15,6 +15,7 @@ import com.bashkevich.tennisscorekeeperbackend.model.match.TennisSetDto
 import com.bashkevich.tennisscorekeeperbackend.model.match.toTennisGameDto
 import com.bashkevich.tennisscorekeeperbackend.model.match.toTennisSetDto
 import com.bashkevich.tennisscorekeeperbackend.model.player.toPlayerInMatchDto
+import com.bashkevich.tennisscorekeeperbackend.model.set_template.TiebreakMode
 import com.bashkevich.tennisscorekeeperbackend.plugins.dbQuery
 import com.bashkevich.tennisscorekeeperbackend.plugins.validateBody
 import io.ktor.server.plugins.BadRequestException
@@ -128,6 +129,11 @@ class MatchService(
 
                 val setsToWin = matchEntity.setsToWin
 
+                val firstPlayerId = matchEntity.firstPlayerId
+
+                val secondPlayerId = matchEntity.secondPlayerId
+
+
                 val lastPoint = matchLogRepository.getLastPoint(matchId)
 
                 var setNumber = lastPoint?.setNumber ?: 1
@@ -148,7 +154,14 @@ class MatchService(
 
                 var firstPlayerPoints = 0
                 var secondPlayerPoints = 0
-                var scoreType = ScoreType.POINT
+                var scoreType: ScoreType
+
+                if (changeScoreBody.scoreType == ScoreType.GAME) {
+                    if (lastPoint?.scoreType == ScoreType.POINT) throw BadRequestException("Cannot add game")
+                    scoreType = ScoreType.GAME
+                } else {
+                    scoreType = ScoreType.POINT
+                }
 
 
                 if (lastPoint?.scoreType == ScoreType.SET) {
@@ -162,15 +175,49 @@ class MatchService(
 
 
                 when {
-                    matchEntity.firstPlayerId == scoringPlayerId -> firstPlayerPoints++
-                    matchEntity.secondPlayerId == scoringPlayerId -> secondPlayerPoints++
+                    firstPlayerId == scoringPlayerId -> firstPlayerPoints++
+                    secondPlayerId == scoringPlayerId -> secondPlayerPoints++
                     else -> throw BadRequestException("Wrong player id in request")
                 }
 
-                val isFirstPlayerWonGame = if (currentSetTemplate.decidingPoint) firstPlayerPoints == 4 else
-                    (firstPlayerPoints == 4 && secondPlayerPoints < 3) || (firstPlayerPoints > 4 && firstPlayerPoints - secondPlayerPoints == 2)
-                val isSecondPlayerWonGame = if (currentSetTemplate.decidingPoint) secondPlayerPoints == 4 else
-                    (secondPlayerPoints == 4 && firstPlayerPoints < 3) || (secondPlayerPoints > 4 && secondPlayerPoints - firstPlayerPoints == 2)
+                val currentSet = matchLogRepository.getCurrentSet(matchId, setNumber)
+
+                var isFirstPlayerWonGame: Boolean
+                var isSecondPlayerWonGame: Boolean
+
+                val isTiebreakMode = when (currentSetTemplate.tiebreakMode) {
+                    TiebreakMode.EARLY -> currentSet?.firstPlayerPoints == currentSet?.secondPlayerPoints && currentSet?.firstPlayerPoints == currentSetTemplate.gamesToWin - 1
+                    TiebreakMode.LATE -> currentSet?.firstPlayerPoints == currentSet?.secondPlayerPoints && currentSet?.firstPlayerPoints == currentSetTemplate.gamesToWin
+                    else -> false
+                }
+
+                if (isTiebreakMode) {
+                    val tiebreakPointsToWin = currentSetTemplate.tiebreakPointsToWin
+
+                    isFirstPlayerWonGame =
+                        firstPlayerPoints == tiebreakPointsToWin || (firstPlayerPoints > tiebreakPointsToWin && firstPlayerPoints - secondPlayerPoints == 2)
+                    isSecondPlayerWonGame =
+                        secondPlayerPoints == tiebreakPointsToWin || (secondPlayerPoints > tiebreakPointsToWin && secondPlayerPoints - firstPlayerPoints == 2)
+                    scoreType = ScoreType.TIEBREAK_POINT
+
+                    currentServe = when {
+                        (firstPlayerPoints + secondPlayerPoints % 2 == 1 && currentSet?.currentServe == firstPlayerId) -> secondPlayerId
+                        (firstPlayerPoints + secondPlayerPoints % 2 == 1 && currentSet?.currentServe == secondPlayerId) -> firstPlayerId
+                        else -> lastPoint?.currentServe ?: matchEntity.firstPlayerServe!!
+                    }
+                } else {
+                    isFirstPlayerWonGame = when {
+                        changeScoreBody.scoreType == ScoreType.GAME && changeScoreBody.playerId == matchEntity.firstPlayerId -> true
+                        currentSetTemplate.decidingPoint -> firstPlayerPoints == 4
+                        else -> (firstPlayerPoints == 4 && secondPlayerPoints < 3) || (firstPlayerPoints > 4 && firstPlayerPoints - secondPlayerPoints == 2)
+                    }
+
+                    isSecondPlayerWonGame = when {
+                        changeScoreBody.scoreType == ScoreType.GAME && changeScoreBody.playerId == matchEntity.secondPlayerId -> true
+                        currentSetTemplate.decidingPoint -> secondPlayerPoints == 4
+                        else -> (secondPlayerPoints == 4 && firstPlayerPoints < 3) || (secondPlayerPoints > 4 && secondPlayerPoints - firstPlayerPoints == 2)
+                    }
+                }
 
 
                 if (isFirstPlayerWonGame || isSecondPlayerWonGame) {
@@ -178,7 +225,6 @@ class MatchService(
                     currentServe =
                         if (currentServe == matchEntity.firstPlayerId) matchEntity.secondPlayerId else matchEntity.firstPlayerId
 
-                    val currentSet = matchLogRepository.getCurrentSet(matchId, setNumber)
 
                     firstPlayerPoints = currentSet?.firstPlayerPoints ?: 0
                     secondPlayerPoints = currentSet?.secondPlayerPoints ?: 0
@@ -191,13 +237,21 @@ class MatchService(
 
                     val gamesToWin = currentSetTemplate.gamesToWin
 
-                    val isFirstPlayerWonSet =
-                        (firstPlayerPoints == gamesToWin && secondPlayerPoints < gamesToWin - 1) || (firstPlayerPoints > gamesToWin && firstPlayerPoints - secondPlayerPoints == 2)
-                    val isSecondPlayerWonSet =
-                        (secondPlayerPoints == gamesToWin && firstPlayerPoints < gamesToWin - 1) || (secondPlayerPoints > gamesToWin && secondPlayerPoints - firstPlayerPoints == 2)
+                    val isFirstPlayerWonSet = when {
+                        isTiebreakMode && isFirstPlayerWonGame -> true
+                        else -> (firstPlayerPoints == gamesToWin && secondPlayerPoints < gamesToWin - 1) || (firstPlayerPoints > gamesToWin && firstPlayerPoints - secondPlayerPoints == 2)
+                    }
+
+                    val isSecondPlayerWonSet = when {
+                        isTiebreakMode && isSecondPlayerWonGame -> true
+                        else -> (secondPlayerPoints == gamesToWin && firstPlayerPoints < gamesToWin - 1) || (secondPlayerPoints > gamesToWin && secondPlayerPoints - firstPlayerPoints == 2)
+                    }
 
                     if (isFirstPlayerWonSet || isSecondPlayerWonSet) {
                         scoreType = ScoreType.SET
+                        if (isTiebreakMode){
+                            currentServe = currentSet?.currentServe ?: matchEntity.firstPlayerServe!!
+                        }
                     }
 
                 }

@@ -12,5 +12,5 @@ data class ChangeScoreBody(
 )
 
 enum class ScoreType{
-    POINT,GAME,SET
+    POINT,TIEBREAK_POINT,GAME,SET
 }

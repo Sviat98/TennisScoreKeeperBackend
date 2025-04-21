@@ -43,9 +43,17 @@ fun MatchLogEvent.toTennisSetDto(): TennisSetDto {
 }
 
 fun MatchLogEvent.toTennisGameDto(): TennisGameDto {
-    val firstPlayerScore = mapGameScore(this.firstPlayerPoints, this.secondPlayerPoints)
+    val firstPlayerScore =
+        if (this.scoreType == ScoreType.TIEBREAK_POINT) this.firstPlayerPoints.toString() else mapGameScore(
+            this.firstPlayerPoints,
+            this.secondPlayerPoints
+        )
 
-    val secondPlayerScore = mapGameScore(this.secondPlayerPoints, this.firstPlayerPoints)
+    val secondPlayerScore =
+        if (this.scoreType == ScoreType.TIEBREAK_POINT) this.secondPlayerPoints.toString() else mapGameScore(
+            this.secondPlayerPoints,
+            this.firstPlayerPoints
+        )
 
     return TennisGameDto(firstPlayerPoints = firstPlayerScore, secondPlayerPoints = secondPlayerScore)
 }
