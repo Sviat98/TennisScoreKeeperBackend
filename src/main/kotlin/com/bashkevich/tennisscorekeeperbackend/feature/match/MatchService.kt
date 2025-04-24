@@ -105,7 +105,7 @@ class MatchService(
             ) else lastPoint?.toTennisGameDto() ?: TennisGameDto("0", "0")
 
             val matchDto = MatchDto(
-                matchId, firstPlayer, secondPlayer, previousSets, currentSet,
+                matchId.toString(), firstPlayer, secondPlayer, previousSets, currentSet,
                 currentGame
             )
 

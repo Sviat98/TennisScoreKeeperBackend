@@ -15,7 +15,7 @@ object MatchObserver {
     }
 
     suspend fun notifyChange(match: MatchDto) {
-        val id = match.id
+        val id = match.id.toInt()
         val flow = matchFlows.getOrPut(id) {
             MutableSharedFlow(replay = 1)
         }
