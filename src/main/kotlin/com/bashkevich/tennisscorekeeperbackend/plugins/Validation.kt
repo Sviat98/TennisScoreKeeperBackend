@@ -15,9 +15,9 @@ fun Application.configureValidation(){
 
     install(RequestValidation) {
             validate<MatchBody> { body ->
-                val firstPlayerId = body.firstPlayerId
+                val firstPlayerId = body.firstPlayerId.toIntOrNull() ?: 0
 
-                val secondPlayerId = body.secondPlayerId
+                val secondPlayerId = body.secondPlayerId.toIntOrNull() ?: 0
 
                 val firstPlayer = playerService.getPlayerById(firstPlayerId)
 

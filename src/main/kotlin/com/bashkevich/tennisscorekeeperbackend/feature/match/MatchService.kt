@@ -54,7 +54,7 @@ class MatchService(
     suspend fun updateServe(matchId: Int, serveBody: ServeBody) {
         return dbQuery {
             if (matchId != 0) {
-                val firstServePlayerId = serveBody.servingPlayerId
+                val firstServePlayerId = serveBody.servingPlayerId.toIntOrNull() ?: 0
 
                 validateBody(serveBody) {
                     val playerId = playerRepository.getPlayerById(firstServePlayerId)
@@ -116,7 +116,7 @@ class MatchService(
     suspend fun updateScore(matchId: Int, changeScoreBody: ChangeScoreBody) {
         return dbQuery {
             if (matchId != 0) {
-                val scoringPlayerId = changeScoreBody.playerId
+                val scoringPlayerId = changeScoreBody.playerId.toIntOrNull() ?: 0
 
 
                 validateBody(changeScoreBody) {
@@ -207,13 +207,13 @@ class MatchService(
                     }
                 } else {
                     isFirstPlayerWonGame = when {
-                        changeScoreBody.scoreType == ScoreType.GAME && changeScoreBody.playerId == matchEntity.firstPlayerId -> true
+                        changeScoreBody.scoreType == ScoreType.GAME && changeScoreBody.playerId == matchEntity.firstPlayerId.toString() -> true
                         currentSetTemplate.decidingPoint -> firstPlayerPoints == 4
                         else -> (firstPlayerPoints == 4 && secondPlayerPoints < 3) || (firstPlayerPoints > 4 && firstPlayerPoints - secondPlayerPoints == 2)
                     }
 
                     isSecondPlayerWonGame = when {
-                        changeScoreBody.scoreType == ScoreType.GAME && changeScoreBody.playerId == matchEntity.secondPlayerId -> true
+                        changeScoreBody.scoreType == ScoreType.GAME && changeScoreBody.playerId == matchEntity.secondPlayerId.toString() -> true
                         currentSetTemplate.decidingPoint -> secondPlayerPoints == 4
                         else -> (secondPlayerPoints == 4 && firstPlayerPoints < 3) || (secondPlayerPoints > 4 && secondPlayerPoints - firstPlayerPoints == 2)
                     }
@@ -249,7 +249,7 @@ class MatchService(
 
                     if (isFirstPlayerWonSet || isSecondPlayerWonSet) {
                         scoreType = ScoreType.SET
-                        if (isTiebreakMode){
+                        if (isTiebreakMode) {
                             currentServe = currentSet?.currentServe ?: matchEntity.firstPlayerServe!!
                         }
                     }

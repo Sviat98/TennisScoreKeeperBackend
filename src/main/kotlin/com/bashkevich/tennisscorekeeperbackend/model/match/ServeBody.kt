@@ -6,5 +6,5 @@ import kotlinx.serialization.Serializable
 @Serializable
 data class ServeBody(
     @SerialName("serving_player_id")
-    val servingPlayerId: Int
+    val servingPlayerId: String
 )

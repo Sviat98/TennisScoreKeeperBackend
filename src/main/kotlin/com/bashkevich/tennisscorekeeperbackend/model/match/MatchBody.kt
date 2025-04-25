@@ -6,13 +6,13 @@ import kotlinx.serialization.Serializable
 @Serializable
 data class MatchBody(
     @SerialName("first_player_id")
-    val firstPlayerId: Int,
+    val firstPlayerId: String,
     @SerialName("second_player_id")
-    val secondPlayerId: Int,
+    val secondPlayerId: String,
     @SerialName("sets_to_win")
     val setsToWin: Int,
     @SerialName("regular_set_id")
-    val regularSet: Int,
+    val regularSet: String,
     @SerialName("deciding_set_id")
-    val decidingSet: Int
+    val decidingSet: String
 )

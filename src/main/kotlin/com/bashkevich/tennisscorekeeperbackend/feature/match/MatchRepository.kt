@@ -9,11 +9,11 @@ import org.jetbrains.exposed.sql.update
 
 class MatchRepository {
     fun addMatch(matchBody: MatchBody) = MatchTable.insert {
-        it[firstPlayer] = matchBody.firstPlayerId
-        it[secondPlayer] = matchBody.secondPlayerId
+        it[firstPlayer] = matchBody.firstPlayerId.toInt()
+        it[secondPlayer] = matchBody.secondPlayerId.toInt()
         it[setsToWin] = matchBody.setsToWin
-        it[regularSet]  = matchBody.regularSet
-        it[decidingSet] = matchBody.decidingSet
+        it[regularSet]  = matchBody.regularSet.toInt()
+        it[decidingSet] = matchBody.decidingSet.toInt()
     }
 
     fun getMatchById(id: Int) = MatchTable.selectAll().where{
