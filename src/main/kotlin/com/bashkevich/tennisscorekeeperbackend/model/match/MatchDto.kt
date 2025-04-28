@@ -9,6 +9,8 @@ import kotlinx.serialization.Serializable
 data class MatchDto(
     @SerialName("id")
     val id: String,
+    @SerialName("point_shift")
+    val pointShift: Int,
     @SerialName("first_player")
     val firstPlayer: PlayerInMatchDto,
     @SerialName("second_player")

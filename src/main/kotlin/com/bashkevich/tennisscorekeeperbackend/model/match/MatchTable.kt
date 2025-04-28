@@ -11,4 +11,5 @@ object MatchTable: IntIdTable("match"){
     val setsToWin = integer("sets_to_win")
     val regularSet = reference("regular_set", SetTemplateTable)
     val decidingSet = reference("deciding_set", SetTemplateTable)
+    val pointShift = integer("point_shift")
 }

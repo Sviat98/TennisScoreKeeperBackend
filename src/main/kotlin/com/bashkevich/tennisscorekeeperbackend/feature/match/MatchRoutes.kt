@@ -115,6 +115,20 @@ fun Route.matchRoutes(){
 
                 call.respond("Successfully updated the score")
             }
+            patch("/undo"){
+                val matchId = call.pathParameters["id"]?.toIntOrNull() ?: 0
+
+                matchService.undoPoint(matchId)
+
+                call.respond("Successfully undone the point")
+            }
+            patch("/redo"){
+                val matchId = call.pathParameters["id"]?.toIntOrNull() ?: 0
+
+                matchService.redoPoint(matchId)
+
+                call.respond("Successfully redone the point")
+            }
         }
     }
 }

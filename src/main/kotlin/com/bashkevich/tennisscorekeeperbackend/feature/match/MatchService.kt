@@ -45,9 +45,18 @@ class MatchService(
 
     suspend fun getMatchById(matchId: Int): MatchDto {
         return dbQuery {
-            val matchDto = buildMatchById(matchId)
+            if (matchId != 0) {
+                val matchEntity = matchRepository.getMatchById(matchId)
+                    ?: throw NotFoundException("No match found!")
 
-            matchDto
+                val lastPointInTable = matchLogRepository.getLastPoint(matchId)
+
+                val lastPointNumber = (lastPointInTable?.pointNumber ?: 0) + matchEntity.pointShift
+
+                val matchDto = buildMatchById(matchId,lastPointNumber)
+
+                matchDto
+            }else throw BadRequestException("Incorrect id")
         }
     }
 
@@ -65,24 +74,22 @@ class MatchService(
 
                 if (updatedRows < 1) throw NotFoundException("Match not found")
 
-                val matchDto = buildMatchById(matchId)
+                val matchDto = buildMatchById(matchId,0)
 
                 MatchObserver.notifyChange(matchDto)
             } else throw BadRequestException("Incorrect id")
         }
     }
 
-    private fun buildMatchById(matchId: Int): MatchDto {
-
-        if (matchId != 0) {
+    private fun buildMatchById(matchId: Int, lastPointNumber: Int): MatchDto {
             val matchEntity = matchRepository.getMatchById(matchId)
                 ?: throw NotFoundException("No match found!")
 
-            val previousSets = matchLogRepository.getPreviousSets(matchId).map { it.toTennisSetDto() }
+            val previousSets = matchLogRepository.getPreviousSets(matchId,lastPointNumber).map { it.toTennisSetDto() }
 
             val setNumber = previousSets.size + 1
 
-            val lastPoint = matchLogRepository.getLastPoint(matchId)
+            val lastPoint = matchLogRepository.getLastPoint(matchId,lastPointNumber)
 
             val currentServe = lastPoint?.currentServe ?: matchEntity.firstPlayerServe
             val firstPlayer = playerRepository.getPlayerById(matchEntity.firstPlayerId)
@@ -93,7 +100,7 @@ class MatchService(
                 ?.toPlayerInMatchDto(currentServe)
                 ?: throw NotFoundException("Player with id = ${matchEntity.secondPlayerId} not found")
 
-            val lastGame = matchLogRepository.getCurrentSet(matchId, setNumber)
+            val lastGame = matchLogRepository.getCurrentSet(matchId, setNumber, lastPointNumber)
 
             val currentSet =
                 if (lastPoint?.scoreType == ScoreType.SET) TennisSetDto(0, 0) else lastGame?.toTennisSetDto()
@@ -105,12 +112,16 @@ class MatchService(
             ) else lastPoint?.toTennisGameDto() ?: TennisGameDto("0", "0")
 
             val matchDto = MatchDto(
-                matchId.toString(), firstPlayer, secondPlayer, previousSets, currentSet,
-                currentGame
+                id = matchId.toString(),
+                pointShift = matchEntity.pointShift,
+                firstPlayer = firstPlayer,
+                secondPlayer = secondPlayer,
+                previousSets = previousSets,
+                currentSet = currentSet,
+                currentGame = currentGame
             )
 
             return matchDto
-        } else throw BadRequestException("Incorrect id")
     }
 
     suspend fun updateScore(matchId: Int, changeScoreBody: ChangeScoreBody) {
@@ -127,14 +138,23 @@ class MatchService(
 
                 val matchEntity = matchRepository.getMatchById(matchId) ?: throw NotFoundException("No match found!")
 
+                val lastPointInTable = matchLogRepository.getLastPoint(matchId)
+
+                val lastPointNumber = (lastPointInTable?.pointNumber ?: 0) + matchEntity.pointShift
+
+                val lastPoint = matchLogRepository.getLastPoint(matchId,lastPointNumber)
+
+                if (matchEntity.pointShift<0){
+                    matchRepository.updatePointShift(matchId = matchId, newPointShift = 0)
+
+                    matchLogRepository.removeEvents(matchId = matchId,pointNumber = lastPointNumber)
+                }
+
                 val setsToWin = matchEntity.setsToWin
 
                 val firstPlayerId = matchEntity.firstPlayerId
 
                 val secondPlayerId = matchEntity.secondPlayerId
-
-
-                val lastPoint = matchLogRepository.getLastPoint(matchId)
 
                 var setNumber = lastPoint?.setNumber ?: 1
 
@@ -180,7 +200,7 @@ class MatchService(
                     else -> throw BadRequestException("Wrong player id in request")
                 }
 
-                val currentSet = matchLogRepository.getCurrentSet(matchId, setNumber)
+                val currentSet = matchLogRepository.getCurrentSet(matchId, setNumber, lastPointNumber)
 
                 var isFirstPlayerWonGame: Boolean
                 var isSecondPlayerWonGame: Boolean
@@ -268,7 +288,57 @@ class MatchService(
 
                 matchLogRepository.insertMatchLogEvent(matchLogEvent)
 
-                val matchDto = buildMatchById(matchId)
+                val matchDto = buildMatchById(matchId, lastPointNumber)
+
+                MatchObserver.notifyChange(matchDto)
+            } else throw BadRequestException("Incorrect id")
+        }
+    }
+
+    suspend fun undoPoint(matchId: Int) {
+        return dbQuery {
+            if (matchId != 0) {
+
+                val matchEntity = matchRepository.getMatchById(matchId) ?: throw NotFoundException("No match found!")
+
+                val lastPointInTable = matchLogRepository.getLastPoint(matchId)
+
+                val pointShift = matchEntity.pointShift
+
+                val newPointShift =pointShift-1
+
+                val lastPointNumber = (lastPointInTable?.pointNumber ?: 0) + newPointShift
+
+                if (lastPointNumber==0) throw BadRequestException("Cannot undo the point")
+
+                matchRepository.updatePointShift(matchId =matchId, newPointShift = newPointShift)
+
+                val matchDto = buildMatchById(matchId, lastPointNumber)
+
+                MatchObserver.notifyChange(matchDto)
+            } else throw BadRequestException("Incorrect id")
+        }
+    }
+
+    suspend fun redoPoint(matchId: Int) {
+        return dbQuery {
+            if (matchId != 0) {
+
+                val matchEntity = matchRepository.getMatchById(matchId) ?: throw NotFoundException("No match found!")
+
+                val lastPointInTable = matchLogRepository.getLastPoint(matchId)
+
+                val pointShift = matchEntity.pointShift
+
+                if (pointShift==0) throw BadRequestException("Cannot redo the point")
+
+                val newPointShift =pointShift+1
+
+                val lastPointNumber = (lastPointInTable?.pointNumber ?: 0) + newPointShift
+
+                matchRepository.updatePointShift(matchId =matchId, newPointShift = newPointShift)
+
+                val matchDto = buildMatchById(matchId, lastPointNumber)
 
                 MatchObserver.notifyChange(matchDto)
             } else throw BadRequestException("Incorrect id")

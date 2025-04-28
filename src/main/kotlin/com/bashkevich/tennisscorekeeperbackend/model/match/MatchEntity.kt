@@ -8,4 +8,5 @@ data class MatchEntity (
     val setsToWin: Int,
     val regularSet: Int,
     val decidingSet: Int,
+    val pointShift: Int
 )

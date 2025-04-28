@@ -14,6 +14,7 @@ class MatchRepository {
         it[setsToWin] = matchBody.setsToWin
         it[regularSet]  = matchBody.regularSet.toInt()
         it[decidingSet] = matchBody.decidingSet.toInt()
+        it[pointShift] = 0
     }
 
     fun getMatchById(id: Int) = MatchTable.selectAll().where{
@@ -27,6 +28,7 @@ class MatchRepository {
             setsToWin = it[MatchTable.setsToWin],
             regularSet = it[MatchTable.regularSet].value,
             decidingSet = it[MatchTable.decidingSet].value,
+            pointShift = it[MatchTable.pointShift]
         )
     }.firstOrNull()
 
@@ -34,5 +36,8 @@ class MatchRepository {
         it[firstServe] = firstServePlayerId
     }
 
+    fun updatePointShift(matchId: Int,newPointShift: Int) = MatchTable.update({ MatchTable.id eq  matchId }) {
+        it[pointShift] = newPointShift
+    }
 
 }
