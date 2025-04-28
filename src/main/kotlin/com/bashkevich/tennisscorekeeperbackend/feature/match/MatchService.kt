@@ -288,7 +288,9 @@ class MatchService(
 
                 matchLogRepository.insertMatchLogEvent(matchLogEvent)
 
-                val matchDto = buildMatchById(matchId, lastPointNumber)
+                val newLastPointNumber = lastPointNumber+1
+
+                val matchDto = buildMatchById(matchId, newLastPointNumber)
 
                 MatchObserver.notifyChange(matchDto)
             } else throw BadRequestException("Incorrect id")
