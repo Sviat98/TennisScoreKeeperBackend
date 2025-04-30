@@ -2,12 +2,10 @@ package com.bashkevich.tennisscorekeeperbackend.feature.match
 
 import com.bashkevich.tennisscorekeeperbackend.feature.match.websocket.MatchConnectionManager
 import com.bashkevich.tennisscorekeeperbackend.feature.match.websocket.MatchObserver
-import com.bashkevich.tennisscorekeeperbackend.model.counter.CounterConnectionManager
-import com.bashkevich.tennisscorekeeperbackend.model.counter.CounterObserver
-import com.bashkevich.tennisscorekeeperbackend.model.counter.toDto
 import com.bashkevich.tennisscorekeeperbackend.model.match.ChangeScoreBody
 import com.bashkevich.tennisscorekeeperbackend.model.match.MatchBody
 import com.bashkevich.tennisscorekeeperbackend.model.match.ServeBody
+import io.ktor.http.HttpStatusCode
 import io.ktor.server.request.receive
 import io.ktor.server.response.respond
 import io.ktor.server.routing.Route
@@ -22,7 +20,6 @@ import io.ktor.websocket.CloseReason
 import io.ktor.websocket.Frame
 import io.ktor.websocket.close
 import kotlinx.coroutines.flow.collectLatest
-import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.onStart
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
@@ -32,10 +29,17 @@ fun Route.matchRoutes(){
     val matchService by application.inject<MatchService>()
 
     route("/matches") {
+        get {
+            val matches = matchService.getMatches()
+
+            call.respond(matches)
+        }
         post {
             val matchBody = call.receive<MatchBody>()
 
-            matchService.addMatch(matchBody)
+            val newMatch = matchService.addMatch(matchBody)
+
+            call.respond(HttpStatusCode.Created,newMatch)
         }
         route("/{id}") {
             get {

@@ -30,14 +30,17 @@ data class PlayerInMatchDto(
     @SerialName("name")
     val name: String,
     @SerialName("is_serving")
-    val isServing: Boolean
+    val isServing: Boolean,
+    @SerialName("is_winner")
+    val isWinner: Boolean
 )
 
-fun PlayerEntity.toPlayerInMatchDto(servingPlayerId: Int?) = PlayerInMatchDto(
+fun PlayerEntity.toPlayerInMatchDto(servingPlayerId: Int?, winnerPlayerId: Int?) = PlayerInMatchDto(
     id = this.id.value.toString(),
     surname = this.surname,
     name = this.name,
-    isServing = this.id.value == servingPlayerId
+    isServing = this.id.value == servingPlayerId,
+    isWinner = this.id.value == winnerPlayerId,
 )
 
 fun PlayerEntity.toDto() = PlayerDto(

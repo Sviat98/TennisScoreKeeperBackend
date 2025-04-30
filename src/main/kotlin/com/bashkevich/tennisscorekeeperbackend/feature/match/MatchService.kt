@@ -10,8 +10,10 @@ import com.bashkevich.tennisscorekeeperbackend.model.match.MatchDto
 import com.bashkevich.tennisscorekeeperbackend.model.match_log.MatchLogEvent
 import com.bashkevich.tennisscorekeeperbackend.model.match.ScoreType
 import com.bashkevich.tennisscorekeeperbackend.model.match.ServeBody
+import com.bashkevich.tennisscorekeeperbackend.model.match.ShortMatchDto
 import com.bashkevich.tennisscorekeeperbackend.model.match.TennisGameDto
 import com.bashkevich.tennisscorekeeperbackend.model.match.TennisSetDto
+import com.bashkevich.tennisscorekeeperbackend.model.match.toDto
 import com.bashkevich.tennisscorekeeperbackend.model.match.toTennisGameDto
 import com.bashkevich.tennisscorekeeperbackend.model.match.toTennisSetDto
 import com.bashkevich.tennisscorekeeperbackend.model.player.toPlayerInMatchDto
@@ -27,9 +29,8 @@ class MatchService(
     private val setTemplateRepository: SetTemplateRepository,
     private val playerRepository: PlayerRepository,
 ) {
-    suspend fun addMatch(matchBody: MatchBody) {
+    suspend fun addMatch(matchBody: MatchBody): ShortMatchDto {
         return dbQuery {
-
 
 //            validateBody(matchBody) {
 //                val firstPlayer = playerRepository.getPlayerById(firstPlayerId)
@@ -39,7 +40,19 @@ class MatchService(
 //                firstPlayer != null && secondPlayer != null
 //            }
 
-            matchRepository.addMatch(matchBody)
+            val newMatchId = matchRepository.addMatch(matchBody).value
+
+            val shortMatchDto = matchRepository.getShortMatchById(newMatchId)
+
+            shortMatchDto!!.toDto()
+        }
+    }
+
+    suspend fun getMatches(): List<ShortMatchDto>{
+        return dbQuery {
+            matchRepository.getMatches().map { shortMatch->
+                shortMatch.toDto()
+            }
         }
     }
 
@@ -91,14 +104,19 @@ class MatchService(
 
         val lastPoint = matchLogRepository.getLastPoint(matchId, lastPointNumber)
 
-        val currentServe = lastPoint?.currentServe ?: matchEntity.firstPlayerServe
-        val firstPlayer = playerRepository.getPlayerById(matchEntity.firstPlayerId)
-            ?.toPlayerInMatchDto(currentServe)
-            ?: throw NotFoundException("Player with id = ${matchEntity.firstPlayerId} not found")
+        val firstPlayerId = matchEntity.firstPlayer.id
+        val secondPlayerId = matchEntity.secondPlayer.id
 
-        val secondPlayer = playerRepository.getPlayerById(matchEntity.secondPlayerId)
-            ?.toPlayerInMatchDto(currentServe)
-            ?: throw NotFoundException("Player with id = ${matchEntity.secondPlayerId} not found")
+
+        val currentServe = lastPoint?.currentServe ?: matchEntity.firstPlayerServe
+        val winnerPlayerId = matchEntity.winner
+        val firstPlayer = playerRepository.getPlayerById(firstPlayerId)
+            ?.toPlayerInMatchDto(servingPlayerId = currentServe, winnerPlayerId = winnerPlayerId)
+            ?: throw NotFoundException("Player with id = $firstPlayerId not found")
+
+        val secondPlayer = playerRepository.getPlayerById(secondPlayerId)
+            ?.toPlayerInMatchDto(servingPlayerId = currentServe, winnerPlayerId = winnerPlayerId)
+            ?: throw NotFoundException("Player with id = $secondPlayerId not found")
 
         val lastGame = matchLogRepository.getCurrentSet(matchId, setNumber, lastPointNumber)
 
@@ -152,9 +170,9 @@ class MatchService(
 
                 val setsToWin = matchEntity.setsToWin
 
-                val firstPlayerId = matchEntity.firstPlayerId
+                val firstPlayerId = matchEntity.firstPlayer.id
 
-                val secondPlayerId = matchEntity.secondPlayerId
+                val secondPlayerId = matchEntity.secondPlayer.id
 
                 var setNumber = lastPoint?.setNumber ?: 1
 
@@ -227,13 +245,13 @@ class MatchService(
                     }
                 } else {
                     isFirstPlayerWonGame = when {
-                        changeScoreBody.scoreType == ScoreType.GAME && changeScoreBody.playerId == matchEntity.firstPlayerId.toString() -> true
+                        changeScoreBody.scoreType == ScoreType.GAME && changeScoreBody.playerId == firstPlayerId.toString() -> true
                         currentSetTemplate.decidingPoint -> firstPlayerPoints == 4
                         else -> (firstPlayerPoints == 4 && secondPlayerPoints < 3) || (firstPlayerPoints > 4 && firstPlayerPoints - secondPlayerPoints == 2)
                     }
 
                     isSecondPlayerWonGame = when {
-                        changeScoreBody.scoreType == ScoreType.GAME && changeScoreBody.playerId == matchEntity.secondPlayerId.toString() -> true
+                        changeScoreBody.scoreType == ScoreType.GAME && changeScoreBody.playerId == secondPlayerId.toString() -> true
                         currentSetTemplate.decidingPoint -> secondPlayerPoints == 4
                         else -> (secondPlayerPoints == 4 && firstPlayerPoints < 3) || (secondPlayerPoints > 4 && secondPlayerPoints - firstPlayerPoints == 2)
                     }
@@ -243,7 +261,7 @@ class MatchService(
                 if (isFirstPlayerWonGame || isSecondPlayerWonGame) {
                     scoreType = ScoreType.GAME
                     currentServe =
-                        if (currentServe == matchEntity.firstPlayerId) matchEntity.secondPlayerId else matchEntity.firstPlayerId
+                        if (currentServe == firstPlayerId) secondPlayerId else firstPlayerId
 
 
                     firstPlayerPoints = currentSet?.firstPlayerPoints ?: 0
@@ -304,6 +322,19 @@ class MatchService(
 
                 val newLastPointNumber = lastPointNumber + 1
 
+                if (scoreType == ScoreType.SET) {
+                    val previousSets = matchLogRepository.getPreviousSets(matchId, newLastPointNumber)
+
+                    val (firstPlayerSetsWon, secondPlayerSetsWon) =
+                        previousSets.partition { it.firstPlayerPoints > it.secondPlayerPoints }
+                            .let { it.first.size to it.second.size }
+
+                    if (firstPlayerSetsWon == setsToWin || secondPlayerSetsWon == setsToWin) {
+                        val winnerPlayerId = if (firstPlayerSetsWon == setsToWin) firstPlayerId else secondPlayerId
+                        matchRepository.updateWinner(matchId = matchId, winnerPlayerId = winnerPlayerId)
+                    }
+                }
+
                 val matchDto = buildMatchById(matchId, newLastPointNumber)
 
                 MatchObserver.notifyChange(matchDto)
@@ -326,6 +357,10 @@ class MatchService(
                 val lastPointNumber = (lastPointInTable?.pointNumber ?: 0) + newPointShift
 
                 if (lastPointNumber == 0) throw BadRequestException("Cannot undo the point")
+
+                matchEntity.winner?.let {
+                    matchRepository.updateWinner(matchId = matchId, winnerPlayerId = null)
+                }
 
                 matchRepository.updatePointShift(matchId = matchId, newPointShift = newPointShift)
 
@@ -353,6 +388,25 @@ class MatchService(
                 val lastPointNumber = (lastPointInTable?.pointNumber ?: 0) + newPointShift
 
                 matchRepository.updatePointShift(matchId = matchId, newPointShift = newPointShift)
+
+                val lastPoint = matchLogRepository.getLastPoint(matchId, lastPointNumber)
+
+                if (lastPoint?.scoreType == ScoreType.SET) {
+                    val previousSets = matchLogRepository.getPreviousSets(matchId, lastPointNumber)
+
+                    val setsToWin = matchEntity.setsToWin
+                    val firstPlayerId = matchEntity.firstPlayer.id
+                    val secondPlayerId = matchEntity.secondPlayer.id
+
+                    val (firstPlayerSetsWon, secondPlayerSetsWon) =
+                        previousSets.partition { it.firstPlayerPoints > it.secondPlayerPoints }
+                            .let { it.first.size to it.second.size }
+
+                    if (firstPlayerSetsWon == setsToWin || secondPlayerSetsWon == setsToWin) {
+                        val winnerPlayerId = if (firstPlayerSetsWon == setsToWin) firstPlayerId else secondPlayerId
+                        matchRepository.updateWinner(matchId = matchId, winnerPlayerId = winnerPlayerId)
+                    }
+                }
 
                 val matchDto = buildMatchById(matchId, lastPointNumber)
 
