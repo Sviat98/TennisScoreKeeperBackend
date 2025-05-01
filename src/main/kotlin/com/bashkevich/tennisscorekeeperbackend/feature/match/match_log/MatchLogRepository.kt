@@ -8,7 +8,6 @@ import org.jetbrains.exposed.sql.SqlExpressionBuilder.eq
 import org.jetbrains.exposed.sql.SqlExpressionBuilder.greater
 import org.jetbrains.exposed.sql.and
 import org.jetbrains.exposed.sql.andWhere
-import org.jetbrains.exposed.sql.deleteAll
 import org.jetbrains.exposed.sql.deleteWhere
 import org.jetbrains.exposed.sql.insert
 import org.jetbrains.exposed.sql.selectAll
@@ -46,7 +45,7 @@ class MatchLogRepository {
             MatchLogEvent(
                 matchId = it[MatchLogTable.matchId].value,
                 setNumber = it[MatchLogTable.setNumber],
-                pointNumber = it[MatchLogTable.pointNumber],
+                pointNumber = it[MatchLogTable.pointNumber].value,
                 scoreType = it[MatchLogTable.scoreType],
                 currentServe = it[MatchLogTable.currentServe].value,
                 firstPlayerPoints = it[MatchLogTable.firstPlayerPoints],
@@ -69,7 +68,7 @@ class MatchLogRepository {
                 MatchLogEvent(
                     matchId = it[MatchLogTable.matchId].value,
                     setNumber = it[MatchLogTable.setNumber],
-                    pointNumber = it[MatchLogTable.pointNumber],
+                    pointNumber = it[MatchLogTable.pointNumber].value,
                     scoreType = it[MatchLogTable.scoreType],
                     currentServe = it[MatchLogTable.currentServe].value,
                     firstPlayerPoints = it[MatchLogTable.firstPlayerPoints],
@@ -90,7 +89,7 @@ class MatchLogRepository {
                 MatchLogEvent(
                     matchId = it[MatchLogTable.matchId].value,
                     setNumber = it[MatchLogTable.setNumber],
-                    pointNumber = it[MatchLogTable.pointNumber],
+                    pointNumber = it[MatchLogTable.pointNumber].value,
                     scoreType = it[MatchLogTable.scoreType],
                     currentServe = it[MatchLogTable.currentServe].value,
                     firstPlayerPoints = it[MatchLogTable.firstPlayerPoints],

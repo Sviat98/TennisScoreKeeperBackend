@@ -356,7 +356,7 @@ class MatchService(
 
                 val lastPointNumber = (lastPointInTable?.pointNumber ?: 0) + newPointShift
 
-                if (lastPointNumber == 0) throw BadRequestException("Cannot undo the point")
+                if (lastPointNumber < 0) throw BadRequestException("Cannot undo the point")
 
                 matchEntity.winner?.let {
                     matchRepository.updateWinner(matchId = matchId, winnerPlayerId = null)
