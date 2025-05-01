@@ -142,10 +142,11 @@ class MatchService(
                 ?: TennisSetDto(firstPlayerGames = 0, secondPlayerGames = 0, specialSetMode = currentSetMode)
         }
 
-        val currentGame = if (lastPoint?.scoreType in listOf(ScoreType.GAME, ScoreType.SET)) TennisGameDto(
-            "0",
-            "0"
-        ) else lastPoint?.toTennisGameDto() ?: TennisGameDto("0", "0")
+        val currentGame = when{
+            currentSetMode== SpecialSetMode.SUPER_TIEBREAK -> TennisGameDto("0", "0")
+            lastPoint?.scoreType in listOf(ScoreType.GAME, ScoreType.SET) -> TennisGameDto("0", "0")
+            else -> lastPoint?.toTennisGameDto() ?: TennisGameDto("0", "0")
+        }
 
         val matchDto = MatchDto(
             id = matchId.toString(),
@@ -194,18 +195,6 @@ class MatchService(
 
                 var setNumber = lastPoint?.setNumber ?: 1
 
-//                val isDecidingSet = setNumber == 2 * setsToWin - 1
-//
-//                val currentSetTemplate = if (isDecidingSet) {
-//                    setTemplateRepository.getSetTemplateById(matchEntity.decidingSet)
-//                } else {
-//                    setTemplateRepository.getSetTemplateById(matchEntity.regularSet)
-//                } ?: throw NotFoundException("No set template found!")
-
-                val currentSetTemplate = findSetTemplate(matchEntity, setNumber, setsToWin)
-
-                val currentSetMode = calculateCurrentSetMode(currentSetTemplate)
-
                 var pointNumber = lastPoint?.pointNumber ?: 0
 
                 pointNumber++
@@ -233,21 +222,31 @@ class MatchService(
                     secondPlayerPoints = lastPoint?.secondPlayerPoints ?: 0
                 }
 
-
                 when {
                     firstPlayerId == scoringPlayerId -> firstPlayerPoints++
                     secondPlayerId == scoringPlayerId -> secondPlayerPoints++
                     else -> throw BadRequestException("Wrong player id in request")
                 }
 
+                val currentSetTemplate = findSetTemplate(matchEntity, setNumber, setsToWin)
+
+                val currentSetMode = calculateCurrentSetMode(currentSetTemplate)
+
                 val currentSet = matchLogRepository.getCurrentSet(matchId, setNumber, lastPointNumber)
+
+                val currentSetFirstPlayerPoints = currentSet?.firstPlayerPoints ?: 0
+                val currentSetSecondPlayerPoints = currentSet?.secondPlayerPoints ?: 0
 
                 var isFirstPlayerWonGame: Boolean
                 var isSecondPlayerWonGame: Boolean
 
                 val isTiebreakMode = when (currentSetTemplate.tiebreakMode) {
-                    TiebreakMode.EARLY -> currentSet?.firstPlayerPoints == currentSet?.secondPlayerPoints && currentSet?.firstPlayerPoints == currentSetTemplate.gamesToWin - 1
-                    TiebreakMode.LATE -> currentSet?.firstPlayerPoints == currentSet?.secondPlayerPoints && currentSet?.firstPlayerPoints == currentSetTemplate.gamesToWin
+                    // пример для сета до 6 геймов
+                    // EARLY - когда тайбрейк играется при сете 5-5
+                    //LATE - когда тайбрейк играется при сете 6-6
+                    TiebreakMode.EARLY -> currentSetFirstPlayerPoints == currentSetSecondPlayerPoints
+                         && currentSetFirstPlayerPoints == currentSetTemplate.gamesToWin - 1
+                    TiebreakMode.LATE -> currentSetFirstPlayerPoints == currentSetSecondPlayerPoints && currentSetFirstPlayerPoints == currentSetTemplate.gamesToWin
                     else -> false
                 }
 
@@ -289,30 +288,30 @@ class MatchService(
                     firstPlayerPoints = when {
                         // для итогового результата супер-тайбрейка берем количество очков в гейме
                         currentSetMode == SpecialSetMode.SUPER_TIEBREAK -> firstPlayerPoints
-                        else -> currentSet?.firstPlayerPoints ?: 0
+                        else -> currentSetFirstPlayerPoints
                     }
                     secondPlayerPoints = when {
                         // для итогового результата супер-тайбрейка берем количество очков в гейме
                         currentSetMode == SpecialSetMode.SUPER_TIEBREAK -> secondPlayerPoints
-                        else -> currentSet?.secondPlayerPoints ?: 0
+                        else -> currentSetSecondPlayerPoints
                     }
 
                     if (isFirstPlayerWonGame) {
                         firstPlayerPoints++
+                    } else {
+                        secondPlayerPoints++
                     }
-                } else {
-                    secondPlayerPoints++
                 }
 
                 val gamesToWin = currentSetTemplate.gamesToWin
 
                 val isFirstPlayerWonSet = when {
-                    isTiebreakMode && isFirstPlayerWonGame -> true
+                    isTiebreakMode -> isFirstPlayerWonGame
                     else -> (firstPlayerPoints == gamesToWin && secondPlayerPoints < gamesToWin - 1) || (firstPlayerPoints > gamesToWin && firstPlayerPoints - secondPlayerPoints == 2)
                 }
 
                 val isSecondPlayerWonSet = when {
-                    isTiebreakMode && isSecondPlayerWonGame -> true
+                    isTiebreakMode-> isSecondPlayerWonGame
                     else -> (secondPlayerPoints == gamesToWin && firstPlayerPoints < gamesToWin - 1) || (secondPlayerPoints > gamesToWin && secondPlayerPoints - firstPlayerPoints == 2)
                 }
 
