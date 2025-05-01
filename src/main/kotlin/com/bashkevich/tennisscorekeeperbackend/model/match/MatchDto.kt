@@ -29,7 +29,15 @@ data class TennisSetDto(
     val firstPlayerGames: Int,
     @SerialName("second_player_games")
     val secondPlayerGames: Int,
+    @SerialName("special_set_mode")
+    val specialSetMode: SpecialSetMode? = null,
 )
+
+// SUPER_TIEBREAK - помечаем, что это супер-тайбрейк (на клиенте нужно залочить кнопки GAME)
+// ENDLESS - там, где gamesToWin > 10, на клиенте должна быть возможность завершить досрочно
+enum class SpecialSetMode {
+    SUPER_TIEBREAK, ENDLESS
+}
 
 @Serializable
 data class TennisGameDto(
@@ -39,9 +47,13 @@ data class TennisGameDto(
     val secondPlayerPoints: String,
 )
 
-fun MatchLogEvent.toTennisSetDto(): TennisSetDto {
+fun MatchLogEvent.toTennisSetDto(specialSetMode: SpecialSetMode? = null): TennisSetDto {
 
-    return TennisSetDto(firstPlayerGames = this.firstPlayerPoints, secondPlayerGames = this.secondPlayerPoints)
+    return TennisSetDto(
+        firstPlayerGames = this.firstPlayerPoints,
+        secondPlayerGames = this.secondPlayerPoints,
+        specialSetMode = specialSetMode
+    )
 }
 
 fun MatchLogEvent.toTennisGameDto(): TennisGameDto {
