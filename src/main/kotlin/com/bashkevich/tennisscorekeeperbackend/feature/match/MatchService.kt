@@ -279,22 +279,15 @@ class MatchService(
                 }
 
 
-                if (isFirstPlayerWonGame || isSecondPlayerWonGame) {
+                if ((isFirstPlayerWonGame || isSecondPlayerWonGame) && currentSetMode != SpecialSetMode.SUPER_TIEBREAK) {
+                    // для супер-тайбрейка обработка смены подачи ниже, а количество геймов мы не увеличиваем
                     scoreType = ScoreType.GAME
                     currentServe =
                         if (currentServe == firstPlayerId) secondPlayerId else firstPlayerId
 
 
-                    firstPlayerPoints = when {
-                        // для итогового результата супер-тайбрейка берем количество очков в гейме
-                        currentSetMode == SpecialSetMode.SUPER_TIEBREAK -> firstPlayerPoints
-                        else -> currentSetFirstPlayerPoints
-                    }
-                    secondPlayerPoints = when {
-                        // для итогового результата супер-тайбрейка берем количество очков в гейме
-                        currentSetMode == SpecialSetMode.SUPER_TIEBREAK -> secondPlayerPoints
-                        else -> currentSetSecondPlayerPoints
-                    }
+                    firstPlayerPoints =  currentSetFirstPlayerPoints
+                    secondPlayerPoints =  currentSetSecondPlayerPoints
 
                     if (isFirstPlayerWonGame) {
                         firstPlayerPoints++
