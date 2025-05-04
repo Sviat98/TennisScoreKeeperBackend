@@ -22,7 +22,8 @@ fun Application.configureDatabase() {
 
     val schemaName = "tennis_score_keeper"
 
-    val remotejdbcURL = "jdbc:postgresql://ep-blue-fog-a2izbdkl-pooler.eu-central-1.aws.neon.tech/$cloudDB?sslmode=require"
+    val remotejdbcURL =
+        "jdbc:postgresql://ep-blue-fog-a2izbdkl-pooler.eu-central-1.aws.neon.tech/$cloudDB?sslmode=require"
 
     val localUsername = System.getenv("LOCAL_USERNAME")
 
@@ -76,6 +77,17 @@ fun Application.configureDatabase() {
 //            it[tiebreakMode] = TiebreakMode.EARLY
 //            it[tiebreakPointsToWin] = 10
 //        }
+    }
+}
+
+suspend fun isDbConnected(): Boolean {
+    return try {
+        newSuspendedTransaction(Dispatchers.IO) {
+            exec("SELECT 1")
+            true
+        }
+    } catch (e: Exception) {
+        false
     }
 }
 
