@@ -142,8 +142,8 @@ class MatchService(
                 ?: TennisSetDto(firstPlayerGames = 0, secondPlayerGames = 0, specialSetMode = currentSetMode)
         }
 
-        val currentGame = when{
-            currentSetMode== SpecialSetMode.SUPER_TIEBREAK -> TennisGameDto("0", "0")
+        val currentGame = when {
+            currentSetMode == SpecialSetMode.SUPER_TIEBREAK -> TennisGameDto("0", "0")
             lastPoint?.scoreType in listOf(ScoreType.GAME, ScoreType.SET) -> TennisGameDto("0", "0")
             else -> lastPoint?.toTennisGameDto() ?: TennisGameDto("0", "0")
         }
@@ -245,7 +245,8 @@ class MatchService(
                     // EARLY - когда тайбрейк играется при сете 5-5
                     //LATE - когда тайбрейк играется при сете 6-6
                     TiebreakMode.EARLY -> currentSetFirstPlayerPoints == currentSetSecondPlayerPoints
-                         && currentSetFirstPlayerPoints == currentSetTemplate.gamesToWin - 1
+                            && currentSetFirstPlayerPoints == currentSetTemplate.gamesToWin - 1
+
                     TiebreakMode.LATE -> currentSetFirstPlayerPoints == currentSetSecondPlayerPoints && currentSetFirstPlayerPoints == currentSetTemplate.gamesToWin
                     else -> false
                 }
@@ -254,9 +255,12 @@ class MatchService(
                     val tiebreakPointsToWin = currentSetTemplate.tiebreakPointsToWin
 
                     isFirstPlayerWonGame =
-                        firstPlayerPoints == tiebreakPointsToWin || (firstPlayerPoints > tiebreakPointsToWin && firstPlayerPoints - secondPlayerPoints == 2)
+                        if (secondPlayerPoints < tiebreakPointsToWin - 1) firstPlayerPoints == tiebreakPointsToWin else
+                            firstPlayerPoints - secondPlayerPoints == 2
+
                     isSecondPlayerWonGame =
-                        secondPlayerPoints == tiebreakPointsToWin || (secondPlayerPoints > tiebreakPointsToWin && secondPlayerPoints - firstPlayerPoints == 2)
+                        if (firstPlayerPoints < tiebreakPointsToWin - 1) secondPlayerPoints == tiebreakPointsToWin
+                        else secondPlayerPoints - firstPlayerPoints == 2
                     scoreType = ScoreType.TIEBREAK_POINT
 
                     currentServe = when {
@@ -266,13 +270,13 @@ class MatchService(
                     }
                 } else {
                     isFirstPlayerWonGame = when {
-                        changeScoreBody.scoreType == ScoreType.GAME && changeScoreBody.playerId == firstPlayerId.toString() -> true
+                        changeScoreBody.scoreType == ScoreType.GAME -> changeScoreBody.playerId == firstPlayerId.toString()
                         currentSetTemplate.decidingPoint -> firstPlayerPoints == 4
                         else -> (firstPlayerPoints == 4 && secondPlayerPoints < 3) || (firstPlayerPoints > 4 && firstPlayerPoints - secondPlayerPoints == 2)
                     }
 
                     isSecondPlayerWonGame = when {
-                        changeScoreBody.scoreType == ScoreType.GAME && changeScoreBody.playerId == secondPlayerId.toString() -> true
+                        changeScoreBody.scoreType == ScoreType.GAME -> changeScoreBody.playerId == secondPlayerId.toString()
                         currentSetTemplate.decidingPoint -> secondPlayerPoints == 4
                         else -> (secondPlayerPoints == 4 && firstPlayerPoints < 3) || (secondPlayerPoints > 4 && secondPlayerPoints - firstPlayerPoints == 2)
                     }
@@ -286,8 +290,8 @@ class MatchService(
                         if (currentServe == firstPlayerId) secondPlayerId else firstPlayerId
 
 
-                    firstPlayerPoints =  currentSetFirstPlayerPoints
-                    secondPlayerPoints =  currentSetSecondPlayerPoints
+                    firstPlayerPoints = currentSetFirstPlayerPoints
+                    secondPlayerPoints = currentSetSecondPlayerPoints
 
                     if (isFirstPlayerWonGame) {
                         firstPlayerPoints++
@@ -304,7 +308,7 @@ class MatchService(
                 }
 
                 val isSecondPlayerWonSet = when {
-                    isTiebreakMode-> isSecondPlayerWonGame
+                    isTiebreakMode -> isSecondPlayerWonGame
                     else -> (secondPlayerPoints == gamesToWin && firstPlayerPoints < gamesToWin - 1) || (secondPlayerPoints > gamesToWin && secondPlayerPoints - firstPlayerPoints == 2)
                 }
 
