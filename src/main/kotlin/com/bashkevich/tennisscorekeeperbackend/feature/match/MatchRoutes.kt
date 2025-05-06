@@ -5,8 +5,9 @@ import com.bashkevich.tennisscorekeeperbackend.feature.match.websocket.MatchObse
 import com.bashkevich.tennisscorekeeperbackend.model.match.ChangeScoreBody
 import com.bashkevich.tennisscorekeeperbackend.model.match.MatchBody
 import com.bashkevich.tennisscorekeeperbackend.model.match.ServeBody
+import com.bashkevich.tennisscorekeeperbackend.plugins.receiveBodyCatching
+import com.bashkevich.tennisscorekeeperbackend.plugins.respondWithMessageBody
 import io.ktor.http.HttpStatusCode
-import io.ktor.server.request.receive
 import io.ktor.server.response.respond
 import io.ktor.server.routing.Route
 import io.ktor.server.routing.application
@@ -35,7 +36,7 @@ fun Route.matchRoutes(){
             call.respond(matches)
         }
         post {
-            val matchBody = call.receive<MatchBody>()
+            val matchBody = call.receiveBodyCatching<MatchBody>()
 
             val newMatch = matchService.addMatch(matchBody)
 
@@ -104,34 +105,34 @@ fun Route.matchRoutes(){
             patch("/serve"){
                 val matchId = call.pathParameters["id"]?.toIntOrNull() ?: 0
 
-                val serveBody = call.receive<ServeBody>()
+                val serveBody = call.receiveBodyCatching<ServeBody>()
 
                 matchService.updateServe(matchId,serveBody)
 
-                call.respond("Successfully chose serve")
+                call.respondWithMessageBody(message ="Successfully chose serve")
             }
             patch("/score"){
                 val matchId = call.pathParameters["id"]?.toIntOrNull() ?: 0
 
-                val changeScoreBody = call.receive<ChangeScoreBody>()
+                val changeScoreBody = call.receiveBodyCatching<ChangeScoreBody>()
 
                 matchService.updateScore(matchId,changeScoreBody)
 
-                call.respond("Successfully updated the score")
+                call.respondWithMessageBody(message ="Successfully updated the score")
             }
             patch("/undo"){
                 val matchId = call.pathParameters["id"]?.toIntOrNull() ?: 0
 
                 matchService.undoPoint(matchId)
 
-                call.respond("Successfully undone the point")
+                call.respondWithMessageBody(message = "Successfully undone the point")
             }
             patch("/redo"){
                 val matchId = call.pathParameters["id"]?.toIntOrNull() ?: 0
 
                 matchService.redoPoint(matchId)
 
-                call.respond("Successfully redone the point")
+                call.respondWithMessageBody(message ="Successfully redone the point")
             }
         }
     }

@@ -1,49 +1,65 @@
 package com.bashkevich.tennisscorekeeperbackend.plugins
 
-import com.bashkevich.tennisscorekeeperbackend.feature.player.PlayerService
+import com.bashkevich.tennisscorekeeperbackend.model.match.ChangeScoreBody
 import com.bashkevich.tennisscorekeeperbackend.model.match.MatchBody
+import com.bashkevich.tennisscorekeeperbackend.model.match.ScoreType
 import io.ktor.server.application.Application
 import io.ktor.server.application.install
 import io.ktor.server.plugins.BadRequestException
 import io.ktor.server.plugins.requestvalidation.RequestValidation
 import io.ktor.server.plugins.requestvalidation.ValidationResult
 import io.ktor.server.request.ContentTransformationException
-import org.koin.ktor.ext.inject
 
-fun Application.configureValidation(){
-    val playerService by inject<PlayerService>()
+fun Application.configureValidation() {
 
     install(RequestValidation) {
-            validate<MatchBody> { body ->
-                val firstPlayerId = body.firstPlayer.id.toIntOrNull() ?: 0
+        validate<MatchBody> { body ->
+            val firstPlayerId = body.firstPlayer.id.toIntOrNull() ?: 0
 
-                val secondPlayerId = body.secondPlayer.id.toIntOrNull() ?: 0
+            val secondPlayerId = body.secondPlayer.id.toIntOrNull() ?: 0
 
-                val firstPlayer = playerService.getPlayerById(firstPlayerId)
+            val regularSetId = body.regularSet.toIntOrNull() ?: 0
+            val decidingSetId = body.decidingSet.toIntOrNull() ?: 0
 
-                val secondPlayer = playerService.getPlayerById(secondPlayerId)
-
-                if (firstPlayerId == secondPlayerId)
-                    ValidationResult.Invalid("Players should be different!")
-                else ValidationResult.Valid
+            when {
+                firstPlayerId == 0 -> ValidationResult.Invalid("First player id is wrong!")
+                secondPlayerId == 0 -> ValidationResult.Invalid("Second player id is wrong!")
+                firstPlayerId == secondPlayerId -> ValidationResult.Invalid("Players should be different!")
+                regularSetId == 0 -> ValidationResult.Invalid("Regular set id is wrong!")
+                decidingSetId == 0 -> ValidationResult.Invalid("Deciding set id is wrong!")
+                else -> ValidationResult.Valid
             }
+        }
+        validate<ChangeScoreBody> { body ->
+
+            val scoringPlayerId = body.playerId.toIntOrNull() ?: 0
+
+            when {
+                scoringPlayerId == 0 -> ValidationResult.Invalid("Scoring player id is wrong!")
+                body.scoreType !in listOf(
+                    ScoreType.GAME,
+                    ScoreType.POINT
+                ) -> ValidationResult.Invalid("Wrong score type!")
+
+                else -> ValidationResult.Valid
+            }
+        }
     }
 }
 
-
+// данная валидация нужна для проверки сущностей в базе
 suspend inline fun <reified T : Any> validateBody(
     requestBody: T,
-    noinline validation: suspend (T) -> Boolean,
-){
+    noinline validation: suspend (T) -> String,
+) {
     try {
-        if (!validation(requestBody)) {
-            throw BadRequestException("Invalid request body format 111")
+        val errorMessage = validation(requestBody)
+        if (errorMessage.isNotEmpty()) {
+            throw BadRequestException(errorMessage)
         }
     } catch (e: ContentTransformationException) {
         throw BadRequestException("Invalid request body format")
     } catch (e: Exception) {
-        if (e !is BadRequestException){
-            throw InternalServerErrorException("Invalid request body format")
-        }
+        throw e
     }
 }
