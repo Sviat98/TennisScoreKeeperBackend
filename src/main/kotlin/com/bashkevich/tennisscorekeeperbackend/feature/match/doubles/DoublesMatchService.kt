@@ -234,7 +234,7 @@ class DoublesMatchService(
             setNumber++
         }
 
-        if (lastPoint?.scoreType in listOf(ScoreType.GAME, ScoreType.SET)) {
+        if (lastPoint?.scoreType !in listOf(ScoreType.GAME, ScoreType.SET)) {
             firstParticipantPoints = lastPoint?.firstParticipantPoints ?: 0
             secondParticipantPoints = lastPoint?.secondParticipantPoints ?: 0
         }
