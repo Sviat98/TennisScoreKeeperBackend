@@ -12,10 +12,10 @@ data class MatchDto(
     val id: String,
     @SerialName("point_shift")
     val pointShift: Int,
-    @SerialName("first_player")
-    val firstPlayer: ParticipantDto,
-    @SerialName("second_player")
-    val secondPlayer: ParticipantDto,
+    @SerialName("first_participant")
+    val firstParticipant: ParticipantDto,
+    @SerialName("second_participant")
+    val secondParticipant: ParticipantDto,
     @SerialName("previous_sets")
     val previousSets: List<TennisSetDto>,
     @SerialName("current_set")
@@ -26,10 +26,10 @@ data class MatchDto(
 
 @Serializable
 data class TennisSetDto(
-    @SerialName("first_player_games")
-    val firstPlayerGames: Int,
-    @SerialName("second_player_games")
-    val secondPlayerGames: Int,
+    @SerialName("first_participant_games")
+    val firstParticipantGames: Int,
+    @SerialName("second_participant_games")
+    val secondParticipantGames: Int,
     @SerialName("special_set_mode")
     val specialSetMode: SpecialSetMode? = null,
 )
@@ -42,17 +42,17 @@ enum class SpecialSetMode {
 
 @Serializable
 data class TennisGameDto(
-    @SerialName("first_player_points")
-    val firstPlayerPoints: String,
-    @SerialName("second_player_points")
-    val secondPlayerPoints: String,
+    @SerialName("first_participant_points")
+    val firstParticipantPoints: String,
+    @SerialName("second_participant_points")
+    val secondParticipantPoints: String,
 )
 
 fun SinglesMatchLogEvent.toTennisSetDto(specialSetMode: SpecialSetMode? = null): TennisSetDto {
 
     return TennisSetDto(
-        firstPlayerGames = this.firstParticipantPoints,
-        secondPlayerGames = this.secondParticipantPoints,
+        firstParticipantGames = this.firstParticipantPoints,
+        secondParticipantGames = this.secondParticipantPoints,
         specialSetMode = specialSetMode
     )
 }
@@ -60,8 +60,8 @@ fun SinglesMatchLogEvent.toTennisSetDto(specialSetMode: SpecialSetMode? = null):
 fun DoublesMatchLogEvent.toTennisSetDto(specialSetMode: SpecialSetMode? = null): TennisSetDto {
 
     return TennisSetDto(
-        firstPlayerGames = this.firstParticipantPoints,
-        secondPlayerGames = this.secondParticipantPoints,
+        firstParticipantGames = this.firstParticipantPoints,
+        secondParticipantGames = this.secondParticipantPoints,
         specialSetMode = specialSetMode
     )
 }
@@ -79,34 +79,34 @@ fun SinglesMatchLogEvent.toTennisGameDto(): TennisGameDto {
             this.firstParticipantPoints
         )
 
-    return TennisGameDto(firstPlayerPoints = firstPlayerScore, secondPlayerPoints = secondPlayerScore)
+    return TennisGameDto(firstParticipantPoints = firstPlayerScore, secondParticipantPoints = secondPlayerScore)
 }
 
 fun DoublesMatchLogEvent.toTennisGameDto(): TennisGameDto {
-    val firstPlayerScore =
+    val firstParticipantScore =
         if (this.scoreType == ScoreType.TIEBREAK_POINT) this.firstParticipantPoints.toString() else mapGameScore(
             this.firstParticipantPoints,
             this.secondParticipantPoints
         )
 
-    val secondPlayerScore =
+    val secondParticipantScore =
         if (this.scoreType == ScoreType.TIEBREAK_POINT) this.secondParticipantPoints.toString() else mapGameScore(
             this.secondParticipantPoints,
             this.firstParticipantPoints
         )
 
-    return TennisGameDto(firstPlayerPoints = firstPlayerScore, secondPlayerPoints = secondPlayerScore)
+    return TennisGameDto(firstParticipantPoints = firstParticipantScore, secondParticipantPoints = secondParticipantScore)
 }
 
-fun mapGameScore(playerPoints: Int, opponentPoints: Int): String {
+fun mapGameScore(participantPoints: Int, opponentPoints: Int): String {
     return when {
-        playerPoints == 0 -> "0"
-        playerPoints == 1 -> "15"
-        playerPoints == 2 -> "30"
-        playerPoints == 3 && playerPoints > opponentPoints -> "40"
-        playerPoints >= 3 && playerPoints == opponentPoints -> "40"
-        playerPoints > 3 && playerPoints > opponentPoints -> "AD"
-        playerPoints < opponentPoints -> ""
+        participantPoints == 0 -> "0"
+        participantPoints == 1 -> "15"
+        participantPoints == 2 -> "30"
+        participantPoints == 3 && participantPoints > opponentPoints -> "40"
+        participantPoints >= 3 && participantPoints == opponentPoints -> "40"
+        participantPoints > 3 && participantPoints > opponentPoints -> "AD"
+        participantPoints < opponentPoints -> ""
         else -> ""
     }
 }
