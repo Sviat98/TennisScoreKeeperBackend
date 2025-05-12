@@ -5,8 +5,8 @@ import kotlinx.serialization.Serializable
 
 @Serializable
 data class ChangeScoreBody(
-    @SerialName("player_id")
-    val playerId: String,
+    @SerialName("participant_id")
+    val participantId: String,
     @SerialName("score_type")
     val scoreType: ScoreType,
 )

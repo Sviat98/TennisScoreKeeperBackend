@@ -1,7 +1,8 @@
 package com.bashkevich.tennisscorekeeperbackend.model.match
 
-import com.bashkevich.tennisscorekeeperbackend.model.match_log.MatchLogEvent
-import com.bashkevich.tennisscorekeeperbackend.model.player.PlayerInMatchDto
+import com.bashkevich.tennisscorekeeperbackend.model.match_log.doubles.DoublesMatchLogEvent
+import com.bashkevich.tennisscorekeeperbackend.model.match_log.singles.SinglesMatchLogEvent
+import com.bashkevich.tennisscorekeeperbackend.model.participant.ParticipantDto
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
@@ -12,9 +13,9 @@ data class MatchDto(
     @SerialName("point_shift")
     val pointShift: Int,
     @SerialName("first_player")
-    val firstPlayer: PlayerInMatchDto,
+    val firstPlayer: ParticipantDto,
     @SerialName("second_player")
-    val secondPlayer: PlayerInMatchDto,
+    val secondPlayer: ParticipantDto,
     @SerialName("previous_sets")
     val previousSets: List<TennisSetDto>,
     @SerialName("current_set")
@@ -47,26 +48,51 @@ data class TennisGameDto(
     val secondPlayerPoints: String,
 )
 
-fun MatchLogEvent.toTennisSetDto(specialSetMode: SpecialSetMode? = null): TennisSetDto {
+fun SinglesMatchLogEvent.toTennisSetDto(specialSetMode: SpecialSetMode? = null): TennisSetDto {
 
     return TennisSetDto(
-        firstPlayerGames = this.firstPlayerPoints,
-        secondPlayerGames = this.secondPlayerPoints,
+        firstPlayerGames = this.firstParticipantPoints,
+        secondPlayerGames = this.secondParticipantPoints,
         specialSetMode = specialSetMode
     )
 }
 
-fun MatchLogEvent.toTennisGameDto(): TennisGameDto {
+fun DoublesMatchLogEvent.toTennisSetDto(specialSetMode: SpecialSetMode? = null): TennisSetDto {
+
+    return TennisSetDto(
+        firstPlayerGames = this.firstParticipantPoints,
+        secondPlayerGames = this.secondParticipantPoints,
+        specialSetMode = specialSetMode
+    )
+}
+
+fun SinglesMatchLogEvent.toTennisGameDto(): TennisGameDto {
     val firstPlayerScore =
-        if (this.scoreType == ScoreType.TIEBREAK_POINT) this.firstPlayerPoints.toString() else mapGameScore(
-            this.firstPlayerPoints,
-            this.secondPlayerPoints
+        if (this.scoreType == ScoreType.TIEBREAK_POINT) this.firstParticipantPoints.toString() else mapGameScore(
+            this.firstParticipantPoints,
+            this.secondParticipantPoints
         )
 
     val secondPlayerScore =
-        if (this.scoreType == ScoreType.TIEBREAK_POINT) this.secondPlayerPoints.toString() else mapGameScore(
-            this.secondPlayerPoints,
-            this.firstPlayerPoints
+        if (this.scoreType == ScoreType.TIEBREAK_POINT) this.secondParticipantPoints.toString() else mapGameScore(
+            this.secondParticipantPoints,
+            this.firstParticipantPoints
+        )
+
+    return TennisGameDto(firstPlayerPoints = firstPlayerScore, secondPlayerPoints = secondPlayerScore)
+}
+
+fun DoublesMatchLogEvent.toTennisGameDto(): TennisGameDto {
+    val firstPlayerScore =
+        if (this.scoreType == ScoreType.TIEBREAK_POINT) this.firstParticipantPoints.toString() else mapGameScore(
+            this.firstParticipantPoints,
+            this.secondParticipantPoints
+        )
+
+    val secondPlayerScore =
+        if (this.scoreType == ScoreType.TIEBREAK_POINT) this.secondParticipantPoints.toString() else mapGameScore(
+            this.secondParticipantPoints,
+            this.firstParticipantPoints
         )
 
     return TennisGameDto(firstPlayerPoints = firstPlayerScore, secondPlayerPoints = secondPlayerScore)

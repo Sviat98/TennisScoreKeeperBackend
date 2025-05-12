@@ -27,26 +27,33 @@ import kotlinx.coroutines.launch
 import org.koin.ktor.ext.inject
 
 fun Route.matchRoutes(){
-    val matchService by application.inject<MatchService>()
+    val matchServiceRouter by application.inject<MatchServiceRouter>()
 
-    route("/matches") {
+    route("/tournaments/{id}/matches"){
         get {
-            val matches = matchService.getMatches()
+            val tournamentId = call.pathParameters["id"]?.toIntOrNull() ?: 0
 
-            call.respond(matches)
+            val matchList = matchServiceRouter.getMatchesByTournament(tournamentId)
+
+            call.respond(matchList)
         }
         post {
+            val tournamentId = call.pathParameters["id"]?.toIntOrNull() ?: 0
+
             val matchBody = call.receiveBodyCatching<MatchBody>()
 
-            val newMatch = matchService.addMatch(matchBody)
+            val newMatch = matchServiceRouter.addMatch(tournamentId,matchBody)
 
             call.respond(HttpStatusCode.Created,newMatch)
         }
+    }
+
+    route("/matches") {
         route("/{id}") {
             get {
                 val id = call.pathParameters["id"]?.toIntOrNull() ?: 0
 
-                val matchDto = matchService.getMatchById(id)
+                val matchDto = matchServiceRouter.getMatchById(id)
 
                 call.respond(matchDto)
             }
@@ -79,7 +86,7 @@ fun Route.matchRoutes(){
                 val job = launch {
                     matchFlow.onStart {
                         if(matchFlow.replayCache.isEmpty()){
-                            val initialMatch = matchService.getMatchById(id)
+                            val initialMatch = matchServiceRouter.getMatchById(id)
                             emit(initialMatch)
                         }
                     }.collectLatest { matchDto ->
@@ -107,7 +114,7 @@ fun Route.matchRoutes(){
 
                 val serveBody = call.receiveBodyCatching<ServeBody>()
 
-                matchService.updateServe(matchId,serveBody)
+                matchServiceRouter.updateServe(matchId,serveBody)
 
                 call.respondWithMessageBody(message ="Successfully chose serve")
             }
@@ -116,24 +123,24 @@ fun Route.matchRoutes(){
 
                 val changeScoreBody = call.receiveBodyCatching<ChangeScoreBody>()
 
-                matchService.updateScore(matchId,changeScoreBody)
+                matchServiceRouter.updateScore(matchId,changeScoreBody)
 
                 call.respondWithMessageBody(message ="Successfully updated the score")
             }
             patch("/undo"){
                 val matchId = call.pathParameters["id"]?.toIntOrNull() ?: 0
 
-                matchService.undoPoint(matchId)
+                matchServiceRouter.undoPoint(matchId)
 
                 call.respondWithMessageBody(message = "Successfully undone the point")
             }
             patch("/redo"){
                 val matchId = call.pathParameters["id"]?.toIntOrNull() ?: 0
 
-                matchService.redoPoint(matchId)
+                matchServiceRouter.redoPoint(matchId)
 
                 call.respondWithMessageBody(message ="Successfully redone the point")
             }
         }
-    }
+   }
 }

@@ -5,10 +5,10 @@ import kotlinx.serialization.Serializable
 
 @Serializable
 data class MatchBody(
-    @SerialName("first_player")
-    val firstPlayer: PlayerBody,
-    @SerialName("second_player")
-    val secondPlayer: PlayerBody,
+    @SerialName("first_participant")
+    val firstParticipant: ParticipantBody,
+    @SerialName("second_participant")
+    val secondParticipant: ParticipantBody,
     @SerialName("sets_to_win")
     val setsToWin: Int,
     @SerialName("regular_set_id")
@@ -18,7 +18,7 @@ data class MatchBody(
 )
 
 @Serializable
-data class PlayerBody(
+data class ParticipantBody(
     @SerialName("id")
     val id: String,
     @SerialName("display_name")

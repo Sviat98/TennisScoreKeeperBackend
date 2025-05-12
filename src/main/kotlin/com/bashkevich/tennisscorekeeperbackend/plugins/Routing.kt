@@ -3,6 +3,7 @@ package com.bashkevich.tennisscorekeeperbackend.plugins
 import com.bashkevich.tennisscorekeeperbackend.feature.counter.counterRoutes
 import com.bashkevich.tennisscorekeeperbackend.feature.match.matchRoutes
 import com.bashkevich.tennisscorekeeperbackend.feature.player.playerRoutes
+import com.bashkevich.tennisscorekeeperbackend.feature.tournament.tournamentRoutes
 import io.ktor.http.HttpStatusCode
 import io.ktor.server.application.*
 import io.ktor.server.response.*
@@ -19,6 +20,7 @@ fun Application.configureRouting() {
             else call.respond(HttpStatusCode.ServiceUnavailable)
         }
         counterRoutes()
+        tournamentRoutes()
         playerRoutes()
         matchRoutes()
     }

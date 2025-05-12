@@ -14,9 +14,9 @@ fun Application.configureValidation() {
 
     install(RequestValidation) {
         validate<MatchBody> { body ->
-            val firstPlayerId = body.firstPlayer.id.toIntOrNull() ?: 0
+            val firstPlayerId = body.firstParticipant.id.toIntOrNull() ?: 0
 
-            val secondPlayerId = body.secondPlayer.id.toIntOrNull() ?: 0
+            val secondPlayerId = body.secondParticipant.id.toIntOrNull() ?: 0
 
             val regularSetId = body.regularSet.toIntOrNull() ?: 0
             val decidingSetId = body.decidingSet.toIntOrNull() ?: 0
@@ -32,7 +32,7 @@ fun Application.configureValidation() {
         }
         validate<ChangeScoreBody> { body ->
 
-            val scoringPlayerId = body.playerId.toIntOrNull() ?: 0
+            val scoringPlayerId = body.participantId.toIntOrNull() ?: 0
 
             when {
                 scoringPlayerId == 0 -> ValidationResult.Invalid("Scoring player id is wrong!")
