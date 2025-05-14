@@ -32,6 +32,16 @@ class DoublesMatchRepository {
             it[firstServe] = firstServeParticipantId
         }
 
+    fun updateServeInFirstPair(matchId: Int, firstServePlayerId: Int) =
+        DoublesMatchTable.update({ DoublesMatchTable.id eq matchId }) {
+            it[firstServeInFirstPair] = firstServePlayerId
+        }
+
+    fun updateServeInSecondPair(matchId: Int, firstServePlayerId: Int) =
+        DoublesMatchTable.update({ DoublesMatchTable.id eq matchId }) {
+            it[firstServeInSecondPair] = firstServePlayerId
+        }
+
     fun updatePointShift(matchId: Int, newPointShift: Int) =
         DoublesMatchTable.update({ DoublesMatchTable.id eq matchId }) {
             it[pointShift] = newPointShift

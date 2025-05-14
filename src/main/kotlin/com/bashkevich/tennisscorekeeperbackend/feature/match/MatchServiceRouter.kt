@@ -7,6 +7,7 @@ import com.bashkevich.tennisscorekeeperbackend.model.match.ChangeScoreBody
 import com.bashkevich.tennisscorekeeperbackend.model.match.MatchBody
 import com.bashkevich.tennisscorekeeperbackend.model.match.MatchDto
 import com.bashkevich.tennisscorekeeperbackend.model.match.ServeBody
+import com.bashkevich.tennisscorekeeperbackend.model.match.ServeInPairBody
 import com.bashkevich.tennisscorekeeperbackend.model.match.ShortMatchDto
 import com.bashkevich.tennisscorekeeperbackend.model.tournament.TournamentType
 import com.bashkevich.tennisscorekeeperbackend.plugins.dbQuery
@@ -70,6 +71,19 @@ class MatchServiceRouter(
             when (tournament.type){
                 TournamentType.SINGLES -> singlesMatchService.updateServe(matchId,serveBody)
                 TournamentType.DOUBLES -> doublesMatchService.updateServe(matchId,serveBody)
+            }
+        }
+    }
+
+    suspend fun updateServeInPair(matchId: Int, serveInPairBody: ServeInPairBody) {
+        dbQuery {
+            if (matchId == 0) throw BadRequestException("Wrong format of match id")
+            val tournament = tournamentRepository.getTournamentByMatchId(matchId)
+                ?: throw NotFoundException("No tournament found by that id")
+
+            when (tournament.type){
+                TournamentType.SINGLES -> throw BadRequestException("Choosing serve in pair is not allowed in singles matches")
+                TournamentType.DOUBLES -> doublesMatchService.updateServeInPair(matchId,serveInPairBody)
             }
         }
     }

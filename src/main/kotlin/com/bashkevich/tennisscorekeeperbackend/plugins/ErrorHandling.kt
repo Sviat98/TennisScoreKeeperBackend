@@ -13,6 +13,7 @@ import io.ktor.server.request.ContentTransformationException
 import io.ktor.server.request.receive
 import io.ktor.server.response.respond
 import kotlinx.serialization.SerializationException
+import org.jetbrains.exposed.dao.exceptions.EntityNotFoundException
 
 
 fun Application.configureStatusPages(){
@@ -28,6 +29,12 @@ fun Application.configureStatusPages(){
         }
         exception<NotFoundException> { call, cause ->
             call.respondWithMessageBody(statusCode = HttpStatusCode.NotFound, message = cause.message ?: "")
+        }
+        exception<EntityNotFoundException>{ call, cause ->
+            val entityId = cause.id
+            val entityClass = cause.entity.javaClass
+
+            call.respondWithMessageBody(statusCode = HttpStatusCode.NotFound, "Entity $entityClass with id = $entityId not found")
         }
         exception<Throwable> { call, cause ->
             call.respondWithMessageBody(statusCode = HttpStatusCode.InternalServerError, message = cause.message ?: "")

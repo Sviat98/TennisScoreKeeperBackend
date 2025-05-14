@@ -5,6 +5,7 @@ import com.bashkevich.tennisscorekeeperbackend.feature.match.websocket.MatchObse
 import com.bashkevich.tennisscorekeeperbackend.model.match.ChangeScoreBody
 import com.bashkevich.tennisscorekeeperbackend.model.match.MatchBody
 import com.bashkevich.tennisscorekeeperbackend.model.match.ServeBody
+import com.bashkevich.tennisscorekeeperbackend.model.match.ServeInPairBody
 import com.bashkevich.tennisscorekeeperbackend.plugins.receiveBodyCatching
 import com.bashkevich.tennisscorekeeperbackend.plugins.respondWithMessageBody
 import io.ktor.http.HttpStatusCode
@@ -109,14 +110,23 @@ fun Route.matchRoutes(){
                     }
                 }
             }
-            patch("/serve"){
+            patch("/firstServe"){
                 val matchId = call.pathParameters["id"]?.toIntOrNull() ?: 0
 
                 val serveBody = call.receiveBodyCatching<ServeBody>()
 
                 matchServiceRouter.updateServe(matchId,serveBody)
 
-                call.respondWithMessageBody(message ="Successfully chose serve")
+                call.respondWithMessageBody(message ="Successfully chose first serve")
+            }
+            patch("/firstServeInPair"){
+                val matchId = call.pathParameters["id"]?.toIntOrNull() ?: 0
+
+                val serveInPairBody = call.receiveBodyCatching<ServeInPairBody>()
+
+                matchServiceRouter.updateServeInPair(matchId,serveInPairBody)
+
+                call.respondWithMessageBody(message ="Successfully chose first serve in pair")
             }
             patch("/score"){
                 val matchId = call.pathParameters["id"]?.toIntOrNull() ?: 0

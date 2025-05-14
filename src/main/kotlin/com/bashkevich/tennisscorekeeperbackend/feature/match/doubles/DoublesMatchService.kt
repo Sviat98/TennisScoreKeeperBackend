@@ -9,6 +9,7 @@ import com.bashkevich.tennisscorekeeperbackend.model.match.MatchBody
 import com.bashkevich.tennisscorekeeperbackend.model.match.MatchDto
 import com.bashkevich.tennisscorekeeperbackend.model.match.ScoreType
 import com.bashkevich.tennisscorekeeperbackend.model.match.ServeBody
+import com.bashkevich.tennisscorekeeperbackend.model.match.ServeInPairBody
 import com.bashkevich.tennisscorekeeperbackend.model.match.ShortMatchDto
 import com.bashkevich.tennisscorekeeperbackend.model.match.SpecialSetMode
 import com.bashkevich.tennisscorekeeperbackend.model.match.TennisGameDto
@@ -83,7 +84,7 @@ class DoublesMatchService(
 
     suspend fun updateServe(matchId: Int, serveBody: ServeBody) {
         if (matchId == 0) throw BadRequestException("Incorrect id")
-        val firstServeParticipantId = serveBody.servingParticipantId.toInt()
+        val firstServeParticipantId = serveBody.servingParticipantId.toIntOrNull() ?: 0
 
         val matchEntity = doublesMatchRepository.getMatchById(matchId) ?: throw NotFoundException("No match found!")
 
@@ -103,11 +104,56 @@ class DoublesMatchService(
         MatchObserver.notifyChange(matchDto)
     }
 
+    suspend fun updateServeInPair(matchId: Int, serveInPairBody: ServeInPairBody) {
+        if (matchId == 0) throw BadRequestException("Incorrect id")
+        val firstServePlayerId = serveInPairBody.servingPlayerId.toIntOrNull() ?: 0
+
+        val matchEntity = doublesMatchRepository.getMatchById(matchId) ?: throw NotFoundException("No match found!")
+
+        val firstParticipant = matchEntity.firstParticipant
+        val secondParticipant = matchEntity.secondParticipant
+
+        var isFirstPair = false
+
+        validateBody(serveInPairBody) {
+
+            when (firstServePlayerId) {
+                in listOf(
+                    firstParticipant.firstPlayer.id.value,
+                    firstParticipant.secondPlayer.id.value
+                ),
+                    -> {
+                    isFirstPair = true
+                    ""
+                }
+                in listOf(
+                    secondParticipant.firstPlayer.id.value,
+                    secondParticipant.secondPlayer.id.value
+                ),
+                    -> {
+                    isFirstPair = false
+                    ""
+                }
+                else -> "Serve player id is not in any of participants"
+            }
+        }
+
+        if (isFirstPair){
+            doublesMatchRepository.updateServeInFirstPair(matchId, firstServePlayerId)
+        }else{
+            doublesMatchRepository.updateServeInSecondPair(matchId, firstServePlayerId)
+        }
+
+        val matchDto = buildMatchById(matchId, 0)
+
+        MatchObserver.notifyChange(matchDto)
+    }
+
     private fun buildMatchById(matchId: Int, lastPointNumber: Int): MatchDto {
         val matchEntity = doublesMatchRepository.getMatchById(matchId)
             ?: throw NotFoundException("No match found!")
 
-        // для предыдущих партий всгде возвращаем ORDINARY,здесь нам нужен только сам счет
+        // для предыдущих партий всегда возвращаем ORDINARY,здесь нам нужен только сам счет
         val previousSets =
             doublesMatchLogRepository.getPreviousSets(matchId, lastPointNumber).map { it.toTennisSetDto() }
 
@@ -372,7 +418,8 @@ class DoublesMatchService(
                     .let { it.first.size to it.second.size }
 
             if (firstParticipantSetsWon == setsToWin || secondParticipantSetsWon == setsToWin) {
-                val winnerParticipantId = if (firstParticipantSetsWon == setsToWin) firstParticipantId else secondParticipantId
+                val winnerParticipantId =
+                    if (firstParticipantSetsWon == setsToWin) firstParticipantId else secondParticipantId
                 doublesMatchRepository.updateWinner(matchId = matchId, winnerParticipantId = winnerParticipantId)
             }
         }
