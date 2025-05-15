@@ -372,11 +372,19 @@ class DoublesMatchService(
 
             currentServe = when {
                 (firstParticipantPoints + secondParticipantPoints) % 2 == 1 -> calculateNextServe(
-                    participantServingOrder,
-                    currentServe
+                    serveOrder = participantServingOrder,
+                    currentServe = currentServe
                 )
 
                 else -> currentServe
+            }
+            currentPlayerToServe = when {
+                (firstParticipantPoints + secondParticipantPoints) % 2 == 1 -> calculateNextServe(
+                    serveOrder = playerServingOrder,
+                    currentServe = currentPlayerToServe
+                )
+
+                else -> currentPlayerToServe
             }
         } else {
             isFirstParticipantWonGame = when {
@@ -396,8 +404,11 @@ class DoublesMatchService(
         if ((isFirstParticipantWonGame || isSecondParticipantWonGame) && currentSetMode != SpecialSetMode.SUPER_TIEBREAK) {
             // для супер-тайбрейка обработка смены подачи ниже, а количество геймов мы не увеличиваем
             scoreType = ScoreType.GAME
-            currentServe = calculateNextServe(participantServingOrder, currentServe)
-            currentPlayerToServe = calculateNextServe(playerServingOrder, currentPlayerToServe)
+            currentServe = calculateNextServe(serveOrder = participantServingOrder, currentServe = currentServe)
+            currentPlayerToServe = calculateNextServe(
+                serveOrder = playerServingOrder,
+                currentServe = currentPlayerToServe
+            )
 
             firstParticipantPoints = currentSetFirstParticipantPoints
             secondParticipantPoints = currentSetSecondParticipantPoints
@@ -425,9 +436,24 @@ class DoublesMatchService(
             scoreType = ScoreType.SET
             if (isTiebreakMode) {
                 currentServe = when {
-                    currentSet != null -> calculateNextServe(participantServingOrder, currentSet.currentServe)
+                    currentSet != null -> calculateNextServe(
+                        serveOrder = participantServingOrder,
+                        currentServe = currentSet.currentServe
+                    )
+
                     setNumber % 2 == 0 -> secondParticipantToServeInMatch
                     else -> firstParticipantToServeInMatch
+                }
+                currentPlayerToServe = when {
+                    currentSet != null -> calculateNextServe(
+                        serveOrder = playerServingOrder,
+                        currentServe = currentSet.currentServeInPair
+                    )
+
+                    else -> {
+                        val playerServingIndex = setNumber  % 4 // после 1го сета будет подавать второй игрок, index = 1 и т д
+                        playerServingOrder[playerServingIndex]
+                    }
                 }
             }
         }
