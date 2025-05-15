@@ -126,6 +126,7 @@ class DoublesMatchService(
                     isFirstPair = true
                     ""
                 }
+
                 in listOf(
                     secondParticipant.firstPlayer.id.value,
                     secondParticipant.secondPlayer.id.value
@@ -134,13 +135,14 @@ class DoublesMatchService(
                     isFirstPair = false
                     ""
                 }
+
                 else -> "Serve player id is not in any of participants"
             }
         }
 
-        if (isFirstPair){
+        if (isFirstPair) {
             doublesMatchRepository.updateServeInFirstPair(matchId, firstServePlayerId)
-        }else{
+        } else {
             doublesMatchRepository.updateServeInSecondPair(matchId, firstServePlayerId)
         }
 
@@ -168,26 +170,29 @@ class DoublesMatchService(
         val currentSetMode = calculateCurrentSetMode(currentSetTemplate)
 
         val firstParticipantId = matchEntity.firstParticipant.id.value
-        val secondParticipantId = matchEntity.secondParticipant.id.value
+        val firstParticipantToServe = matchEntity.firstServe?.id?.value
 
+        val firstPlayerToServe =
+            if (firstParticipantToServe == firstParticipantId) matchEntity.firstParticipantFirstServe?.id?.value else
+                matchEntity.secondParticipantFirstServe?.id?.value
 
-        val currentServe = lastPoint?.currentServe ?: matchEntity.firstServe?.id?.value
+        val currentServe = lastPoint?.currentServe ?: firstParticipantToServe
+        val currentPlayerToServe = lastPoint?.currentServeInPair ?: firstPlayerToServe
+
         val winnerParticipantId = matchEntity.winner?.id?.value
         val firstParticipant = matchEntity.firstParticipant.toDto(
             displayName = matchEntity.firstParticipantDisplayName,
             servingParticipantId = currentServe,
-            servingInPairPlayerId = null,
+            servingInPairPlayerId = currentPlayerToServe,
             winningParticipantId = winnerParticipantId
         )
-        //?: throw NotFoundException("Player with id = $firstParticipantId not found")
 
-        val secondParticipant = matchEntity.firstParticipant.toDto(
+        val secondParticipant = matchEntity.secondParticipant.toDto(
             displayName = matchEntity.secondParticipantDisplayName,
             servingParticipantId = currentServe,
-            servingInPairPlayerId = null,
+            servingInPairPlayerId = currentPlayerToServe,
             winningParticipantId = winnerParticipantId
         )
-        //?: throw NotFoundException("Player with id = $secondParticipantId not found")
 
         val lastGame = doublesMatchLogRepository.getCurrentSet(matchId, setNumber, lastPointNumber)
 
@@ -195,8 +200,8 @@ class DoublesMatchService(
             lastPoint?.scoreType == ScoreType.SET -> TennisSetDto(0, 0, currentSetMode)
             currentSetMode == SpecialSetMode.SUPER_TIEBREAK -> TennisSetDto(
                 firstParticipantGames = lastPoint?.firstParticipantPoints ?: 0,
-                lastPoint?.secondParticipantPoints ?: 0,
-                currentSetMode
+                secondParticipantGames = lastPoint?.secondParticipantPoints ?: 0,
+                specialSetMode = currentSetMode
             )
 
             else -> lastGame?.toTennisSetDto(
@@ -234,11 +239,52 @@ class DoublesMatchService(
 
         val secondParticipantId = matchEntity.secondParticipant.id.value
 
-
         validateBody(changeScoreBody) {
             if (scoringParticipantId !in listOf(firstParticipantId, secondParticipantId))
                 "Scoring player id is not in match" else ""
         }
+
+        val firstParticipantToServeInMatch = matchEntity.firstServe!!.id.value
+
+        val secondParticipantToServeInMatch =
+            if (firstParticipantToServeInMatch == firstParticipantId) secondParticipantId else firstParticipantId
+
+        val participantServingOrder = listOf(firstParticipantToServeInMatch, secondParticipantToServeInMatch)
+
+        val firstParticipantFirstPlayerId = matchEntity.firstParticipant.firstPlayer.id.value
+
+        val firstParticipantSecondPlayerId = matchEntity.firstParticipant.secondPlayer.id.value
+
+        val secondParticipantFirstPlayerId = matchEntity.secondParticipant.firstPlayer.id.value
+
+        val secondParticipantSecondPlayerId = matchEntity.secondParticipant.secondPlayer.id.value
+
+        val firstParticipantFirstServePlayerId = matchEntity.firstParticipantFirstServe!!.id.value
+
+        val secondParticipantFirstServePlayerId = matchEntity.secondParticipantFirstServe!!.id.value
+
+        val (firstPlayerToServe, thirdPlayerToServe) = if (firstParticipantToServeInMatch == firstParticipantId) {
+            firstParticipantFirstServePlayerId to
+                    (if (firstParticipantFirstServePlayerId == firstParticipantFirstPlayerId) firstParticipantSecondPlayerId else firstParticipantFirstPlayerId)
+        } else {
+            secondParticipantFirstServePlayerId to
+                    (if (secondParticipantFirstServePlayerId == secondParticipantFirstPlayerId) secondParticipantSecondPlayerId else secondParticipantFirstPlayerId)
+        }
+
+        val (secondPlayerToServe, fourthPlayerToServe) = if (firstParticipantToServeInMatch == firstParticipantId) {
+            secondParticipantFirstServePlayerId to
+                    (if (secondParticipantFirstServePlayerId == secondParticipantFirstPlayerId) secondParticipantSecondPlayerId else secondParticipantFirstPlayerId)
+        } else {
+            firstParticipantFirstServePlayerId to
+                    (if (firstParticipantFirstServePlayerId == firstParticipantFirstPlayerId) firstParticipantSecondPlayerId else firstParticipantFirstPlayerId)
+        }
+
+        val playerServingOrder = listOf(
+            firstPlayerToServe,
+            secondPlayerToServe,
+            thirdPlayerToServe,
+            fourthPlayerToServe
+        )
 
         val lastPointInTable = doublesMatchLogRepository.getLastPoint(matchId)
 
@@ -260,9 +306,8 @@ class DoublesMatchService(
 
         pointNumber++
 
-        val firstParticipantToServeInMatch = matchEntity.firstServe!!.id.value
-
         var currentServe = lastPoint?.currentServe ?: firstParticipantToServeInMatch
+        var currentPlayerToServe = lastPoint?.currentServeInPair ?: firstPlayerToServe
 
         var firstParticipantPoints = 0
         var secondParticipantPoints = 0
@@ -326,9 +371,12 @@ class DoublesMatchService(
             scoreType = ScoreType.TIEBREAK_POINT
 
             currentServe = when {
-                ((firstParticipantPoints + secondParticipantPoints) % 2 == 1 && lastPoint?.currentServe == firstParticipantId) -> secondParticipantId
-                ((firstParticipantPoints + secondParticipantPoints) % 2 == 1 && lastPoint?.currentServe == secondParticipantId) -> firstParticipantId
-                else -> lastPoint?.currentServe ?: firstParticipantToServeInMatch
+                (firstParticipantPoints + secondParticipantPoints) % 2 == 1 -> calculateNextServe(
+                    participantServingOrder,
+                    currentServe
+                )
+
+                else -> currentServe
             }
         } else {
             isFirstParticipantWonGame = when {
@@ -348,9 +396,8 @@ class DoublesMatchService(
         if ((isFirstParticipantWonGame || isSecondParticipantWonGame) && currentSetMode != SpecialSetMode.SUPER_TIEBREAK) {
             // для супер-тайбрейка обработка смены подачи ниже, а количество геймов мы не увеличиваем
             scoreType = ScoreType.GAME
-            currentServe =
-                if (currentServe == firstParticipantId) secondParticipantId else firstParticipantId
-
+            currentServe = calculateNextServe(participantServingOrder, currentServe)
+            currentPlayerToServe = calculateNextServe(playerServingOrder, currentPlayerToServe)
 
             firstParticipantPoints = currentSetFirstParticipantPoints
             secondParticipantPoints = currentSetSecondParticipantPoints
@@ -377,20 +424,10 @@ class DoublesMatchService(
         if (isFirstParticipantWonSet || isSecondParticipantWonSet) {
             scoreType = ScoreType.SET
             if (isTiebreakMode) {
-                currentServe = when (currentSet?.currentServe) {
-                    firstParticipantId -> secondParticipantId
-                    secondParticipantId -> firstParticipantId
-                    else -> {
-                        if (setNumber % 2 == 0) {
-                            if (firstParticipantToServeInMatch == firstParticipantId) {
-                                secondParticipantId
-                            } else {
-                                firstParticipantId
-                            }
-                        } else {
-                            firstParticipantToServeInMatch
-                        }
-                    }
+                currentServe = when {
+                    currentSet != null -> calculateNextServe(participantServingOrder, currentSet.currentServe)
+                    setNumber % 2 == 0 -> secondParticipantToServeInMatch
+                    else -> firstParticipantToServeInMatch
                 }
             }
         }
@@ -401,7 +438,7 @@ class DoublesMatchService(
             pointNumber = pointNumber,
             scoreType = scoreType,
             currentServe = currentServe,
-            currentServeInPair = 0,
+            currentServeInPair = currentPlayerToServe,
             firstParticipantPoints = firstParticipantPoints,
             secondParticipantPoints = secondParticipantPoints,
         )
@@ -447,6 +484,13 @@ class DoublesMatchService(
         currentSetTemplate.gamesToWin == 1 && currentSetTemplate.tiebreakMode == TiebreakMode.EARLY -> SpecialSetMode.SUPER_TIEBREAK
         currentSetTemplate.gamesToWin > 10 -> SpecialSetMode.ENDLESS
         else -> null
+    }
+
+    private fun calculateNextServe(serveOrder: List<Int>, currentServe: Int): Int {
+        val newServeIndex = serveOrder.indexOf(currentServe) + 1
+        val size = serveOrder.size
+
+        return serveOrder[newServeIndex % size]
     }
 
     suspend fun undoPoint(matchId: Int) {

@@ -192,6 +192,13 @@ class SinglesMatchService(
                 "Scoring player id is not in match" else ""
         }
 
+        val firstParticipantToServeInMatch = matchEntity.firstServe!!.id.value
+
+        val secondParticipantToServeInMatch =
+            if (firstParticipantToServeInMatch == firstParticipantId) secondParticipantId else firstParticipantId
+
+        val participantServingOrder = listOf(firstParticipantToServeInMatch, secondParticipantToServeInMatch)
+
         val lastPointInTable = singlesMatchLogRepository.getLastPoint(matchId)
 
         val lastPointNumber = (lastPointInTable?.pointNumber ?: 0) + matchEntity.pointShift
@@ -212,8 +219,6 @@ class SinglesMatchService(
         var pointNumber = lastPoint?.pointNumber ?: 0
 
         pointNumber++
-
-        val firstParticipantToServeInMatch = matchEntity.firstServe!!.id.value
 
         var currentServe = lastPoint?.currentServe ?: firstParticipantToServeInMatch
 
@@ -279,9 +284,8 @@ class SinglesMatchService(
             scoreType = ScoreType.TIEBREAK_POINT
 
             currentServe = when {
-                ((firstParticipantPoints + secondParticipantPoints) % 2 == 1 && lastPoint?.currentServe == firstParticipantId) -> secondParticipantId
-                ((firstParticipantPoints + secondParticipantPoints) % 2 == 1 && lastPoint?.currentServe == secondParticipantId) -> firstParticipantId
-                else -> lastPoint?.currentServe ?: firstParticipantToServeInMatch
+                (firstParticipantPoints + secondParticipantPoints) % 2 == 1 -> calculateNextServe(participantServingOrder,currentServe)
+                else -> currentServe
             }
         } else {
             isFirstParticipantWonGame = when {
@@ -301,8 +305,7 @@ class SinglesMatchService(
         if ((isFirstParticipantWonGame || isSecondParticipantWonGame) && currentSetMode != SpecialSetMode.SUPER_TIEBREAK) {
             // для супер-тайбрейка обработка смены подачи ниже, а количество геймов мы не увеличиваем
             scoreType = ScoreType.GAME
-            currentServe =
-                if (currentServe == firstParticipantId) secondParticipantId else firstParticipantId
+            currentServe = calculateNextServe(participantServingOrder,currentServe)
 
 
             firstParticipantPoints = currentSetFirstParticipantPoints
@@ -330,20 +333,10 @@ class SinglesMatchService(
         if (isFirstParticipantWonSet || isSecondParticipantWonSet) {
             scoreType = ScoreType.SET
             if (isTiebreakMode) {
-                currentServe = when (currentSet?.currentServe) {
-                    firstParticipantId -> secondParticipantId
-                    secondParticipantId -> firstParticipantId
-                    else -> {
-                        if (setNumber % 2 == 0) {
-                            if (firstParticipantToServeInMatch == firstParticipantId) {
-                                secondParticipantId
-                            } else {
-                                firstParticipantId
-                            }
-                        } else {
-                            firstParticipantToServeInMatch
-                        }
-                    }
+                currentServe = when {
+                    currentSet != null -> calculateNextServe(participantServingOrder, currentSet.currentServe)
+                    setNumber % 2 == 0 -> secondParticipantToServeInMatch
+                    else -> firstParticipantToServeInMatch
                 }
             }
         }
@@ -398,6 +391,13 @@ class SinglesMatchService(
         currentSetTemplate.gamesToWin == 1 && currentSetTemplate.tiebreakMode == TiebreakMode.EARLY -> SpecialSetMode.SUPER_TIEBREAK
         currentSetTemplate.gamesToWin > 10 -> SpecialSetMode.ENDLESS
         else -> null
+    }
+
+    private fun calculateNextServe(serveOrder: List<Int>, currentServe: Int): Int {
+        val newServeIndex = serveOrder.indexOf(currentServe) + 1
+        val size = serveOrder.size
+
+        return serveOrder[newServeIndex % size]
     }
 
     suspend fun undoPoint(matchId: Int) {
