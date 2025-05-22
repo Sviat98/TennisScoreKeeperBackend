@@ -482,9 +482,12 @@ class DoublesMatchService(
                 else -> 0 to 0
             }
 
-            if (firstParticipantPreviousSetsWon + firstParticipantCurrentSetWon == setsToWin || secondParticipantPreviousSetsWon + secondParticipantCurrentSetWon == setsToWin) {
+            val firstParticipantSetsWon = firstParticipantPreviousSetsWon+firstParticipantCurrentSetWon
+            val secondParticipantSetsWon = secondParticipantPreviousSetsWon+secondParticipantCurrentSetWon
+
+            if (firstParticipantSetsWon == setsToWin || secondParticipantSetsWon == setsToWin) {
                 val winnerParticipantId =
-                    if (firstParticipantPreviousSetsWon == setsToWin) firstParticipantId else secondParticipantId
+                    if (firstParticipantSetsWon == setsToWin) firstParticipantId else secondParticipantId
                 doublesMatchRepository.updateWinner(matchId = matchId, winnerParticipantId = winnerParticipantId)
                 // матч закончился, вставляем currentServe и currentPlayerToServe, равные null
                 currentServeToInsert = null
