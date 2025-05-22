@@ -155,7 +155,7 @@ class DoublesMatchService(
         val matchEntity = doublesMatchRepository.getMatchById(matchId)
             ?: throw NotFoundException("No match found!")
 
-        // для предыдущих партий всегда возвращаем ORDINARY,здесь нам нужен только сам счет
+        // для предыдущих партий всегда возвращаем ORDINARY, здесь нам нужен только сам счет
         val previousSets =
             doublesMatchLogRepository.getPreviousSets(matchId, lastPointNumber).map { it.toTennisSetDto() }
 
@@ -306,8 +306,8 @@ class DoublesMatchService(
 
         pointNumber++
 
-        var currentServe = lastPoint?.currentServe ?: firstParticipantToServeInMatch
-        var currentPlayerToServe = lastPoint?.currentServeInPair ?: firstPlayerToServe
+        var currentServe: Int? = lastPoint?.currentServe ?: firstParticipantToServeInMatch
+        var currentPlayerToServe: Int? = lastPoint?.currentServeInPair ?: firstPlayerToServe
 
         var firstParticipantPoints = 0
         var secondParticipantPoints = 0
@@ -320,7 +320,7 @@ class DoublesMatchService(
             scoreType = ScoreType.POINT
         }
 
-
+        // после сыгранного сета увеличиваем set_number на 1
         if (lastPoint?.scoreType == ScoreType.SET) {
             setNumber++
         }
@@ -349,8 +349,8 @@ class DoublesMatchService(
 
         val isTiebreakMode = when (currentSetTemplate.tiebreakMode) {
             // пример для сета до 6 геймов
-            // EARLY - когда тайбрейк играется при сете 5-5
-            //LATE - когда тайбрейк играется при сете 6-6
+            // EARLY - когда тай-брейк играется при сете 5-5
+            //LATE - когда тай-брейк играется при сете 6-6
             TiebreakMode.EARLY -> currentSetFirstParticipantPoints == currentSetSecondParticipantPoints
                     && currentSetFirstParticipantPoints == currentSetTemplate.gamesToWin - 1
 
@@ -373,7 +373,7 @@ class DoublesMatchService(
             currentServe = when {
                 (firstParticipantPoints + secondParticipantPoints) % 2 == 1 -> calculateNextServe(
                     serveOrder = participantServingOrder,
-                    currentServe = currentServe
+                    currentServe = currentServe!! //currentServe = null ТОЛЬКО после окончания матча
                 )
 
                 else -> currentServe
@@ -381,7 +381,7 @@ class DoublesMatchService(
             currentPlayerToServe = when {
                 (firstParticipantPoints + secondParticipantPoints) % 2 == 1 -> calculateNextServe(
                     serveOrder = playerServingOrder,
-                    currentServe = currentPlayerToServe
+                    currentServe = currentPlayerToServe!! //currentPlayerToServe = null ТОЛЬКО после окончания матча
                 )
 
                 else -> currentPlayerToServe
@@ -402,12 +402,15 @@ class DoublesMatchService(
 
 
         if ((isFirstParticipantWonGame || isSecondParticipantWonGame) && currentSetMode != SpecialSetMode.SUPER_TIEBREAK) {
-            // для супер-тайбрейка обработка смены подачи ниже, а количество геймов мы не увеличиваем
+            // для супер-тай-брейка обработка смены подачи ниже, а количество геймов мы не увеличиваем
             scoreType = ScoreType.GAME
-            currentServe = calculateNextServe(serveOrder = participantServingOrder, currentServe = currentServe)
+            currentServe = calculateNextServe(
+                serveOrder = participantServingOrder,
+                currentServe = currentServe!! //currentServe = null ТОЛЬКО после окончания матча
+            )
             currentPlayerToServe = calculateNextServe(
                 serveOrder = playerServingOrder,
-                currentServe = currentPlayerToServe
+                currentServe = currentPlayerToServe!! //currentPlayerToServe = null ТОЛЬКО после окончания матча
             )
 
             firstParticipantPoints = currentSetFirstParticipantPoints
@@ -436,9 +439,10 @@ class DoublesMatchService(
             scoreType = ScoreType.SET
             if (isTiebreakMode) {
                 currentServe = when {
+                    // берем подачу в первом розыгрыше тай-брейка и меняем ее на противоположную
                     currentSet != null -> calculateNextServe(
                         serveOrder = participantServingOrder,
-                        currentServe = currentSet.currentServe
+                        currentServe = currentSet.currentServe!! //currentServe = null ТОЛЬКО после окончания матча
                     )
 
                     setNumber % 2 == 0 -> secondParticipantToServeInMatch
@@ -447,14 +451,39 @@ class DoublesMatchService(
                 currentPlayerToServe = when {
                     currentSet != null -> calculateNextServe(
                         serveOrder = playerServingOrder,
-                        currentServe = currentSet.currentServeInPair
+                        currentServe = currentSet.currentServeInPair!! //currentServeInPair = null ТОЛЬКО после окончания матча
                     )
 
                     else -> {
-                        val playerServingIndex = setNumber  % 4 // после 1го сета будет подавать второй игрок, index = 1 и т д
+                        val playerServingIndex =
+                            setNumber % 4 // после 1-го сета будет подавать второй игрок, index = 1 и т д
                         playerServingOrder[playerServingIndex]
                     }
                 }
+            }
+        }
+
+
+        if (scoreType == ScoreType.SET) {
+            val previousSets = doublesMatchLogRepository.getPreviousSets(matchId, lastPointNumber)
+
+            val (firstParticipantPreviousSetsWon, secondParticipantPreviousSetsWon) =
+                previousSets.partition { it.firstParticipantPoints > it.secondParticipantPoints }
+                    .let { it.first.size to it.second.size }
+
+            val (firstParticipantCurrentSetWon, secondParticipantCurrentSetWon) = when (firstParticipantPoints.compareTo(secondParticipantPoints)) {
+                1 -> 1 to 0
+                -1 -> 0 to 1
+                else -> 0 to 0
+            }
+
+            if (firstParticipantPreviousSetsWon + firstParticipantCurrentSetWon == setsToWin || secondParticipantPreviousSetsWon + secondParticipantCurrentSetWon == setsToWin) {
+                val winnerParticipantId =
+                    if (firstParticipantPreviousSetsWon == setsToWin) firstParticipantId else secondParticipantId
+                doublesMatchRepository.updateWinner(matchId = matchId, winnerParticipantId = winnerParticipantId)
+                // матч закончился, вставляем currentServe и currentPlayerToServe, равные null
+                currentServe = null
+                currentPlayerToServe = null
             }
         }
 
@@ -472,20 +501,6 @@ class DoublesMatchService(
         doublesMatchLogRepository.insertMatchLogEvent(doublesMatchLogEvent)
 
         val newLastPointNumber = lastPointNumber + 1
-
-        if (scoreType == ScoreType.SET) {
-            val previousSets = doublesMatchLogRepository.getPreviousSets(matchId, newLastPointNumber)
-
-            val (firstParticipantSetsWon, secondParticipantSetsWon) =
-                previousSets.partition { it.firstParticipantPoints > it.secondParticipantPoints }
-                    .let { it.first.size to it.second.size }
-
-            if (firstParticipantSetsWon == setsToWin || secondParticipantSetsWon == setsToWin) {
-                val winnerParticipantId =
-                    if (firstParticipantSetsWon == setsToWin) firstParticipantId else secondParticipantId
-                doublesMatchRepository.updateWinner(matchId = matchId, winnerParticipantId = winnerParticipantId)
-            }
-        }
 
         val matchDto = buildMatchById(matchId, newLastPointNumber)
 

@@ -108,7 +108,7 @@ class SinglesMatchService(
         val matchEntity = singlesMatchRepository.getMatchById(matchId)
             ?: throw NotFoundException("No match found!")
 
-        // для предыдущих партий всгде возвращаем ORDINARY,здесь нам нужен только сам счет
+        // для предыдущих партий всегда возвращаем ORDINARY, здесь нам нужен только сам счет
         val previousSets =
             singlesMatchLogRepository.getPreviousSets(matchId, lastPointNumber).map { it.toTennisSetDto() }
 
@@ -122,25 +122,20 @@ class SinglesMatchService(
 
         val currentSetMode = calculateCurrentSetMode(currentSetTemplate)
 
-        val firstParticipantId = matchEntity.firstParticipant.id.value
-        val secondParticipantId = matchEntity.secondParticipant.id.value
-
 
         val currentServe = lastPoint?.currentServe ?: matchEntity.firstServe?.id?.value
         val winnerParticipantId = matchEntity.winner?.id?.value
         val firstParticipant = matchEntity.firstParticipant.toDto(
-                displayName = matchEntity.firstParticipantDisplayName,
-                servingParticipantId = currentServe,
-                winningParticipantId = winnerParticipantId
-            )
-            //?: throw NotFoundException("Player with id = $firstParticipantId not found")
+            displayName = matchEntity.firstParticipantDisplayName,
+            servingParticipantId = currentServe,
+            winningParticipantId = winnerParticipantId
+        )
 
         val secondParticipant = matchEntity.secondParticipant.toDto(
-                displayName = matchEntity.secondParticipantDisplayName,
-                servingParticipantId = currentServe,
-                winningParticipantId = winnerParticipantId
-            )
-            //?: throw NotFoundException("Player with id = $secondParticipantId not found")
+            displayName = matchEntity.secondParticipantDisplayName,
+            servingParticipantId = currentServe,
+            winningParticipantId = winnerParticipantId
+        )
 
         val lastGame = singlesMatchLogRepository.getCurrentSet(matchId, setNumber, lastPointNumber)
 
@@ -220,7 +215,7 @@ class SinglesMatchService(
 
         pointNumber++
 
-        var currentServe = lastPoint?.currentServe ?: firstParticipantToServeInMatch
+        var currentServe: Int? = lastPoint?.currentServe ?: firstParticipantToServeInMatch
 
         var firstParticipantPoints = 0
         var secondParticipantPoints = 0
@@ -233,7 +228,7 @@ class SinglesMatchService(
             scoreType = ScoreType.POINT
         }
 
-
+        // после сыгранного сета увеличиваем set_number на 1
         if (lastPoint?.scoreType == ScoreType.SET) {
             setNumber++
         }
@@ -262,8 +257,8 @@ class SinglesMatchService(
 
         val isTiebreakMode = when (currentSetTemplate.tiebreakMode) {
             // пример для сета до 6 геймов
-            // EARLY - когда тайбрейк играется при сете 5-5
-            //LATE - когда тайбрейк играется при сете 6-6
+            // EARLY - когда тай-брейк играется при сете 5-5
+            //LATE - когда тай-брейк играется при сете 6-6
             TiebreakMode.EARLY -> currentSetFirstParticipantPoints == currentSetSecondParticipantPoints
                     && currentSetFirstParticipantPoints == currentSetTemplate.gamesToWin - 1
 
@@ -284,7 +279,11 @@ class SinglesMatchService(
             scoreType = ScoreType.TIEBREAK_POINT
 
             currentServe = when {
-                (firstParticipantPoints + secondParticipantPoints) % 2 == 1 -> calculateNextServe(participantServingOrder,currentServe)
+                (firstParticipantPoints + secondParticipantPoints) % 2 == 1 -> calculateNextServe(
+                    participantServingOrder,
+                    currentServe!! //currentServe = null ТОЛЬКО после окончания матча
+                )
+
                 else -> currentServe
             }
         } else {
@@ -303,9 +302,12 @@ class SinglesMatchService(
 
 
         if ((isFirstParticipantWonGame || isSecondParticipantWonGame) && currentSetMode != SpecialSetMode.SUPER_TIEBREAK) {
-            // для супер-тайбрейка обработка смены подачи ниже, а количество геймов мы не увеличиваем
+            // для супер-тай-брейка обработка смены подачи ниже, а количество геймов мы не увеличиваем
             scoreType = ScoreType.GAME
-            currentServe = calculateNextServe(participantServingOrder,currentServe)
+            currentServe = calculateNextServe(
+                serveOrder = participantServingOrder,
+                currentServe = currentServe!! //currentServe = null ТОЛЬКО после окончания матча
+            )
 
 
             firstParticipantPoints = currentSetFirstParticipantPoints
@@ -334,10 +336,34 @@ class SinglesMatchService(
             scoreType = ScoreType.SET
             if (isTiebreakMode) {
                 currentServe = when {
-                    currentSet != null -> calculateNextServe(participantServingOrder, currentSet.currentServe)
+                    currentSet != null -> calculateNextServe(
+                        serveOrder = participantServingOrder,
+                        currentServe = currentSet.currentServe!! //currentServe = null ТОЛЬКО после окончания матча
+                    )
                     setNumber % 2 == 0 -> secondParticipantToServeInMatch
                     else -> firstParticipantToServeInMatch
                 }
+            }
+        }
+
+        if (scoreType == ScoreType.SET) {
+            val previousSets = singlesMatchLogRepository.getPreviousSets(matchId, lastPointNumber)
+
+            val (firstParticipantPreviousSetsWon, secondParticipantPreviousSetsWon) =
+                previousSets.partition { it.firstParticipantPoints > it.secondParticipantPoints }
+                    .let { it.first.size to it.second.size }
+
+            val (firstParticipantCurrentSetWon, secondParticipantCurrentSetWon) = when (firstParticipantPoints.compareTo(secondParticipantPoints)) {
+                1 -> 1 to 0
+                -1 -> 0 to 1
+                else -> 0 to 0
+            }
+
+            if (firstParticipantPreviousSetsWon + firstParticipantCurrentSetWon == setsToWin || secondParticipantPreviousSetsWon + secondParticipantCurrentSetWon == setsToWin) {
+                val winnerParticipantId =
+                    if (firstParticipantPreviousSetsWon == setsToWin) firstParticipantId else secondParticipantId
+                singlesMatchRepository.updateWinner(matchId = matchId, winnerParticipantId = winnerParticipantId)
+                currentServe = null
             }
         }
 
@@ -353,20 +379,7 @@ class SinglesMatchService(
 
         singlesMatchLogRepository.insertMatchLogEvent(singlesMatchLogEvent)
 
-        val newLastPointNumber = lastPointNumber + 1
-
-        if (scoreType == ScoreType.SET) {
-            val previousSets = singlesMatchLogRepository.getPreviousSets(matchId, newLastPointNumber)
-
-            val (firstParticipantSetsWon, secondParticipantSetsWon) =
-                previousSets.partition { it.firstParticipantPoints > it.secondParticipantPoints }
-                    .let { it.first.size to it.second.size }
-
-            if (firstParticipantSetsWon == setsToWin || secondParticipantSetsWon == setsToWin) {
-                val winnerParticipantId = if (firstParticipantSetsWon == setsToWin) firstParticipantId else secondParticipantId
-                singlesMatchRepository.updateWinner(matchId = matchId, winnerParticipantId = winnerParticipantId)
-            }
-        }
+        val newLastPointNumber = lastPointNumber+1
 
         val matchDto = buildMatchById(matchId, newLastPointNumber)
 

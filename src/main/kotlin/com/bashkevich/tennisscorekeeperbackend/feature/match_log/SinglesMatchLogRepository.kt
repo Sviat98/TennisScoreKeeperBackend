@@ -47,7 +47,7 @@ class SinglesMatchLogRepository {
                 setNumber = it[SinglesMatchLogTable.setNumber],
                 pointNumber = it[SinglesMatchLogTable.pointNumber].value,
                 scoreType = it[SinglesMatchLogTable.scoreType],
-                currentServe = it[SinglesMatchLogTable.currentServe].value,
+                currentServe = it[SinglesMatchLogTable.currentServe]?.value,
                 firstParticipantPoints = it[SinglesMatchLogTable.firstParticipantPoints],
                 secondParticipantPoints = it[SinglesMatchLogTable.secondParticipantPoints]
             )
@@ -70,7 +70,7 @@ class SinglesMatchLogRepository {
                     setNumber = it[SinglesMatchLogTable.setNumber],
                     pointNumber = it[SinglesMatchLogTable.pointNumber].value,
                     scoreType = it[SinglesMatchLogTable.scoreType],
-                    currentServe = it[SinglesMatchLogTable.currentServe].value,
+                    currentServe = it[SinglesMatchLogTable.currentServe]?.value,
                     firstParticipantPoints = it[SinglesMatchLogTable.firstParticipantPoints],
                     secondParticipantPoints = it[SinglesMatchLogTable.secondParticipantPoints]
                 )
@@ -91,7 +91,7 @@ class SinglesMatchLogRepository {
                     setNumber = it[SinglesMatchLogTable.setNumber],
                     pointNumber = it[SinglesMatchLogTable.pointNumber].value,
                     scoreType = it[SinglesMatchLogTable.scoreType],
-                    currentServe = it[SinglesMatchLogTable.currentServe].value,
+                    currentServe = it[SinglesMatchLogTable.currentServe]?.value,
                     firstParticipantPoints = it[SinglesMatchLogTable.firstParticipantPoints],
                     secondParticipantPoints = it[SinglesMatchLogTable.secondParticipantPoints]
                 )

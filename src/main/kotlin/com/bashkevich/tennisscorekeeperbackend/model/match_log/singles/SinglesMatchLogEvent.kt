@@ -17,7 +17,7 @@ data class SinglesMatchLogEvent(
     val setNumber: Int,
     val pointNumber: Int,
     val scoreType: ScoreType,
-    val currentServe: Int,
+    val currentServe: Int?,
     val firstParticipantPoints: Int,
     val secondParticipantPoints: Int
 )

@@ -47,8 +47,8 @@ class DoublesMatchLogRepository {
                 setNumber = it[DoublesMatchLogTable.setNumber],
                 pointNumber = it[DoublesMatchLogTable.pointNumber].value,
                 scoreType = it[DoublesMatchLogTable.scoreType],
-                currentServe = it[DoublesMatchLogTable.currentServe].value,
-                currentServeInPair = it[DoublesMatchLogTable.currentServePlayer].value,
+                currentServe = it[DoublesMatchLogTable.currentServe]?.value,
+                currentServeInPair = it[DoublesMatchLogTable.currentServePlayer]?.value,
                 firstParticipantPoints = it[DoublesMatchLogTable.firstPlayerPoints],
                 secondParticipantPoints = it[DoublesMatchLogTable.secondPlayerPoints]
             )
@@ -71,8 +71,8 @@ class DoublesMatchLogRepository {
                     setNumber = it[DoublesMatchLogTable.setNumber],
                     pointNumber = it[DoublesMatchLogTable.pointNumber].value,
                     scoreType = it[DoublesMatchLogTable.scoreType],
-                    currentServe = it[DoublesMatchLogTable.currentServe].value,
-                    currentServeInPair = it[DoublesMatchLogTable.currentServePlayer].value,
+                    currentServe = it[DoublesMatchLogTable.currentServe]?.value,
+                    currentServeInPair = it[DoublesMatchLogTable.currentServePlayer]?.value,
                     firstParticipantPoints = it[DoublesMatchLogTable.firstPlayerPoints],
                     secondParticipantPoints = it[DoublesMatchLogTable.secondPlayerPoints]
                 )
@@ -93,8 +93,8 @@ class DoublesMatchLogRepository {
                     setNumber = it[DoublesMatchLogTable.setNumber],
                     pointNumber = it[DoublesMatchLogTable.pointNumber].value,
                     scoreType = it[DoublesMatchLogTable.scoreType],
-                    currentServe = it[DoublesMatchLogTable.currentServe].value,
-                    currentServeInPair = it[DoublesMatchLogTable.currentServePlayer].value,
+                    currentServe = it[DoublesMatchLogTable.currentServe]?.value,
+                    currentServeInPair = it[DoublesMatchLogTable.currentServePlayer]?.value,
                     firstParticipantPoints = it[DoublesMatchLogTable.firstPlayerPoints],
                     secondParticipantPoints = it[DoublesMatchLogTable.secondPlayerPoints]
                 )
