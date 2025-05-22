@@ -215,7 +215,7 @@ class SinglesMatchService(
 
         pointNumber++
 
-        var currentServe: Int? = lastPoint?.currentServe ?: firstParticipantToServeInMatch
+        var currentServe = lastPoint?.currentServe ?: firstParticipantToServeInMatch
 
         var firstParticipantPoints = 0
         var secondParticipantPoints = 0
@@ -280,8 +280,8 @@ class SinglesMatchService(
 
             currentServe = when {
                 (firstParticipantPoints + secondParticipantPoints) % 2 == 1 -> calculateNextServe(
-                    participantServingOrder,
-                    currentServe!! //currentServe = null ТОЛЬКО после окончания матча
+                    serveOrder = participantServingOrder,
+                    currentServe = currentServe
                 )
 
                 else -> currentServe
@@ -306,7 +306,7 @@ class SinglesMatchService(
             scoreType = ScoreType.GAME
             currentServe = calculateNextServe(
                 serveOrder = participantServingOrder,
-                currentServe = currentServe!! //currentServe = null ТОЛЬКО после окончания матча
+                currentServe = currentServe
             )
 
 
@@ -345,6 +345,8 @@ class SinglesMatchService(
                 }
             }
         }
+        // чтобы не менять currentServe на Int? ради одного частного случая, создадим новую переменную
+        var currentServeToInsert: Int? = currentServe
 
         if (scoreType == ScoreType.SET) {
             val previousSets = singlesMatchLogRepository.getPreviousSets(matchId, lastPointNumber)
@@ -359,11 +361,15 @@ class SinglesMatchService(
                 else -> 0 to 0
             }
 
-            if (firstParticipantPreviousSetsWon + firstParticipantCurrentSetWon == setsToWin || secondParticipantPreviousSetsWon + secondParticipantCurrentSetWon == setsToWin) {
+            val firstParticipantSetsWon = firstParticipantPreviousSetsWon+firstParticipantCurrentSetWon
+            val secondParticipantSetsWon = secondParticipantPreviousSetsWon+secondParticipantCurrentSetWon
+
+
+            if (firstParticipantSetsWon == setsToWin || secondParticipantSetsWon == setsToWin) {
                 val winnerParticipantId =
-                    if (firstParticipantPreviousSetsWon == setsToWin) firstParticipantId else secondParticipantId
+                    if (firstParticipantSetsWon == setsToWin) firstParticipantId else secondParticipantId
                 singlesMatchRepository.updateWinner(matchId = matchId, winnerParticipantId = winnerParticipantId)
-                currentServe = null
+                currentServeToInsert = null
             }
         }
 
@@ -372,16 +378,14 @@ class SinglesMatchService(
             setNumber = setNumber,
             pointNumber = pointNumber,
             scoreType = scoreType,
-            currentServe = currentServe,
+            currentServe = currentServeToInsert,
             firstParticipantPoints = firstParticipantPoints,
             secondParticipantPoints = secondParticipantPoints
         )
 
         singlesMatchLogRepository.insertMatchLogEvent(singlesMatchLogEvent)
 
-        val newLastPointNumber = lastPointNumber+1
-
-        val matchDto = buildMatchById(matchId, newLastPointNumber)
+        val matchDto = buildMatchById(matchId = matchId,lastPointNumber =  pointNumber)
 
         MatchObserver.notifyChange(matchDto)
     }

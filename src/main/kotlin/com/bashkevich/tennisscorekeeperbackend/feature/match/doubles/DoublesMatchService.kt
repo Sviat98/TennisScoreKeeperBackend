@@ -306,8 +306,8 @@ class DoublesMatchService(
 
         pointNumber++
 
-        var currentServe: Int? = lastPoint?.currentServe ?: firstParticipantToServeInMatch
-        var currentPlayerToServe: Int? = lastPoint?.currentServeInPair ?: firstPlayerToServe
+        var currentServe = lastPoint?.currentServe ?: firstParticipantToServeInMatch
+        var currentPlayerToServe = lastPoint?.currentServeInPair ?: firstPlayerToServe
 
         var firstParticipantPoints = 0
         var secondParticipantPoints = 0
@@ -373,7 +373,7 @@ class DoublesMatchService(
             currentServe = when {
                 (firstParticipantPoints + secondParticipantPoints) % 2 == 1 -> calculateNextServe(
                     serveOrder = participantServingOrder,
-                    currentServe = currentServe!! //currentServe = null ТОЛЬКО после окончания матча
+                    currentServe = currentServe
                 )
 
                 else -> currentServe
@@ -381,7 +381,7 @@ class DoublesMatchService(
             currentPlayerToServe = when {
                 (firstParticipantPoints + secondParticipantPoints) % 2 == 1 -> calculateNextServe(
                     serveOrder = playerServingOrder,
-                    currentServe = currentPlayerToServe!! //currentPlayerToServe = null ТОЛЬКО после окончания матча
+                    currentServe = currentPlayerToServe
                 )
 
                 else -> currentPlayerToServe
@@ -406,11 +406,11 @@ class DoublesMatchService(
             scoreType = ScoreType.GAME
             currentServe = calculateNextServe(
                 serveOrder = participantServingOrder,
-                currentServe = currentServe!! //currentServe = null ТОЛЬКО после окончания матча
+                currentServe = currentServe
             )
             currentPlayerToServe = calculateNextServe(
                 serveOrder = playerServingOrder,
-                currentServe = currentPlayerToServe!! //currentPlayerToServe = null ТОЛЬКО после окончания матча
+                currentServe = currentPlayerToServe
             )
 
             firstParticipantPoints = currentSetFirstParticipantPoints
@@ -462,6 +462,9 @@ class DoublesMatchService(
                 }
             }
         }
+        // чтобы не менять currentServe и currentPlayerToServe на Int? ради одного частного случая, создадим новые переменные
+        var currentServeToInsert : Int? = currentServe
+        var currentServePlayerToInsert : Int? = currentPlayerToServe
 
 
         if (scoreType == ScoreType.SET) {
@@ -471,7 +474,9 @@ class DoublesMatchService(
                 previousSets.partition { it.firstParticipantPoints > it.secondParticipantPoints }
                     .let { it.first.size to it.second.size }
 
-            val (firstParticipantCurrentSetWon, secondParticipantCurrentSetWon) = when (firstParticipantPoints.compareTo(secondParticipantPoints)) {
+            val (firstParticipantCurrentSetWon, secondParticipantCurrentSetWon) = when (firstParticipantPoints.compareTo(
+                secondParticipantPoints
+            )) {
                 1 -> 1 to 0
                 -1 -> 0 to 1
                 else -> 0 to 0
@@ -482,8 +487,8 @@ class DoublesMatchService(
                     if (firstParticipantPreviousSetsWon == setsToWin) firstParticipantId else secondParticipantId
                 doublesMatchRepository.updateWinner(matchId = matchId, winnerParticipantId = winnerParticipantId)
                 // матч закончился, вставляем currentServe и currentPlayerToServe, равные null
-                currentServe = null
-                currentPlayerToServe = null
+                currentServeToInsert = null
+                currentServePlayerToInsert = null
             }
         }
 
@@ -492,17 +497,15 @@ class DoublesMatchService(
             setNumber = setNumber,
             pointNumber = pointNumber,
             scoreType = scoreType,
-            currentServe = currentServe,
-            currentServeInPair = currentPlayerToServe,
+            currentServe = currentServeToInsert,
+            currentServeInPair = currentServePlayerToInsert,
             firstParticipantPoints = firstParticipantPoints,
             secondParticipantPoints = secondParticipantPoints,
         )
 
         doublesMatchLogRepository.insertMatchLogEvent(doublesMatchLogEvent)
 
-        val newLastPointNumber = lastPointNumber + 1
-
-        val matchDto = buildMatchById(matchId, newLastPointNumber)
+        val matchDto = buildMatchById(matchId = matchId, lastPointNumber = pointNumber)
 
         MatchObserver.notifyChange(matchDto)
     }
