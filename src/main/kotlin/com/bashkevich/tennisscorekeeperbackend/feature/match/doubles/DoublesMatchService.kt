@@ -176,8 +176,14 @@ class DoublesMatchService(
             if (firstParticipantToServe == firstParticipantId) matchEntity.firstParticipantFirstServe?.id?.value else
                 matchEntity.secondParticipantFirstServe?.id?.value
 
-        val currentServe = lastPoint?.currentServe ?: firstParticipantToServe
-        val currentPlayerToServe = lastPoint?.currentServeInPair ?: firstPlayerToServe
+        val currentServe = when {
+            lastPoint == null -> matchEntity.firstServe?.id?.value
+            else -> lastPoint.currentServe
+        }
+        val currentPlayerToServe = when {
+            lastPoint == null -> firstPlayerToServe
+            else -> lastPoint.currentServeInPair
+        }
 
         val winnerParticipantId = matchEntity.winner?.id?.value
         val firstParticipant = matchEntity.firstParticipant.toDto(

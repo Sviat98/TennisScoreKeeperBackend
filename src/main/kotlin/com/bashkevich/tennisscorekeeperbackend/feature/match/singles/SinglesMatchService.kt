@@ -122,8 +122,11 @@ class SinglesMatchService(
 
         val currentSetMode = calculateCurrentSetMode(currentSetTemplate)
 
+        val currentServe = when {
+            lastPoint == null -> matchEntity.firstServe?.id?.value
+            else -> lastPoint.currentServe
+        }
 
-        val currentServe = lastPoint?.currentServe ?: matchEntity.firstServe?.id?.value
         val winnerParticipantId = matchEntity.winner?.id?.value
         val firstParticipant = matchEntity.firstParticipant.toDto(
             displayName = matchEntity.firstParticipantDisplayName,
