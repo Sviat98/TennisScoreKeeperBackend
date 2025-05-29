@@ -1,5 +1,6 @@
 package com.bashkevich.tennisscorekeeperbackend.model.player
 
+import kotlinx.datetime.LocalDate
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
@@ -11,6 +12,8 @@ data class PlayerDto(
     val surname: String,
     @SerialName("name")
     val name: String,
+    @SerialName("date_birth")
+    val dateBirth: LocalDate,
 )
 
 @Serializable
@@ -19,6 +22,8 @@ data class PlayerBodyDto(
     val surname: String,
     @SerialName("name")
     val name: String,
+    @SerialName("date_birth")
+    val dateBirth: LocalDate,
 )
 
 //@Serializable
@@ -88,5 +93,6 @@ fun PlayerEntity.toPlayerInDoublesMatchDto(servingPlayerId: Int?): PlayerInMatch
 fun PlayerEntity.toDto() = PlayerDto(
     id = this.id.value.toString(),
     surname = this.surname,
-    name = this.name
+    name = this.name,
+    dateBirth = this.dateBirth
 )

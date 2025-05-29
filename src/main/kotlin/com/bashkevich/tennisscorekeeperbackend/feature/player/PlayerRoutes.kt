@@ -1,8 +1,8 @@
 package com.bashkevich.tennisscorekeeperbackend.feature.player
 
 import com.bashkevich.tennisscorekeeperbackend.model.player.PlayerBodyDto
+import com.bashkevich.tennisscorekeeperbackend.plugins.receiveBodyCatching
 import io.ktor.http.HttpStatusCode
-import io.ktor.server.request.receive
 import io.ktor.server.response.respond
 import io.ktor.server.routing.Route
 import io.ktor.server.routing.application
@@ -15,9 +15,9 @@ fun Route.playerRoutes(){
 
     route("/players") {
         post {
-           val playerBodyDto = call.receive<PlayerBodyDto>()
+           val playerBodyDto = call.receiveBodyCatching<PlayerBodyDto>()
 
-            val newPlayer = playerService.addPlayer(playerSurname = playerBodyDto.surname, playerName = playerBodyDto.name)
+            val newPlayer = playerService.addPlayer(playerBodyDto = playerBodyDto)
 
             call.respond(HttpStatusCode.Created, newPlayer)
         }

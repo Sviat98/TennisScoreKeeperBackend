@@ -41,6 +41,10 @@ dependencies {
     implementation(libs.postgres.driver)
     implementation(libs.ktor.server.netty)
     implementation(libs.logback.classic)
+
+    implementation(libs.dataframe.core)
+    implementation(libs.dataframe.excel)
+
     implementation(libs.ktor.server.config.yaml)
     testImplementation(libs.ktor.server.test.host)
     testImplementation(libs.kotlin.test.junit)
