@@ -3,18 +3,21 @@ package com.bashkevich.tennisscorekeeperbackend.feature.match_log
 import com.bashkevich.tennisscorekeeperbackend.model.match_log.singles.SinglesMatchLogEvent
 import com.bashkevich.tennisscorekeeperbackend.model.match_log.singles.SinglesMatchLogTable
 import com.bashkevich.tennisscorekeeperbackend.model.match.ScoreType
-import org.jetbrains.exposed.sql.SortOrder
-import org.jetbrains.exposed.sql.SqlExpressionBuilder.eq
-import org.jetbrains.exposed.sql.SqlExpressionBuilder.greater
-import org.jetbrains.exposed.sql.and
-import org.jetbrains.exposed.sql.andWhere
-import org.jetbrains.exposed.sql.deleteWhere
-import org.jetbrains.exposed.sql.insert
-import org.jetbrains.exposed.sql.selectAll
+import org.jetbrains.exposed.v1.core.SortOrder
+import org.jetbrains.exposed.v1.core.SqlExpressionBuilder.eq
+import org.jetbrains.exposed.v1.core.SqlExpressionBuilder.greater
+import org.jetbrains.exposed.v1.core.and
+import org.jetbrains.exposed.v1.jdbc.andWhere
+import org.jetbrains.exposed.v1.jdbc.deleteWhere
+import org.jetbrains.exposed.v1.jdbc.insert
+import org.jetbrains.exposed.v1.jdbc.selectAll
+//import org.jetbrains.exposed.v1.r2dbc.Query
+//import org.jetbrains.exposed.v1.r2dbc.selectAll as selectAll2
+
 
 class SinglesMatchLogRepository {
 
-    fun insertMatchLogEvent(
+    suspend fun insertMatchLogEvent(
         singlesMatchLogEvent: SinglesMatchLogEvent,
     ) {
         SinglesMatchLogTable.insert {
@@ -28,7 +31,7 @@ class SinglesMatchLogRepository {
         }
     }
 
-    fun getLastPoint(
+    suspend fun getLastPoint(
         matchId: Int,
         lastPointNumber: Int? = null,
     ): SinglesMatchLogEvent? {
@@ -54,7 +57,7 @@ class SinglesMatchLogRepository {
         }.singleOrNull()
     }
 
-    fun getCurrentSet(
+    suspend fun getCurrentSet(
         matchId: Int,
         setNumber: Int,
         lastPointNumber: Int,
@@ -77,7 +80,30 @@ class SinglesMatchLogRepository {
             }.singleOrNull()
     }
 
-    fun getPreviousSets(
+//    suspend fun getPreviousSets2(
+//        matchId: Int,
+//        lastPointNumber: Int,
+//    ): List<SinglesMatchLogEvent> {
+//        val something = SinglesMatchLogTable.selectAll2()
+//            .where { (SinglesMatchLogTable.matchId eq matchId) and (SinglesMatchLogTable.scoreType eq ScoreType.SET) and (SinglesMatchLogTable.pointNumber lessEq lastPointNumber) }
+//            .orderBy(
+//                SinglesMatchLogTable.setNumber
+//            ).toList().map {
+//                SinglesMatchLogEvent(
+//                    matchId = it[SinglesMatchLogTable.matchId].value,
+//                    setNumber = it[SinglesMatchLogTable.setNumber],
+//                    pointNumber = it[SinglesMatchLogTable.pointNumber].value,
+//                    scoreType = it[SinglesMatchLogTable.scoreType],
+//                    currentServe = it[SinglesMatchLogTable.currentServe]?.value,
+//                    firstParticipantPoints = it[SinglesMatchLogTable.firstParticipantPoints],
+//                    secondParticipantPoints = it[SinglesMatchLogTable.secondParticipantPoints]
+//                )
+//            }
+//
+//        return something
+//    }
+
+    suspend fun getPreviousSets(
         matchId: Int,
         lastPointNumber: Int,
     ): List<SinglesMatchLogEvent> {
@@ -85,7 +111,9 @@ class SinglesMatchLogRepository {
             .where { (SinglesMatchLogTable.matchId eq matchId) and (SinglesMatchLogTable.scoreType eq ScoreType.SET) and (SinglesMatchLogTable.pointNumber lessEq lastPointNumber) }
             .orderBy(
                 SinglesMatchLogTable.setNumber
-            ).map {
+            )
+
+            .map {
                 SinglesMatchLogEvent(
                     matchId = it[SinglesMatchLogTable.matchId].value,
                     setNumber = it[SinglesMatchLogTable.setNumber],
@@ -98,7 +126,7 @@ class SinglesMatchLogRepository {
             }
     }
 
-    fun removeEvents(matchId: Int, pointNumber: Int): Int {
+    suspend fun removeEvents(matchId: Int, pointNumber: Int): Int {
         return SinglesMatchLogTable.deleteWhere { (SinglesMatchLogTable.matchId eq matchId) and (SinglesMatchLogTable.pointNumber greater pointNumber) }
     }
 }

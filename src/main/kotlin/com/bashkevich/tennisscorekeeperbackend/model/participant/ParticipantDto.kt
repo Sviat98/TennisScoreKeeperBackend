@@ -1,11 +1,6 @@
 package com.bashkevich.tennisscorekeeperbackend.model.participant
 
-import com.bashkevich.tennisscorekeeperbackend.model.participant.doubles.DoublesParticipantEntity
-import com.bashkevich.tennisscorekeeperbackend.model.participant.singles.SinglesParticipantEntity
-import com.bashkevich.tennisscorekeeperbackend.model.player.PlayerInMatchDto
-import com.bashkevich.tennisscorekeeperbackend.model.player.toDto
-import com.bashkevich.tennisscorekeeperbackend.model.player.toPlayerInDoublesMatchDto
-import com.bashkevich.tennisscorekeeperbackend.model.player.toPlayerInSinglesMatchDto
+import com.bashkevich.tennisscorekeeperbackend.model.player.PlayerEntity
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
@@ -16,15 +11,6 @@ sealed class ParticipantDto {
 
     @SerialName("seed")
     abstract val seed: Int?
-
-    @SerialName("display_name")
-    abstract val displayName: String
-
-    @SerialName("is_serving")
-    abstract val isServing: Boolean
-
-    @SerialName("is_winner")
-    abstract val isWinner: Boolean
 }
 
 @Serializable
@@ -33,58 +19,23 @@ data class SinglesParticipantDto(
     @SerialName("id")
     override val id: String,
     @SerialName("seed")
-    override val seed: Int? = null,
-    @SerialName("display_name")
-    override val displayName: String,
-    @SerialName("is_serving")
-    override val isServing: Boolean,
-    @SerialName("is_winner")
-    override val isWinner: Boolean,
+    override val seed: Int?,
     @SerialName("player")
-    val player: PlayerInMatchDto,
-) : ParticipantDto()
-
+    val player: PlayerInParticipantDto
+): ParticipantDto()
 
 @Serializable
-@SerialName("doubles_participant")
-data class DoublesParticipantDto(
+data class PlayerInParticipantDto(
     @SerialName("id")
-    override val id: String,
-    @SerialName("seed")
-    override val seed: Int? = null,
-    @SerialName("display_name")
-    override val displayName: String,
-    @SerialName("is_serving")
-    override val isServing: Boolean,
-    @SerialName("is_winner")
-    override val isWinner: Boolean,
-    @SerialName("first_player")
-    val firstPlayer: PlayerInMatchDto,
-    @SerialName("second_player")
-    val secondPlayer: PlayerInMatchDto,
-) : ParticipantDto()
+    val id: String,
+    @SerialName("surname")
+    val surname: String,
+    @SerialName("name")
+    val name: String,
+)
 
-fun SinglesParticipantEntity.toDto(displayName: String, servingParticipantId: Int?, winningParticipantId: Int?): ParticipantDto =
-    SinglesParticipantDto(
-        id = this.id.value.toString(),
-        seed = this.seed,
-        displayName = displayName,
-        isServing = this.id.value == servingParticipantId,
-        isWinner = this.id.value == winningParticipantId,
-        player = this.player.toPlayerInSinglesMatchDto(),
-    )
-
-fun DoublesParticipantEntity.toDto(
-    displayName: String,
-    servingParticipantId: Int?,
-    servingInPairPlayerId: Int?,
-    winningParticipantId: Int?,
-) : ParticipantDto = DoublesParticipantDto(
+fun PlayerEntity.toPlayerInParticipantDto() = PlayerInParticipantDto(
     id = this.id.value.toString(),
-    seed = this.seed,
-    displayName = displayName,
-    isServing = this.id.value == servingParticipantId,
-    isWinner = this.id.value == winningParticipantId,
-    firstPlayer = this.firstPlayer.toPlayerInDoublesMatchDto(servingPlayerId = servingInPairPlayerId),
-    secondPlayer = this.secondPlayer.toPlayerInDoublesMatchDto(servingPlayerId = servingInPairPlayerId)
+    surname = this.surname,
+    name = this.name
 )

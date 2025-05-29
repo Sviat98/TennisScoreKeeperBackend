@@ -5,12 +5,10 @@ import com.bashkevich.tennisscorekeeperbackend.model.participant.singles.Singles
 import com.bashkevich.tennisscorekeeperbackend.model.set_template.SetTemplateTable
 import com.bashkevich.tennisscorekeeperbackend.model.tournament.TournamentTable
 import com.bashkevich.tennisscorekeeperbackend.plugins.MATCH_SEQUENCE
-import com.bashkevich.tennisscorekeeperbackend.plugins.PARTICIPANT_SEQUENCE
-import org.jetbrains.exposed.dao.id.EntityID
-import org.jetbrains.exposed.dao.id.IdTable
-import org.jetbrains.exposed.sql.Column
-import org.jetbrains.exposed.sql.Sequence
-import org.jetbrains.exposed.sql.nextIntVal
+import org.jetbrains.exposed.v1.core.Sequence
+import org.jetbrains.exposed.v1.core.dao.id.IdTable
+import org.jetbrains.exposed.v1.core.nextIntVal
+
 
 object SinglesMatchTable: IdTable<Int>("singles_match"){
     override val id = integer("id").defaultExpression(

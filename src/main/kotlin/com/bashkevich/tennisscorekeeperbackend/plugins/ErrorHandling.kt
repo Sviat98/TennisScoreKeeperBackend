@@ -15,7 +15,7 @@ import io.ktor.server.request.receive
 import io.ktor.server.request.receiveMultipart
 import io.ktor.server.response.respond
 import kotlinx.serialization.SerializationException
-import org.jetbrains.exposed.dao.exceptions.EntityNotFoundException
+import org.jetbrains.exposed.v1.dao.exceptions.EntityNotFoundException
 
 
 fun Application.configureStatusPages(){

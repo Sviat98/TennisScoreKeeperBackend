@@ -12,9 +12,15 @@ import com.bashkevich.tennisscorekeeperbackend.model.player.PlayerTable
 import com.bashkevich.tennisscorekeeperbackend.model.tournament.TournamentTable
 import io.ktor.server.application.*
 import kotlinx.coroutines.Dispatchers
-import org.jetbrains.exposed.sql.*
-import org.jetbrains.exposed.sql.transactions.experimental.newSuspendedTransaction
-import org.jetbrains.exposed.sql.transactions.transaction
+import org.jetbrains.exposed.v1.core.DatabaseConfig
+import org.jetbrains.exposed.v1.core.Schema
+import  org.jetbrains.exposed.v1.core.Sequence;
+import org.jetbrains.exposed.v1.core.StdOutSqlLogger
+import org.jetbrains.exposed.v1.jdbc.Database
+import org.jetbrains.exposed.v1.jdbc.SchemaUtils
+import org.jetbrains.exposed.v1.jdbc.addLogger
+import org.jetbrains.exposed.v1.jdbc.transactions.experimental.newSuspendedTransaction
+import org.jetbrains.exposed.v1.jdbc.transactions.transaction
 
 const val MATCH_SEQUENCE = "match_seq"
 const val PARTICIPANT_SEQUENCE = "participant_seq"
@@ -74,8 +80,11 @@ fun Application.configureDatabase() {
             DoublesParticipantTable, DoublesMatchTable, DoublesMatchLogTable
         )
 
+//        exec("CREATE UNIQUE INDEX idx_singles_participant_tournament_player \n" +
+//                "ON singles_participant (tournament_id, player_id);")
+
         // Создание таблицы в базе данных
-//        SchemaUtils.create(DoublesParticipantTestTable)
+        //SchemaUtils.create(DoublesParticipantTestTable)
 //
 //        println("--- Тестирование upsert с нормализацией порядка ---")
 //
@@ -183,7 +192,7 @@ fun Application.configureDatabase() {
 
 suspend fun isDbConnected(): Boolean {
     return try {
-        newSuspendedTransaction(Dispatchers.IO) {
+        newSuspendedTransaction (Dispatchers.IO) {
             exec("SELECT 1")
             true
         }
@@ -193,7 +202,7 @@ suspend fun isDbConnected(): Boolean {
 }
 
 suspend fun <T> dbQuery(block: suspend () -> T): T =
-    newSuspendedTransaction(Dispatchers.IO) {
+    newSuspendedTransaction (Dispatchers.IO) {
         addLogger(StdOutSqlLogger)
         block()
     }

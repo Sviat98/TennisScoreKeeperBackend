@@ -3,17 +3,17 @@ package com.bashkevich.tennisscorekeeperbackend.feature.match_log
 import com.bashkevich.tennisscorekeeperbackend.model.match.ScoreType
 import com.bashkevich.tennisscorekeeperbackend.model.match_log.doubles.DoublesMatchLogEvent
 import com.bashkevich.tennisscorekeeperbackend.model.match_log.doubles.DoublesMatchLogTable
-import org.jetbrains.exposed.sql.SortOrder
-import org.jetbrains.exposed.sql.SqlExpressionBuilder.eq
-import org.jetbrains.exposed.sql.SqlExpressionBuilder.greater
-import org.jetbrains.exposed.sql.and
-import org.jetbrains.exposed.sql.andWhere
-import org.jetbrains.exposed.sql.deleteWhere
-import org.jetbrains.exposed.sql.insert
-import org.jetbrains.exposed.sql.selectAll
+import org.jetbrains.exposed.v1.core.SortOrder
+import org.jetbrains.exposed.v1.core.SqlExpressionBuilder.eq
+import org.jetbrains.exposed.v1.core.SqlExpressionBuilder.greater
+import org.jetbrains.exposed.v1.core.and
+import org.jetbrains.exposed.v1.jdbc.andWhere
+import org.jetbrains.exposed.v1.jdbc.deleteWhere
+import org.jetbrains.exposed.v1.jdbc.insert
+import org.jetbrains.exposed.v1.jdbc.selectAll
 
 class DoublesMatchLogRepository {
-    fun insertMatchLogEvent(
+    suspend fun insertMatchLogEvent(
         doublesMatchLogEvent: DoublesMatchLogEvent,
     ) {
         DoublesMatchLogTable.insert {
@@ -28,7 +28,7 @@ class DoublesMatchLogRepository {
         }
     }
 
-    fun getLastPoint(
+    suspend fun getLastPoint(
         matchId: Int,
         lastPointNumber: Int? = null,
     ): DoublesMatchLogEvent? {
@@ -55,7 +55,7 @@ class DoublesMatchLogRepository {
         }.singleOrNull()
     }
 
-    fun getCurrentSet(
+    suspend fun getCurrentSet(
         matchId: Int,
         setNumber: Int,
         lastPointNumber: Int,
@@ -79,7 +79,7 @@ class DoublesMatchLogRepository {
             }.singleOrNull()
     }
 
-    fun getPreviousSets(
+    suspend fun getPreviousSets(
         matchId: Int,
         lastPointNumber: Int,
     ): List<DoublesMatchLogEvent> {
@@ -87,7 +87,8 @@ class DoublesMatchLogRepository {
             .where { (DoublesMatchLogTable.matchId eq matchId) and (DoublesMatchLogTable.scoreType eq ScoreType.SET) and (DoublesMatchLogTable.pointNumber lessEq lastPointNumber) }
             .orderBy(
                 DoublesMatchLogTable.setNumber
-            ).map {
+            )
+            .map {
                 DoublesMatchLogEvent(
                     matchId = it[DoublesMatchLogTable.matchId].value,
                     setNumber = it[DoublesMatchLogTable.setNumber],
@@ -101,7 +102,7 @@ class DoublesMatchLogRepository {
             }
     }
 
-    fun removeEvents(matchId: Int, pointNumber: Int): Int {
+    suspend fun removeEvents(matchId: Int, pointNumber: Int): Int {
         return DoublesMatchLogTable.deleteWhere { (DoublesMatchLogTable.matchId eq matchId) and (DoublesMatchLogTable.pointNumber greater pointNumber) }
     }
 }

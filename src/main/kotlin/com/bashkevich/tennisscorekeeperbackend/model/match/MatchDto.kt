@@ -2,7 +2,7 @@ package com.bashkevich.tennisscorekeeperbackend.model.match
 
 import com.bashkevich.tennisscorekeeperbackend.model.match_log.doubles.DoublesMatchLogEvent
 import com.bashkevich.tennisscorekeeperbackend.model.match_log.singles.SinglesMatchLogEvent
-import com.bashkevich.tennisscorekeeperbackend.model.participant.ParticipantDto
+import com.bashkevich.tennisscorekeeperbackend.model.participant.ParticipantInMatchDto
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
@@ -13,9 +13,9 @@ data class MatchDto(
     @SerialName("point_shift")
     val pointShift: Int,
     @SerialName("first_participant")
-    val firstParticipant: ParticipantDto,
+    val firstParticipant: ParticipantInMatchDto,
     @SerialName("second_participant")
-    val secondParticipant: ParticipantDto,
+    val secondParticipant: ParticipantInMatchDto,
     @SerialName("previous_sets")
     val previousSets: List<TennisSetDto>,
     @SerialName("current_set")

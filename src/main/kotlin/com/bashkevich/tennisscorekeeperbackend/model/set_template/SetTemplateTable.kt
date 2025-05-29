@@ -1,6 +1,7 @@
 package com.bashkevich.tennisscorekeeperbackend.model.set_template
 
-import org.jetbrains.exposed.dao.id.IntIdTable
+import org.jetbrains.exposed.v1.core.dao.id.IntIdTable
+
 
 object SetTemplateTable: IntIdTable("set_template") {
     val name = varchar("name",150)

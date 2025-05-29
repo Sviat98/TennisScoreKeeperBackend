@@ -26,20 +26,6 @@ data class PlayerBodyDto(
     val dateBirth: LocalDate,
 )
 
-//@Serializable
-//data class PlayerInMatchDto(
-//    @SerialName("id")
-//    val id: String,
-//    @SerialName("surname")
-//    val surname: String,
-//    @SerialName("name")
-//    val name: String,
-//    @SerialName("is_serving")
-//    val isServing: Boolean,
-//    @SerialName("is_winner")
-//    val isWinner: Boolean,
-//)
-
 @Serializable
 sealed class PlayerInMatchDto {
     @SerialName("id")

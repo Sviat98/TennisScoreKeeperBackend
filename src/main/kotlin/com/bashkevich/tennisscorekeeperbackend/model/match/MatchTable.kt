@@ -2,7 +2,7 @@ package com.bashkevich.tennisscorekeeperbackend.model.match
 
 import com.bashkevich.tennisscorekeeperbackend.model.participant.singles.SinglesParticipantTable
 import com.bashkevich.tennisscorekeeperbackend.model.set_template.SetTemplateTable
-import org.jetbrains.exposed.dao.id.IntIdTable
+import org.jetbrains.exposed.v1.core.dao.id.IntIdTable
 
 abstract class MatchTable(name: String = ""): IntIdTable(name){
     val firstPlayer = reference("first_player_id", SinglesParticipantTable)

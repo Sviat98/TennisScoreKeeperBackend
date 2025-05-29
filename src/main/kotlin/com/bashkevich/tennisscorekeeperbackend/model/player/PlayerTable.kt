@@ -1,8 +1,8 @@
 package com.bashkevich.tennisscorekeeperbackend.model.player
 
-import org.jetbrains.exposed.dao.id.IntIdTable
-import org.jetbrains.exposed.sql.alias
-import org.jetbrains.exposed.sql.kotlin.datetime.date
+import org.jetbrains.exposed.v1.core.dao.id.IntIdTable
+import org.jetbrains.exposed.v1.datetime.date
+
 
 object PlayerTable: IntIdTable("player"){
     val surname = varchar("surname", 50)

@@ -4,9 +4,10 @@ import com.bashkevich.tennisscorekeeperbackend.model.participant.doubles.Doubles
 import com.bashkevich.tennisscorekeeperbackend.model.player.PlayerEntity
 import com.bashkevich.tennisscorekeeperbackend.model.set_template.SetTemplateEntity
 import com.bashkevich.tennisscorekeeperbackend.model.tournament.TournamentEntity
-import org.jetbrains.exposed.dao.IntEntity
-import org.jetbrains.exposed.dao.IntEntityClass
-import org.jetbrains.exposed.dao.id.EntityID
+import org.jetbrains.exposed.v1.core.dao.id.EntityID
+import org.jetbrains.exposed.v1.dao.IntEntity
+import org.jetbrains.exposed.v1.dao.IntEntityClass
+
 
 class DoublesMatchEntity(id: EntityID<Int>) : IntEntity(id) {
     companion object : IntEntityClass<DoublesMatchEntity>(DoublesMatchTable)

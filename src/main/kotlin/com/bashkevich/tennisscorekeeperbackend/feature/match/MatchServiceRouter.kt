@@ -29,6 +29,7 @@ class MatchServiceRouter(
             val shortMatchDto = when (tournament.type){
                 TournamentType.SINGLES -> singlesMatchService.addMatch(tournamentId, matchBody)
                 TournamentType.DOUBLES -> doublesMatchService.addMatch(tournamentId, matchBody)
+                else -> throw IllegalStateException("Unknown tournament type: ${tournament.type}")
             }
             shortMatchDto
         }
@@ -43,6 +44,7 @@ class MatchServiceRouter(
             val shortMatchListDto = when (tournament.type){
                 TournamentType.SINGLES -> singlesMatchService.getMatches(tournamentId)
                 TournamentType.DOUBLES -> doublesMatchService.getMatches(tournamentId)
+                else -> throw IllegalStateException("Unknown tournament type: ${tournament.type}")
             }
             shortMatchListDto
         }
@@ -57,6 +59,7 @@ class MatchServiceRouter(
             val matchDto = when (tournament.type){
                 TournamentType.SINGLES -> singlesMatchService.getMatchById(matchId)
                 TournamentType.DOUBLES -> doublesMatchService.getMatchById(matchId)
+                else -> throw IllegalStateException("Unknown tournament type: ${tournament.type}")
             }
             matchDto
         }
@@ -71,6 +74,7 @@ class MatchServiceRouter(
             when (tournament.type){
                 TournamentType.SINGLES -> singlesMatchService.updateServe(matchId,serveBody)
                 TournamentType.DOUBLES -> doublesMatchService.updateServe(matchId,serveBody)
+                else -> throw IllegalStateException("Unknown tournament type: ${tournament.type}")
             }
         }
     }
@@ -84,6 +88,7 @@ class MatchServiceRouter(
             when (tournament.type){
                 TournamentType.SINGLES -> throw BadRequestException("Choosing serve in pair is not allowed in singles matches")
                 TournamentType.DOUBLES -> doublesMatchService.updateServeInPair(matchId,serveInPairBody)
+                else -> throw IllegalStateException("Unknown tournament type: ${tournament.type}")
             }
         }
     }
@@ -97,6 +102,7 @@ class MatchServiceRouter(
             when (tournament.type){
                 TournamentType.SINGLES -> singlesMatchService.updateScore(matchId,changeScoreBody)
                 TournamentType.DOUBLES -> doublesMatchService.updateScore(matchId,changeScoreBody)
+                else -> throw IllegalStateException("Unknown tournament type: ${tournament.type}")
             }
         }
     }
@@ -110,6 +116,7 @@ class MatchServiceRouter(
             when (tournament.type){
                 TournamentType.SINGLES -> singlesMatchService.undoPoint(matchId)
                 TournamentType.DOUBLES -> doublesMatchService.undoPoint(matchId)
+                else -> throw IllegalStateException("Unknown tournament type: ${tournament.type}")
             }
         }
     }
@@ -123,6 +130,7 @@ class MatchServiceRouter(
             when (tournament.type){
                 TournamentType.SINGLES -> singlesMatchService.redoPoint(matchId)
                 TournamentType.DOUBLES -> doublesMatchService.redoPoint(matchId)
+                else -> throw IllegalStateException("Unknown tournament type: ${tournament.type}")
             }
         }
     }

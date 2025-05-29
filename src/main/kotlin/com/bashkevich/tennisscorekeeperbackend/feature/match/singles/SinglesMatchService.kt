@@ -68,7 +68,7 @@ class SinglesMatchService(
         }
     }
 
-    fun getMatchById(matchId: Int): MatchDto {
+    suspend fun getMatchById(matchId: Int): MatchDto {
         if (matchId == 0) throw BadRequestException("Incorrect id")
         val matchEntity = singlesMatchRepository.getMatchById(matchId)
             ?: throw NotFoundException("No match found!")
@@ -104,7 +104,7 @@ class SinglesMatchService(
         MatchObserver.notifyChange(matchDto)
     }
 
-    private fun buildMatchById(matchId: Int, lastPointNumber: Int): MatchDto {
+    private suspend fun buildMatchById(matchId: Int, lastPointNumber: Int): MatchDto {
         val matchEntity = singlesMatchRepository.getMatchById(matchId)
             ?: throw NotFoundException("No match found!")
 
@@ -435,7 +435,8 @@ class SinglesMatchService(
 
         if (lastPointNumber < 0) throw BadRequestException("Cannot undo the point")
 
-        matchEntity.winner?.let {
+
+        if (matchEntity.winner!=null){
             singlesMatchRepository.updateWinner(matchId = matchId, winnerParticipantId = null)
         }
 

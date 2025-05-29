@@ -3,6 +3,7 @@ package com.bashkevich.tennisscorekeeperbackend.feature.participant
 import com.bashkevich.tennisscorekeeperbackend.feature.participant.doubles.DoublesParticipantService
 import com.bashkevich.tennisscorekeeperbackend.feature.participant.singles.SinglesParticipantService
 import com.bashkevich.tennisscorekeeperbackend.feature.tournament.TournamentRepository
+import com.bashkevich.tennisscorekeeperbackend.model.participant.ParticipantDto
 import com.bashkevich.tennisscorekeeperbackend.model.tournament.TournamentType
 import com.bashkevich.tennisscorekeeperbackend.plugins.dbQuery
 import io.ktor.http.ContentType
@@ -19,8 +20,8 @@ class ParticipantServiceRouter(
     private val singlesParticipantService: SinglesParticipantService,
     private val doublesParticipantService: DoublesParticipantService,
 ) {
-    suspend fun uploadParticipants(tournamentId: Int, fileData: MultiPartData) {
-        dbQuery {
+    suspend fun uploadParticipants(tournamentId: Int, fileData: MultiPartData) : List<ParticipantDto>{
+        return dbQuery {
             if (tournamentId == 0) throw BadRequestException("Wrong format of tournament id")
 
             val tournament = tournamentRepository.getTournamentById(tournamentId)
@@ -31,7 +32,7 @@ class ParticipantServiceRouter(
             if (excelBytes == null)
                 throw BadRequestException("No Excel file found in request or incorrect part name/content type. Please use 'excelFile' as field name and application/vnd.openxmlformats-officedocument.spreadsheetml.sheet as content type.")
 
-            when (tournament.type) {
+            val participants = when (tournament.type) {
                 TournamentType.SINGLES -> {
                     singlesParticipantService.uploadParticipants(tournamentId, excelBytes)
                 }
@@ -40,6 +41,8 @@ class ParticipantServiceRouter(
                     doublesParticipantService.uploadParticipants(tournamentId, excelBytes)
                 }
             }
+
+            participants
         }
 
     }

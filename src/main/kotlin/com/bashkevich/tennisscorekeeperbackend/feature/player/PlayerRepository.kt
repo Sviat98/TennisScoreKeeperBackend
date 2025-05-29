@@ -3,8 +3,8 @@ package com.bashkevich.tennisscorekeeperbackend.feature.player
 import com.bashkevich.tennisscorekeeperbackend.model.player.PlayerEntity
 import com.bashkevich.tennisscorekeeperbackend.model.player.PlayerTable
 import kotlinx.datetime.LocalDate
-import org.jetbrains.exposed.sql.and
-import org.jetbrains.exposed.sql.upperCase
+import org.jetbrains.exposed.v1.core.and
+import org.jetbrains.exposed.v1.core.upperCase
 
 
 class PlayerRepository {

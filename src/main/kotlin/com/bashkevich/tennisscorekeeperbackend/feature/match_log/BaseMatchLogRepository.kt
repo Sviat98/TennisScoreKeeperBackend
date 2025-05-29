@@ -1,7 +1,5 @@
 package com.bashkevich.tennisscorekeeperbackend.feature.match_log
 
-import com.bashkevich.tennisscorekeeperbackend.model.match_log.MatchLogEvent
-import org.jetbrains.exposed.sql.ResultRow
 
 //abstract class BaseMatchLogRepository<T : MatchLogEvent, Table : MatchLogTable>(
 //    private val table: Table,

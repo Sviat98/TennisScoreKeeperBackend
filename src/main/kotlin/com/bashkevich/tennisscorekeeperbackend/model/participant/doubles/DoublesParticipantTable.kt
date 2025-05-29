@@ -3,10 +3,10 @@ package com.bashkevich.tennisscorekeeperbackend.model.participant.doubles
 import com.bashkevich.tennisscorekeeperbackend.model.player.PlayerTable
 import com.bashkevich.tennisscorekeeperbackend.model.tournament.TournamentTable
 import com.bashkevich.tennisscorekeeperbackend.plugins.PARTICIPANT_SEQUENCE
-import org.jetbrains.exposed.dao.id.IdTable
+import org.jetbrains.exposed.v1.core.Sequence
+import org.jetbrains.exposed.v1.core.dao.id.IdTable
+import org.jetbrains.exposed.v1.core.nextIntVal
 
-import org.jetbrains.exposed.sql.Sequence
-import org.jetbrains.exposed.sql.nextIntVal
 
 object DoublesParticipantTable: IdTable<Int>("doubles_participant") {
     override val id = integer("id").defaultExpression(

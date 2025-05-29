@@ -1,6 +1,7 @@
 package com.bashkevich.tennisscorekeeperbackend.model.tournament
 
-import org.jetbrains.exposed.dao.id.IntIdTable
+import org.jetbrains.exposed.v1.core.dao.id.IntIdTable
+
 
 object TournamentTable : IntIdTable("tournament") {
     val name = varchar("name",50)

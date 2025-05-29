@@ -2,16 +2,14 @@ package com.bashkevich.tennisscorekeeperbackend.model.match.doubles
 
 import com.bashkevich.tennisscorekeeperbackend.model.match.MatchStatus
 import com.bashkevich.tennisscorekeeperbackend.model.participant.doubles.DoublesParticipantTable
-import com.bashkevich.tennisscorekeeperbackend.model.participant.singles.SinglesParticipantTable
 import com.bashkevich.tennisscorekeeperbackend.model.player.PlayerTable
 import com.bashkevich.tennisscorekeeperbackend.model.set_template.SetTemplateTable
 import com.bashkevich.tennisscorekeeperbackend.model.tournament.TournamentTable
 import com.bashkevich.tennisscorekeeperbackend.plugins.MATCH_SEQUENCE
-import org.jetbrains.exposed.dao.id.IdTable
-import org.jetbrains.exposed.dao.id.IntIdTable
-import org.jetbrains.exposed.sql.Sequence
-import org.jetbrains.exposed.sql.Table
-import org.jetbrains.exposed.sql.nextIntVal
+import org.jetbrains.exposed.v1.core.Sequence
+import org.jetbrains.exposed.v1.core.dao.id.IdTable
+import org.jetbrains.exposed.v1.core.nextIntVal
+
 
 object DoublesMatchTable : IdTable<Int>("doubles_match") {
     override val id = integer("id").defaultExpression(

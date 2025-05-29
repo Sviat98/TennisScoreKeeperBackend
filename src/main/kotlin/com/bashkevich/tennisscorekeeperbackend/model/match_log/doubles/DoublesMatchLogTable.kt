@@ -4,7 +4,7 @@ import com.bashkevich.tennisscorekeeperbackend.model.match.ScoreType
 import com.bashkevich.tennisscorekeeperbackend.model.match.doubles.DoublesMatchTable
 import com.bashkevich.tennisscorekeeperbackend.model.participant.doubles.DoublesParticipantTable
 import com.bashkevich.tennisscorekeeperbackend.model.player.PlayerTable
-import org.jetbrains.exposed.dao.id.CompositeIdTable
+import org.jetbrains.exposed.v1.core.dao.id.CompositeIdTable
 
 object DoublesMatchLogTable : CompositeIdTable("doubles_match_log") {
     val matchId = reference("match_id", DoublesMatchTable)

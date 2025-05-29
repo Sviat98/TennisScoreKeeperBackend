@@ -68,7 +68,7 @@ class DoublesMatchService(
         }
     }
 
-    fun getMatchById(matchId: Int): MatchDto {
+    suspend fun getMatchById(matchId: Int): MatchDto {
         if (matchId == 0) throw BadRequestException("Incorrect id")
         val matchEntity = doublesMatchRepository.getMatchById(matchId)
             ?: throw NotFoundException("No match found!")
@@ -151,7 +151,7 @@ class DoublesMatchService(
         MatchObserver.notifyChange(matchDto)
     }
 
-    private fun buildMatchById(matchId: Int, lastPointNumber: Int): MatchDto {
+    private suspend fun buildMatchById(matchId: Int, lastPointNumber: Int): MatchDto {
         val matchEntity = doublesMatchRepository.getMatchById(matchId)
             ?: throw NotFoundException("No match found!")
 

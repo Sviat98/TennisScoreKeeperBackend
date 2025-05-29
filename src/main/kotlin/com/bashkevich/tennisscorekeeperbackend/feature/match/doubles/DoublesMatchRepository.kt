@@ -4,12 +4,12 @@ import com.bashkevich.tennisscorekeeperbackend.model.match.MatchBody
 import com.bashkevich.tennisscorekeeperbackend.model.match.MatchStatus
 import com.bashkevich.tennisscorekeeperbackend.model.match.doubles.DoublesMatchEntity
 import com.bashkevich.tennisscorekeeperbackend.model.match.doubles.DoublesMatchTable
-import com.bashkevich.tennisscorekeeperbackend.model.match.singles.SinglesMatchTable
-import org.jetbrains.exposed.sql.insertAndGetId
-import org.jetbrains.exposed.sql.update
+import org.jetbrains.exposed.v1.jdbc.insertAndGetId
+import org.jetbrains.exposed.v1.jdbc.update
+
 
 class DoublesMatchRepository {
-    fun addMatch(tournamentId: Int,matchBody: MatchBody) = DoublesMatchTable.insertAndGetId {
+    suspend fun addMatch(tournamentId: Int,matchBody: MatchBody) = DoublesMatchTable.insertAndGetId {
         it[tournament] = tournamentId
         it[firstParticipant] = matchBody.firstParticipant.id.toInt()
         it[firstParticipantDisplayName] = matchBody.firstParticipant.displayName
@@ -27,27 +27,27 @@ class DoublesMatchRepository {
 
     fun getMatchById(id: Int) = DoublesMatchEntity.findById(id)
 
-    fun updateServe(matchId: Int, firstServeParticipantId: Int) =
+    suspend fun updateServe(matchId: Int, firstServeParticipantId: Int) =
         DoublesMatchTable.update({ DoublesMatchTable.id eq matchId }) {
             it[firstServe] = firstServeParticipantId
         }
 
-    fun updateServeInFirstPair(matchId: Int, firstServePlayerId: Int) =
+    suspend fun updateServeInFirstPair(matchId: Int, firstServePlayerId: Int) =
         DoublesMatchTable.update({ DoublesMatchTable.id eq matchId }) {
             it[firstServeInFirstPair] = firstServePlayerId
         }
 
-    fun updateServeInSecondPair(matchId: Int, firstServePlayerId: Int) =
+    suspend fun updateServeInSecondPair(matchId: Int, firstServePlayerId: Int) =
         DoublesMatchTable.update({ DoublesMatchTable.id eq matchId }) {
             it[firstServeInSecondPair] = firstServePlayerId
         }
 
-    fun updatePointShift(matchId: Int, newPointShift: Int) =
+    suspend fun updatePointShift(matchId: Int, newPointShift: Int) =
         DoublesMatchTable.update({ DoublesMatchTable.id eq matchId }) {
             it[pointShift] = newPointShift
         }
 
-    fun updateWinner(matchId: Int, winnerParticipantId: Int?) =
+    suspend fun updateWinner(matchId: Int, winnerParticipantId: Int?) =
         DoublesMatchTable.update({ DoublesMatchTable.id eq matchId }) {
             it[winner] = winnerParticipantId
         }
