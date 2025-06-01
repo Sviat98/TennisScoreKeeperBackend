@@ -5,28 +5,14 @@ import com.bashkevich.tennisscorekeeperbackend.model.participant.singles.Singles
 import org.jetbrains.exposed.v1.jdbc.upsert
 
 class SinglesParticipantRepository {
-//    fun upsertParticipant(tournamentId: Int, playerSeed: Int?, playerId: Int){
-//        SinglesParticipantTable.upsert(
-//            SinglesParticipantTable.tournament,
-//            SinglesParticipantTable.player,
-//            onUpdate = {updateStatement ->
-//                        updateStatement[seed] = playerSeed
-//            }
-//        ){
-//            it[tournament] = tournamentId
-//            it[seed] = playerSeed
-//            it[player] = playerId
-//        }
-//
-//    }
 
-    fun upsertParticipant(tournamentId: Int, playerSeed: Int?, playerId: Int): Int {
+    fun upsertParticipant(tournamentId: Int, participantSeed: Int?, playerId: Int): Int {
         return SinglesParticipantTable.upsert(
             SinglesParticipantTable.tournament, SinglesParticipantTable.player,
-            onUpdate = {listOf(SinglesParticipantTable.seed to playerSeed)}
+            onUpdate = {listOf(SinglesParticipantTable.seed to participantSeed)}
         ){
             it[tournament] = tournamentId
-            it[seed] = playerSeed
+            it[seed] = participantSeed
             it[player] = playerId
         }[SinglesParticipantTable.id].value
     }

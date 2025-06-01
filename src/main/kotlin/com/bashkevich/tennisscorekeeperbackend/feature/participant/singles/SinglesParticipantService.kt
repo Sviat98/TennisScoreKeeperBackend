@@ -41,7 +41,7 @@ class SinglesParticipantService(
                 seed = index + 1
             }
 
-            val participantId = singlesParticipantRepository.upsertParticipant(tournamentId = tournamentId,playerSeed = seed, playerId = player.id.value)
+            val participantId = singlesParticipantRepository.upsertParticipant(tournamentId = tournamentId,participantSeed = seed, playerId = player.id.value)
 
             val registeredParticipant = SinglesParticipantDto(participantId.toString(),seed, player.toPlayerInParticipantDto())
 

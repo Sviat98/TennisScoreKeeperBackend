@@ -78,12 +78,19 @@ fun DoublesParticipantEntity.toDto(
     servingParticipantId: Int?,
     servingInPairPlayerId: Int?,
     winningParticipantId: Int?,
-) : ParticipantInMatchDto = DoublesParticipantInMatchDto(
-    id = this.id.value.toString(),
-    seed = this.seed,
-    displayName = displayName,
-    isServing = this.id.value == servingParticipantId,
-    isWinner = this.id.value == winningParticipantId,
-    firstPlayer = this.firstPlayer.toPlayerInDoublesMatchDto(servingPlayerId = servingInPairPlayerId),
-    secondPlayer = this.secondPlayer.toPlayerInDoublesMatchDto(servingPlayerId = servingInPairPlayerId)
-)
+) : ParticipantInMatchDto {
+
+    val firstPlayerInBaseDto = this.firstPlayer.toPlayerInDoublesMatchDto(servingPlayerId = servingInPairPlayerId)
+    val secondPlayerInBaseDto = this.secondPlayer.toPlayerInDoublesMatchDto(servingPlayerId = servingInPairPlayerId)
+
+    val saveOrderAtDisplay = this.saveOrderAtDisplay
+    return DoublesParticipantInMatchDto(
+        id = this.id.value.toString(),
+        seed = this.seed,
+        displayName = displayName,
+        isServing = this.id.value == servingParticipantId,
+        isWinner = this.id.value == winningParticipantId,
+        firstPlayer = if (saveOrderAtDisplay) firstPlayerInBaseDto else secondPlayerInBaseDto,
+        secondPlayer = if (saveOrderAtDisplay) secondPlayerInBaseDto else firstPlayerInBaseDto,
+    )
+}

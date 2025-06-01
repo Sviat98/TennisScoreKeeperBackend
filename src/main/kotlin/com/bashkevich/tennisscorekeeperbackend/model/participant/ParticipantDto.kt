@@ -25,6 +25,19 @@ data class SinglesParticipantDto(
 ): ParticipantDto()
 
 @Serializable
+@SerialName("doubles_participant")
+data class DoublesParticipantDto(
+    @SerialName("id")
+    override val id: String,
+    @SerialName("seed")
+    override val seed: Int?,
+    @SerialName("first_player")
+    val firstPlayer: PlayerInParticipantDto,
+    @SerialName("second_player")
+    val secondPlayer: PlayerInParticipantDto
+): ParticipantDto()
+
+@Serializable
 data class PlayerInParticipantDto(
     @SerialName("id")
     val id: String,
