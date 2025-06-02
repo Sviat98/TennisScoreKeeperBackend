@@ -18,6 +18,8 @@ class TournamentRepository {
             status = TournamentStatus.NOT_STARTED
         }
 
+    fun getTournaments() = TournamentEntity.all().sortedBy { it.id.value }
+
     fun getTournamentById(id: Int) = TournamentEntity.findById(id)
 
     fun getTournamentByMatchId(matchId: Int): TournamentEntity? {

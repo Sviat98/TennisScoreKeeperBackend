@@ -6,6 +6,7 @@ import io.ktor.http.HttpStatusCode
 import io.ktor.server.response.respond
 import io.ktor.server.routing.Route
 import io.ktor.server.routing.application
+import io.ktor.server.routing.get
 import io.ktor.server.routing.post
 import io.ktor.server.routing.route
 import org.koin.ktor.ext.inject
@@ -14,12 +15,17 @@ fun Route.tournamentRoutes(){
     val tournamentService by application.inject<TournamentService>()
 
     route("/tournaments"){
+        get {
+            val tournaments = tournamentService.getTournaments()
+
+            call.respond(tournaments)
+        }
         post {
             val tournamentRequestDto = call.receiveBodyCatching<TournamentRequestDto>()
 
             val newTournament = tournamentService.addTournament(tournamentRequestDto = tournamentRequestDto)
 
-            call.respond(HttpStatusCode.Created, newTournament)
+            call.respond(status = HttpStatusCode.Created, message = newTournament)
         }
     }
 }
