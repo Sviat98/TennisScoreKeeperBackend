@@ -63,7 +63,7 @@ data class DoublesParticipantInMatchDto(
     val secondPlayer: PlayerInMatchDto,
 ) : ParticipantInMatchDto()
 
-fun SinglesParticipantEntity.toDto(displayName: String, servingParticipantId: Int?, winningParticipantId: Int?): ParticipantInMatchDto =
+fun SinglesParticipantEntity.toParticipantInMatchDto(displayName: String, servingParticipantId: Int?, winningParticipantId: Int?): ParticipantInMatchDto =
     SinglesParticipantInMatchDto(
         id = this.id.value.toString(),
         seed = this.seed,
@@ -73,7 +73,7 @@ fun SinglesParticipantEntity.toDto(displayName: String, servingParticipantId: In
         player = this.player.toPlayerInSinglesMatchDto(),
     )
 
-fun DoublesParticipantEntity.toDto(
+fun DoublesParticipantEntity.toParticipantInMatchDto(
     displayName: String,
     servingParticipantId: Int?,
     servingInPairPlayerId: Int?,

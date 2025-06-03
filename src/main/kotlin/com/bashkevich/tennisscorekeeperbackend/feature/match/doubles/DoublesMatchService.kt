@@ -19,7 +19,7 @@ import com.bashkevich.tennisscorekeeperbackend.model.match.toShortMatchDto
 import com.bashkevich.tennisscorekeeperbackend.model.match.toTennisGameDto
 import com.bashkevich.tennisscorekeeperbackend.model.match.toTennisSetDto
 import com.bashkevich.tennisscorekeeperbackend.model.match_log.doubles.DoublesMatchLogEvent
-import com.bashkevich.tennisscorekeeperbackend.model.participant.toDto
+import com.bashkevich.tennisscorekeeperbackend.model.participant.toParticipantInMatchDto
 import com.bashkevich.tennisscorekeeperbackend.model.set_template.SetTemplateEntity
 import com.bashkevich.tennisscorekeeperbackend.model.set_template.TiebreakMode
 import com.bashkevich.tennisscorekeeperbackend.plugins.validateBody
@@ -186,14 +186,14 @@ class DoublesMatchService(
         }
 
         val winnerParticipantId = matchEntity.winner?.id?.value
-        val firstParticipant = matchEntity.firstParticipant.toDto(
+        val firstParticipant = matchEntity.firstParticipant.toParticipantInMatchDto(
             displayName = matchEntity.firstParticipantDisplayName,
             servingParticipantId = currentServe,
             servingInPairPlayerId = currentPlayerToServe,
             winningParticipantId = winnerParticipantId
         )
 
-        val secondParticipant = matchEntity.secondParticipant.toDto(
+        val secondParticipant = matchEntity.secondParticipant.toParticipantInMatchDto(
             displayName = matchEntity.secondParticipantDisplayName,
             servingParticipantId = currentServe,
             servingInPairPlayerId = currentPlayerToServe,

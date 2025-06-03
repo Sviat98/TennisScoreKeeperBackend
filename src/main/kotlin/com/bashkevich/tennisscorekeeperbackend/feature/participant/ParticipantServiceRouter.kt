@@ -47,6 +47,26 @@ class ParticipantServiceRouter(
 
     }
 
+    suspend fun getParticipantsByTournament(tournamentId: Int) : List<ParticipantDto>{
+        return dbQuery {
+            if (tournamentId == 0) throw BadRequestException("Wrong format of tournament id")
+
+            val tournament = tournamentRepository.getTournamentById(tournamentId)
+                ?: throw NotFoundException("No tournament found by that id")
+
+            val participants = when (tournament.type) {
+                TournamentType.SINGLES -> {
+                    singlesParticipantService.getParticipantsByTournament(tournamentId)
+                }
+
+                TournamentType.DOUBLES -> {
+                    doublesParticipantService.getParticipantsByTournament(tournamentId)
+                }
+            }
+
+            participants
+        }
+    }
 
     private suspend fun loadExcelBytesFromMultipart(fileData: MultiPartData): ByteArray? {
         var excelBytes: ByteArray? = null
@@ -71,5 +91,7 @@ class ParticipantServiceRouter(
 
         return excelBytes
     }
+
+
 
 }

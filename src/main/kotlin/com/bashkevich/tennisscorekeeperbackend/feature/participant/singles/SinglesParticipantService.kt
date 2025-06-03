@@ -4,6 +4,7 @@ import com.bashkevich.tennisscorekeeperbackend.feature.player.PlayerRepository
 import com.bashkevich.tennisscorekeeperbackend.model.participant.ParticipantDto
 import com.bashkevich.tennisscorekeeperbackend.model.participant.SinglesParticipantDto
 import com.bashkevich.tennisscorekeeperbackend.model.participant.singles.SinglesParticipantExcel
+import com.bashkevich.tennisscorekeeperbackend.model.participant.toDto
 import com.bashkevich.tennisscorekeeperbackend.model.participant.toPlayerInParticipantDto
 import com.bashkevich.tennisscorekeeperbackend.model.player.PlayerExcel
 import io.ktor.server.plugins.BadRequestException
@@ -18,6 +19,13 @@ class SinglesParticipantService(
     private val playerRepository: PlayerRepository,
     private val singlesParticipantRepository: SinglesParticipantRepository,
 ) {
+
+    fun getParticipantsByTournament(tournamentId: Int) : List<ParticipantDto> {
+        val participants = singlesParticipantRepository.getParticipantsByTournament(tournamentId = tournamentId).map { it.toDto() }
+
+        return participants
+    }
+
     suspend fun uploadParticipants(tournamentId: Int, excelBytes: ByteArray): List<ParticipantDto> {
         val (numberOfSeededParticipants, participants) = parseParticipantListFromBytes(excelBytes)
 

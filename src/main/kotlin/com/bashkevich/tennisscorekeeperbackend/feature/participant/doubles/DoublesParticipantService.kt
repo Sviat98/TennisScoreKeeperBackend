@@ -4,6 +4,7 @@ import com.bashkevich.tennisscorekeeperbackend.feature.player.PlayerRepository
 import com.bashkevich.tennisscorekeeperbackend.model.participant.DoublesParticipantDto
 import com.bashkevich.tennisscorekeeperbackend.model.participant.ParticipantDto
 import com.bashkevich.tennisscorekeeperbackend.model.participant.doubles.DoublesParticipantExcel
+import com.bashkevich.tennisscorekeeperbackend.model.participant.toDto
 import com.bashkevich.tennisscorekeeperbackend.model.participant.toPlayerInParticipantDto
 import com.bashkevich.tennisscorekeeperbackend.model.player.PlayerExcel
 import io.ktor.server.plugins.BadRequestException
@@ -13,12 +14,20 @@ import org.jetbrains.kotlinx.dataframe.api.first
 import org.jetbrains.kotlinx.dataframe.api.map
 import org.jetbrains.kotlinx.dataframe.io.readExcel
 import java.io.ByteArrayInputStream
+import kotlin.collections.map
 
 
 class DoublesParticipantService(
     private val playerRepository: PlayerRepository,
     private val doublesParticipantRepository: DoublesParticipantRepository,
 ) {
+    fun getParticipantsByTournament(tournamentId: Int) : List<ParticipantDto> {
+        val participants = doublesParticipantRepository.getParticipantsByTournament(tournamentId = tournamentId).map { it.toDto() }
+
+        println(participants)
+        return participants
+    }
+
     suspend fun uploadParticipants(tournamentId: Int, excelBytes: ByteArray): List<ParticipantDto> {
         val (numberOfSeededParticipants, participants) = parseParticipantListFromBytes(excelBytes)
 
