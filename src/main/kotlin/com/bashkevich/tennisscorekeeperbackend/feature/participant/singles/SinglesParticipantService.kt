@@ -22,6 +22,8 @@ class SinglesParticipantService(
         val (numberOfSeededParticipants, participants) = parseParticipantListFromBytes(excelBytes)
 
         val registeredParticipants = mutableListOf<ParticipantDto>()
+        val registeredParticipantIds = mutableListOf<Int>()
+
 
         participants.forEachIndexed { index, participant ->
             var seed: Int? = null
@@ -43,10 +45,17 @@ class SinglesParticipantService(
 
             val participantId = singlesParticipantRepository.upsertParticipant(tournamentId = tournamentId,participantSeed = seed, playerId = player.id.value)
 
+            registeredParticipantIds.add(participantId)
+
             val registeredParticipant = SinglesParticipantDto(participantId.toString(),seed, player.toPlayerInParticipantDto())
 
             registeredParticipants.add(registeredParticipant)
         }
+
+        singlesParticipantRepository.deleteUnnecessaryParticipants(
+            tournamentId = tournamentId,
+            registeredParticipantIds = registeredParticipantIds.toList()
+        )
 
         return registeredParticipants
     }

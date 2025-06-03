@@ -2,6 +2,10 @@ package com.bashkevich.tennisscorekeeperbackend.feature.participant.doubles
 
 import com.bashkevich.tennisscorekeeperbackend.model.participant.doubles.DoublesParticipantEntity
 import com.bashkevich.tennisscorekeeperbackend.model.participant.doubles.DoublesParticipantTable
+import org.jetbrains.exposed.v1.core.SqlExpressionBuilder.eq
+import org.jetbrains.exposed.v1.core.SqlExpressionBuilder.notInList
+import org.jetbrains.exposed.v1.core.and
+import org.jetbrains.exposed.v1.jdbc.deleteWhere
 import org.jetbrains.exposed.v1.jdbc.upsert
 
 class DoublesParticipantRepository {
@@ -19,4 +23,8 @@ class DoublesParticipantRepository {
         }
 
         fun getParticipantById(participantId: Int) = DoublesParticipantEntity.findById(participantId)
+
+        fun deleteUnnecessaryParticipants(tournamentId: Int, registeredParticipantIds: List<Int>) {
+                DoublesParticipantTable.deleteWhere { (DoublesParticipantTable.tournament eq tournamentId) and (DoublesParticipantTable.id notInList registeredParticipantIds)}
+        }
 }

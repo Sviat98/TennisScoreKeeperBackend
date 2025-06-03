@@ -23,6 +23,7 @@ class DoublesParticipantService(
         val (numberOfSeededParticipants, participants) = parseParticipantListFromBytes(excelBytes)
 
         val registeredParticipants = mutableListOf<ParticipantDto>()
+        val registeredParticipantIds = mutableListOf<Int>()
 
         participants.forEachIndexed { index, participant ->
             var seed: Int? = null
@@ -77,9 +78,14 @@ class DoublesParticipantService(
                     firstPlayer = firstPlayerInitial.toPlayerInParticipantDto(),
                     secondPlayer = secondPlayerInitial.toPlayerInParticipantDto()
                 )
-
+            registeredParticipantIds.add(participantId)
             registeredParticipants.add(registeredParticipant)
         }
+
+        doublesParticipantRepository.deleteUnnecessaryParticipants(
+            tournamentId = tournamentId,
+            registeredParticipantIds = registeredParticipantIds.toList()
+        )
 
         return registeredParticipants
     }
