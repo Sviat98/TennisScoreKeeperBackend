@@ -206,16 +206,13 @@ class DoublesMatchService(
             currentSetMode == SpecialSetMode.SUPER_TIEBREAK -> TennisSetDto(
                 firstParticipantGames = lastPoint?.firstParticipantPoints ?: 0,
                 secondParticipantGames = lastPoint?.secondParticipantPoints ?: 0,
-                specialSetMode = currentSetMode
             )
             // берем счет с последнего гейма, если первый гейм и начат, то выводим 0:0,
             // если первый розыгрыш - то ничего не выводим
             else -> lastGame?.toTennisSetDto(
-                specialSetMode = currentSetMode
             ) ?: if (lastPoint?.scoreType == ScoreType.POINT) TennisSetDto(
                 firstParticipantGames = 0,
                 secondParticipantGames = 0,
-                specialSetMode = currentSetMode
             ) else null
         }
 
@@ -232,6 +229,7 @@ class DoublesMatchService(
             secondParticipant = secondParticipant,
             previousSets = previousSets,
             currentSet = currentSet,
+            currentSetMode = currentSetMode,
             currentGame = currentGame
         )
 
