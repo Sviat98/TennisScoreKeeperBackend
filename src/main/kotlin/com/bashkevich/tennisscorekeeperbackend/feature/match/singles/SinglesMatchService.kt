@@ -11,7 +11,6 @@ import com.bashkevich.tennisscorekeeperbackend.model.match.ScoreType
 import com.bashkevich.tennisscorekeeperbackend.model.match.ServeBody
 import com.bashkevich.tennisscorekeeperbackend.model.match.ShortMatchDto
 import com.bashkevich.tennisscorekeeperbackend.model.match.SpecialSetMode
-import com.bashkevich.tennisscorekeeperbackend.model.match.TennisGameDto
 import com.bashkevich.tennisscorekeeperbackend.model.match.TennisSetDto
 import com.bashkevich.tennisscorekeeperbackend.model.match.singles.SinglesMatchEntity
 import com.bashkevich.tennisscorekeeperbackend.model.match.toShortMatchDto
@@ -143,23 +142,27 @@ class SinglesMatchService(
         val lastGame = singlesMatchLogRepository.getCurrentSet(matchId, setNumber, lastPointNumber)
 
         val currentSet = when {
-            lastPoint?.scoreType == ScoreType.SET -> TennisSetDto(0, 0, currentSetMode)
+            lastPoint?.scoreType == ScoreType.SET -> null
             currentSetMode == SpecialSetMode.SUPER_TIEBREAK -> TennisSetDto(
                 firstParticipantGames = lastPoint?.firstParticipantPoints ?: 0,
                 secondParticipantGames = lastPoint?.secondParticipantPoints ?: 0,
                 specialSetMode = currentSetMode
             )
-
+            // берем счет с последнего гейма, если первый гейм и начат, то выводим 0:0,
+            // если первый розыгрыш - то ничего не выводим
             else -> lastGame?.toTennisSetDto(
                 specialSetMode = currentSetMode
-            )
-                ?: TennisSetDto(firstParticipantGames = 0, secondParticipantGames = 0, specialSetMode = currentSetMode)
+            ) ?: if (lastPoint?.scoreType == ScoreType.POINT) TennisSetDto(
+                firstParticipantGames = 0,
+                secondParticipantGames = 0,
+                specialSetMode = currentSetMode
+            ) else null
         }
 
         val currentGame = when {
-            currentSetMode == SpecialSetMode.SUPER_TIEBREAK -> TennisGameDto("0", "0")
-            lastPoint?.scoreType in listOf(ScoreType.GAME, ScoreType.SET) -> TennisGameDto("0", "0")
-            else -> lastPoint?.toTennisGameDto() ?: TennisGameDto("0", "0")
+            currentSetMode == SpecialSetMode.SUPER_TIEBREAK -> null
+            lastPoint?.scoreType in listOf(ScoreType.GAME, ScoreType.SET) -> null
+            else -> lastPoint?.toTennisGameDto()
         }
 
         val matchDto = MatchDto(
@@ -343,6 +346,7 @@ class SinglesMatchService(
                         serveOrder = participantServingOrder,
                         currentServe = currentSet.currentServe!! //currentServe = null ТОЛЬКО после окончания матча
                     )
+
                     setNumber % 2 == 0 -> secondParticipantToServeInMatch
                     else -> firstParticipantToServeInMatch
                 }
@@ -358,14 +362,16 @@ class SinglesMatchService(
                 previousSets.partition { it.firstParticipantPoints > it.secondParticipantPoints }
                     .let { it.first.size to it.second.size }
 
-            val (firstParticipantCurrentSetWon, secondParticipantCurrentSetWon) = when (firstParticipantPoints.compareTo(secondParticipantPoints)) {
+            val (firstParticipantCurrentSetWon, secondParticipantCurrentSetWon) = when (firstParticipantPoints.compareTo(
+                secondParticipantPoints
+            )) {
                 1 -> 1 to 0
                 -1 -> 0 to 1
                 else -> 0 to 0
             }
 
-            val firstParticipantSetsWon = firstParticipantPreviousSetsWon+firstParticipantCurrentSetWon
-            val secondParticipantSetsWon = secondParticipantPreviousSetsWon+secondParticipantCurrentSetWon
+            val firstParticipantSetsWon = firstParticipantPreviousSetsWon + firstParticipantCurrentSetWon
+            val secondParticipantSetsWon = secondParticipantPreviousSetsWon + secondParticipantCurrentSetWon
 
 
             if (firstParticipantSetsWon == setsToWin || secondParticipantSetsWon == setsToWin) {
@@ -388,7 +394,7 @@ class SinglesMatchService(
 
         singlesMatchLogRepository.insertMatchLogEvent(singlesMatchLogEvent)
 
-        val matchDto = buildMatchById(matchId = matchId,lastPointNumber =  pointNumber)
+        val matchDto = buildMatchById(matchId = matchId, lastPointNumber = pointNumber)
 
         MatchObserver.notifyChange(matchDto)
     }
@@ -436,7 +442,7 @@ class SinglesMatchService(
         if (lastPointNumber < 0) throw BadRequestException("Cannot undo the point")
 
 
-        if (matchEntity.winner!=null){
+        if (matchEntity.winner != null) {
             singlesMatchRepository.updateWinner(matchId = matchId, winnerParticipantId = null)
         }
 

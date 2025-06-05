@@ -12,7 +12,6 @@ import com.bashkevich.tennisscorekeeperbackend.model.match.ServeBody
 import com.bashkevich.tennisscorekeeperbackend.model.match.ServeInPairBody
 import com.bashkevich.tennisscorekeeperbackend.model.match.ShortMatchDto
 import com.bashkevich.tennisscorekeeperbackend.model.match.SpecialSetMode
-import com.bashkevich.tennisscorekeeperbackend.model.match.TennisGameDto
 import com.bashkevich.tennisscorekeeperbackend.model.match.TennisSetDto
 import com.bashkevich.tennisscorekeeperbackend.model.match.doubles.DoublesMatchEntity
 import com.bashkevich.tennisscorekeeperbackend.model.match.toShortMatchDto
@@ -203,23 +202,27 @@ class DoublesMatchService(
         val lastGame = doublesMatchLogRepository.getCurrentSet(matchId, setNumber, lastPointNumber)
 
         val currentSet = when {
-            lastPoint?.scoreType == ScoreType.SET -> TennisSetDto(0, 0, currentSetMode)
+            lastPoint?.scoreType == ScoreType.SET -> null
             currentSetMode == SpecialSetMode.SUPER_TIEBREAK -> TennisSetDto(
                 firstParticipantGames = lastPoint?.firstParticipantPoints ?: 0,
                 secondParticipantGames = lastPoint?.secondParticipantPoints ?: 0,
                 specialSetMode = currentSetMode
             )
-
+            // берем счет с последнего гейма, если первый гейм и начат, то выводим 0:0,
+            // если первый розыгрыш - то ничего не выводим
             else -> lastGame?.toTennisSetDto(
                 specialSetMode = currentSetMode
-            )
-                ?: TennisSetDto(firstParticipantGames = 0, secondParticipantGames = 0, specialSetMode = currentSetMode)
+            ) ?: if (lastPoint?.scoreType == ScoreType.POINT) TennisSetDto(
+                firstParticipantGames = 0,
+                secondParticipantGames = 0,
+                specialSetMode = currentSetMode
+            ) else null
         }
 
         val currentGame = when {
-            currentSetMode == SpecialSetMode.SUPER_TIEBREAK -> TennisGameDto("0", "0")
-            lastPoint?.scoreType in listOf(ScoreType.GAME, ScoreType.SET) -> TennisGameDto("0", "0")
-            else -> lastPoint?.toTennisGameDto() ?: TennisGameDto("0", "0")
+            currentSetMode == SpecialSetMode.SUPER_TIEBREAK -> null
+            lastPoint?.scoreType in listOf(ScoreType.GAME, ScoreType.SET) -> null
+            else -> lastPoint?.toTennisGameDto()
         }
 
         val matchDto = MatchDto(
