@@ -65,6 +65,14 @@ suspend inline fun ApplicationCall.receiveMultipartCatching(): MultiPartData {
     }
 }
 
+inline fun <reified T : Enum<T>> String.parseEnumSafe(): T {
+    return try {
+        enumValueOf<T>(this)
+    } catch (e: IllegalArgumentException) {
+        throw BadRequestException("Error processing value $this for enum class ${T::class.simpleName}")
+    }
+}
+
 suspend inline fun ApplicationCall.respondWithMessageBody(
     statusCode: HttpStatusCode = HttpStatusCode.OK,
     message: String,
