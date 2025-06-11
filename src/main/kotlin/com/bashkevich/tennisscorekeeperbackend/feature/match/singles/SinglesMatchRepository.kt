@@ -130,4 +130,10 @@ class SinglesMatchRepository {
         SinglesMatchTable.update({ SinglesMatchTable.id eq matchId }) {
             it[winner] = winnerParticipantId
         }
+
+    suspend fun updateStatus(matchId: Int, matchStatus: MatchStatus) {
+        SinglesMatchTable.update({ SinglesMatchTable.id eq matchId }) {
+            it[status] = matchStatus
+        }
+    }
 }

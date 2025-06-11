@@ -3,7 +3,6 @@ package com.bashkevich.tennisscorekeeperbackend.model.match
 import com.bashkevich.tennisscorekeeperbackend.model.match.doubles.DoublesMatchEntity
 import com.bashkevich.tennisscorekeeperbackend.model.match.singles.SinglesMatchEntity
 import com.bashkevich.tennisscorekeeperbackend.model.participant.ParticipantInShortMatchDto
-import com.bashkevich.tennisscorekeeperbackend.model.participant.singles.SinglesParticipantEntity
 import com.bashkevich.tennisscorekeeperbackend.model.participant.toShortMatchParticipantDto
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
@@ -18,6 +17,8 @@ data class ShortMatchDto(
     val secondParticipant: ParticipantInShortMatchDto,
     @SerialName("status")
     val status: MatchStatus,
+    @SerialName("previous_sets")
+    val finalScore: List<TennisSetDto>,
 )
 
 @Serializable
@@ -32,18 +33,20 @@ data class PlayerInShortMatchDto(
     val winner: Boolean,
 )
 
-fun DoublesMatchEntity.toShortMatchDto() = ShortMatchDto(
+fun DoublesMatchEntity.toShortMatchDto(finalScore: List<TennisSetDto> = emptyList()) = ShortMatchDto(
     id = this.id.toString(),
     firstParticipant = this.firstParticipant.toShortMatchParticipantDto(winningParticipantId = this.winner?.id?.value),
     secondParticipant = this.secondParticipant.toShortMatchParticipantDto(winningParticipantId = this.winner?.id?.value),
-    status = this.status
+    status = this.status,
+    finalScore = finalScore
 )
 
-fun SinglesMatchEntity.toShortMatchDto() = ShortMatchDto(
+fun SinglesMatchEntity.toShortMatchDto(finalScore: List<TennisSetDto> = emptyList()) = ShortMatchDto(
     id = this.id.toString(),
     firstParticipant = this.firstParticipant.toShortMatchParticipantDto(winningParticipantId = this.winner?.id?.value),
     secondParticipant = this.secondParticipant.toShortMatchParticipantDto(winningParticipantId = this.winner?.id?.value),
-    status = this.status
+    status = this.status,
+    finalScore = finalScore
 )
 
 //fun PlayerInShortMatchEntity.toDto(winnerPlayerId: Int?) = PlayerInShortMatchDto(

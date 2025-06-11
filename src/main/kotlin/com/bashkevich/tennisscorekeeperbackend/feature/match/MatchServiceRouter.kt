@@ -6,6 +6,7 @@ import com.bashkevich.tennisscorekeeperbackend.feature.tournament.TournamentRepo
 import com.bashkevich.tennisscorekeeperbackend.model.match.ChangeScoreBody
 import com.bashkevich.tennisscorekeeperbackend.model.match.MatchBody
 import com.bashkevich.tennisscorekeeperbackend.model.match.MatchDto
+import com.bashkevich.tennisscorekeeperbackend.model.match.MatchStatusBody
 import com.bashkevich.tennisscorekeeperbackend.model.match.ServeBody
 import com.bashkevich.tennisscorekeeperbackend.model.match.ServeInPairBody
 import com.bashkevich.tennisscorekeeperbackend.model.match.ShortMatchDto
@@ -130,6 +131,20 @@ class MatchServiceRouter(
             when (tournament.type){
                 TournamentType.SINGLES -> singlesMatchService.redoPoint(matchId)
                 TournamentType.DOUBLES -> doublesMatchService.redoPoint(matchId)
+                else -> throw IllegalStateException("Unknown tournament type: ${tournament.type}")
+            }
+        }
+    }
+
+    suspend fun updateMatchStatus(matchId: Int, matchStatusBody: MatchStatusBody) {
+        dbQuery {
+            if (matchId == 0) throw BadRequestException("Wrong format of match id")
+            val tournament = tournamentRepository.getTournamentByMatchId(matchId)
+                ?: throw NotFoundException("No tournament found by that id")
+
+            when (tournament.type){
+                TournamentType.SINGLES -> singlesMatchService.updateMatchStatus(matchId, matchStatusBody)
+                TournamentType.DOUBLES -> doublesMatchService.updateMatchStatus(matchId, matchStatusBody)
                 else -> throw IllegalStateException("Unknown tournament type: ${tournament.type}")
             }
         }

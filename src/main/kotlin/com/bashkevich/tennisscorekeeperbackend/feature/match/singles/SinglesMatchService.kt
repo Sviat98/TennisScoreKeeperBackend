@@ -7,6 +7,8 @@ import com.bashkevich.tennisscorekeeperbackend.feature.set_template.SetTemplateR
 import com.bashkevich.tennisscorekeeperbackend.model.match.ChangeScoreBody
 import com.bashkevich.tennisscorekeeperbackend.model.match.MatchBody
 import com.bashkevich.tennisscorekeeperbackend.model.match.MatchDto
+import com.bashkevich.tennisscorekeeperbackend.model.match.MatchStatus
+import com.bashkevich.tennisscorekeeperbackend.model.match.MatchStatusBody
 import com.bashkevich.tennisscorekeeperbackend.model.match.ScoreType
 import com.bashkevich.tennisscorekeeperbackend.model.match.ServeBody
 import com.bashkevich.tennisscorekeeperbackend.model.match.ShortMatchDto
@@ -61,9 +63,16 @@ class SinglesMatchService(
         return shortMatchDto!!.toShortMatchDto()
     }
 
-    fun getMatches(tournamentId: Int): List<ShortMatchDto> {
+    suspend fun getMatches(tournamentId: Int): List<ShortMatchDto> {
         return singlesMatchRepository.getMatches(tournamentId).map { matchEntity ->
-            matchEntity.toShortMatchDto()
+
+            val previousSets = if (matchEntity.status == MatchStatus.COMPLETED) {
+                singlesMatchLogRepository.getPreviousSets(
+                    matchId = matchEntity.id.value,
+                    lastPointNumber = Int.MAX_VALUE
+                ).map { it.toTennisSetDto() }
+            } else emptyList()
+            matchEntity.toShortMatchDto(finalScore = previousSets)
         }
     }
 
@@ -188,6 +197,10 @@ class SinglesMatchService(
         validateBody(changeScoreBody) {
             if (scoringParticipantId !in listOf(firstParticipantId, secondParticipantId))
                 "Scoring player id is not in match" else ""
+        }
+
+        if (matchEntity.status!= MatchStatus.IN_PROGRESS){
+            throw BadRequestException("Cannot update score. The match is not in progress")
         }
 
         val firstParticipantToServeInMatch = matchEntity.firstServe!!.id.value
@@ -489,6 +502,45 @@ class SinglesMatchService(
         }
 
         val matchDto = buildMatchById(matchId, lastPointNumber)
+
+        MatchObserver.notifyChange(matchDto)
+    }
+
+    suspend fun updateMatchStatus(matchId: Int, matchStatusBody: MatchStatusBody) {
+        if (matchId == 0) throw BadRequestException("Incorrect id")
+
+        val matchEntity =
+            singlesMatchRepository.getMatchById(matchId) ?: throw NotFoundException("No match found!")
+
+        val newStatus = matchStatusBody.status
+        validateBody(matchStatusBody) {
+            val currentStatus = matchEntity.status
+
+            val winnerParticipantId = matchEntity.winner
+
+            val firstServeParticipant = matchEntity.firstServe
+
+            when {
+                (currentStatus == MatchStatus.NOT_STARTED && newStatus == MatchStatus.IN_PROGRESS) -> {
+                    if (firstServeParticipant == null) {
+                        "Cannot update status to $newStatus: No first serve is set"
+                    } else ""
+                }
+
+                (currentStatus == MatchStatus.IN_PROGRESS && newStatus == MatchStatus.COMPLETED) -> {
+                    if (winnerParticipantId == null) {
+                        "Cannot update status to $newStatus: There is no winner in match yet"
+                    } else ""
+                }
+
+                else -> "Cannot update status from $currentStatus to $newStatus"
+            }
+        }
+
+        singlesMatchRepository.updateStatus(matchId = matchId, matchStatus = newStatus)
+
+
+        val matchDto = buildMatchById(matchId, Int.MAX_VALUE)
 
         MatchObserver.notifyChange(matchDto)
     }

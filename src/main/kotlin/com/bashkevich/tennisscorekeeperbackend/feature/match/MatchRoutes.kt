@@ -4,6 +4,7 @@ import com.bashkevich.tennisscorekeeperbackend.feature.match.websocket.MatchConn
 import com.bashkevich.tennisscorekeeperbackend.feature.match.websocket.MatchObserver
 import com.bashkevich.tennisscorekeeperbackend.model.match.ChangeScoreBody
 import com.bashkevich.tennisscorekeeperbackend.model.match.MatchBody
+import com.bashkevich.tennisscorekeeperbackend.model.match.MatchStatusBody
 import com.bashkevich.tennisscorekeeperbackend.model.match.ServeBody
 import com.bashkevich.tennisscorekeeperbackend.model.match.ServeInPairBody
 import com.bashkevich.tennisscorekeeperbackend.plugins.receiveBodyCatching
@@ -127,6 +128,15 @@ fun Route.matchRoutes(){
                 matchServiceRouter.updateServeInPair(matchId,serveInPairBody)
 
                 call.respondWithMessageBody(message ="Successfully chose first serve in pair")
+            }
+            patch("/status"){
+                val matchId = call.pathParameters["id"]?.toIntOrNull() ?: 0
+
+                val matchStatusBody = call.receiveBodyCatching<MatchStatusBody>()
+
+                matchServiceRouter.updateMatchStatus(matchId,matchStatusBody)
+
+                call.respondWithMessageBody(message ="Successfully updated status to ${matchStatusBody.status}")
             }
             patch("/score"){
                 val matchId = call.pathParameters["id"]?.toIntOrNull() ?: 0
