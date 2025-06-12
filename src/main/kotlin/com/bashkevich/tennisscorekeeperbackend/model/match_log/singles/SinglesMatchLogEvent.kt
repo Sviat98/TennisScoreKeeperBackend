@@ -1,6 +1,6 @@
 package com.bashkevich.tennisscorekeeperbackend.model.match_log.singles
 
-import com.bashkevich.tennisscorekeeperbackend.model.match.ScoreType
+import com.bashkevich.tennisscorekeeperbackend.model.match.body.ScoreType
 
 //data class SinglesMatchLogEvent(
 //    override val matchId: Int,

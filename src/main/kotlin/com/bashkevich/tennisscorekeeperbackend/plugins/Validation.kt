@@ -1,8 +1,8 @@
 package com.bashkevich.tennisscorekeeperbackend.plugins
 
-import com.bashkevich.tennisscorekeeperbackend.model.match.ChangeScoreBody
+import com.bashkevich.tennisscorekeeperbackend.model.match.body.ChangeScoreBody
 import com.bashkevich.tennisscorekeeperbackend.model.match.MatchBody
-import com.bashkevich.tennisscorekeeperbackend.model.match.ScoreType
+import com.bashkevich.tennisscorekeeperbackend.model.match.body.ScoreType
 import io.ktor.server.application.Application
 import io.ktor.server.application.install
 import io.ktor.server.plugins.BadRequestException

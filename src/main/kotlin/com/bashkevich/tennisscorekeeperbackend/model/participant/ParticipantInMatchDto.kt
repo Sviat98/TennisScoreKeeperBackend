@@ -28,7 +28,7 @@ sealed class ParticipantInMatchDto {
 
 @Serializable
 @SerialName("singles_participant")
-data class SinglesParticipantInMatchDto(
+data class ParticipantInSinglesMatchDto(
     @SerialName("id")
     override val id: String,
     @SerialName("seed")
@@ -46,7 +46,7 @@ data class SinglesParticipantInMatchDto(
 
 @Serializable
 @SerialName("doubles_participant")
-data class DoublesParticipantInMatchDto(
+data class ParticipantInDoublesMatchDto(
     @SerialName("id")
     override val id: String,
     @SerialName("seed")
@@ -64,7 +64,7 @@ data class DoublesParticipantInMatchDto(
 ) : ParticipantInMatchDto()
 
 fun SinglesParticipantEntity.toParticipantInMatchDto(displayName: String, servingParticipantId: Int?, winningParticipantId: Int?): ParticipantInMatchDto =
-    SinglesParticipantInMatchDto(
+    ParticipantInSinglesMatchDto(
         id = this.id.value.toString(),
         seed = this.seed,
         displayName = displayName,
@@ -84,7 +84,7 @@ fun DoublesParticipantEntity.toParticipantInMatchDto(
     val secondPlayerInBaseDto = this.secondPlayer.toPlayerInDoublesMatchDto(servingPlayerId = servingInPairPlayerId)
 
     val saveOrderAtDisplay = this.saveOrderAtDisplay
-    return DoublesParticipantInMatchDto(
+    return ParticipantInDoublesMatchDto(
         id = this.id.value.toString(),
         seed = this.seed,
         displayName = displayName,

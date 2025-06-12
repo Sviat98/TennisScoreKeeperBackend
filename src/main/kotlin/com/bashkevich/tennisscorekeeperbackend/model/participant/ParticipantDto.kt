@@ -2,7 +2,8 @@ package com.bashkevich.tennisscorekeeperbackend.model.participant
 
 import com.bashkevich.tennisscorekeeperbackend.model.participant.doubles.DoublesParticipantEntity
 import com.bashkevich.tennisscorekeeperbackend.model.participant.singles.SinglesParticipantEntity
-import com.bashkevich.tennisscorekeeperbackend.model.player.PlayerEntity
+import com.bashkevich.tennisscorekeeperbackend.model.player.PlayerInParticipantDto
+import com.bashkevich.tennisscorekeeperbackend.model.player.toPlayerInParticipantDto
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
@@ -55,19 +56,3 @@ fun DoublesParticipantEntity.toDto(): ParticipantDto {
         secondPlayer = if (saveOrderAtDisplay) secondPlayerInBaseDto else firstPlayerInBaseDto,
     )
 }
-
-@Serializable
-data class PlayerInParticipantDto(
-    @SerialName("id")
-    val id: String,
-    @SerialName("surname")
-    val surname: String,
-    @SerialName("name")
-    val name: String,
-)
-
-fun PlayerEntity.toPlayerInParticipantDto() = PlayerInParticipantDto(
-    id = this.id.value.toString(),
-    surname = this.surname,
-    name = this.name
-)

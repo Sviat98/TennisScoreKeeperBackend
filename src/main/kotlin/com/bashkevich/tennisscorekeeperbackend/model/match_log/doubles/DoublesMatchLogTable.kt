@@ -1,6 +1,6 @@
 package com.bashkevich.tennisscorekeeperbackend.model.match_log.doubles
 
-import com.bashkevich.tennisscorekeeperbackend.model.match.ScoreType
+import com.bashkevich.tennisscorekeeperbackend.model.match.body.ScoreType
 import com.bashkevich.tennisscorekeeperbackend.model.match.doubles.DoublesMatchTable
 import com.bashkevich.tennisscorekeeperbackend.model.participant.doubles.DoublesParticipantTable
 import com.bashkevich.tennisscorekeeperbackend.model.player.PlayerTable

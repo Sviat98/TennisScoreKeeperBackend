@@ -4,13 +4,13 @@ import com.bashkevich.tennisscorekeeperbackend.feature.match.websocket.MatchObse
 import com.bashkevich.tennisscorekeeperbackend.feature.match_log.SinglesMatchLogRepository
 import com.bashkevich.tennisscorekeeperbackend.feature.participant.singles.SinglesParticipantRepository
 import com.bashkevich.tennisscorekeeperbackend.feature.set_template.SetTemplateRepository
-import com.bashkevich.tennisscorekeeperbackend.model.match.ChangeScoreBody
+import com.bashkevich.tennisscorekeeperbackend.model.match.body.ChangeScoreBody
 import com.bashkevich.tennisscorekeeperbackend.model.match.MatchBody
 import com.bashkevich.tennisscorekeeperbackend.model.match.MatchDto
 import com.bashkevich.tennisscorekeeperbackend.model.match.MatchStatus
-import com.bashkevich.tennisscorekeeperbackend.model.match.MatchStatusBody
-import com.bashkevich.tennisscorekeeperbackend.model.match.ScoreType
-import com.bashkevich.tennisscorekeeperbackend.model.match.ServeBody
+import com.bashkevich.tennisscorekeeperbackend.model.match.body.MatchStatusBody
+import com.bashkevich.tennisscorekeeperbackend.model.match.body.ScoreType
+import com.bashkevich.tennisscorekeeperbackend.model.match.body.ServeBody
 import com.bashkevich.tennisscorekeeperbackend.model.match.ShortMatchDto
 import com.bashkevich.tennisscorekeeperbackend.model.match.SpecialSetMode
 import com.bashkevich.tennisscorekeeperbackend.model.match.TennisSetDto
@@ -175,6 +175,7 @@ class SinglesMatchService(
             pointShift = matchEntity.pointShift,
             firstParticipant = firstParticipant,
             secondParticipant = secondParticipant,
+            status = matchEntity.status,
             previousSets = previousSets,
             currentSet = currentSet,
             currentSetMode = currentSetMode,

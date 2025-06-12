@@ -5,8 +5,8 @@ import com.bashkevich.tennisscorekeeperbackend.model.participant.DoublesParticip
 import com.bashkevich.tennisscorekeeperbackend.model.participant.ParticipantDto
 import com.bashkevich.tennisscorekeeperbackend.model.participant.doubles.DoublesParticipantExcel
 import com.bashkevich.tennisscorekeeperbackend.model.participant.toDto
-import com.bashkevich.tennisscorekeeperbackend.model.participant.toPlayerInParticipantDto
 import com.bashkevich.tennisscorekeeperbackend.model.player.PlayerExcel
+import com.bashkevich.tennisscorekeeperbackend.model.player.toPlayerInParticipantDto
 import io.ktor.server.plugins.BadRequestException
 import kotlinx.datetime.LocalDateTime
 import org.jetbrains.kotlinx.dataframe.DataFrame

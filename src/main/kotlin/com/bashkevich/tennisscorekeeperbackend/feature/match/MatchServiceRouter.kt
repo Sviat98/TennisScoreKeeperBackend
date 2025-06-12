@@ -3,12 +3,12 @@ package com.bashkevich.tennisscorekeeperbackend.feature.match
 import com.bashkevich.tennisscorekeeperbackend.feature.match.doubles.DoublesMatchService
 import com.bashkevich.tennisscorekeeperbackend.feature.match.singles.SinglesMatchService
 import com.bashkevich.tennisscorekeeperbackend.feature.tournament.TournamentRepository
-import com.bashkevich.tennisscorekeeperbackend.model.match.ChangeScoreBody
+import com.bashkevich.tennisscorekeeperbackend.model.match.body.ChangeScoreBody
 import com.bashkevich.tennisscorekeeperbackend.model.match.MatchBody
 import com.bashkevich.tennisscorekeeperbackend.model.match.MatchDto
-import com.bashkevich.tennisscorekeeperbackend.model.match.MatchStatusBody
-import com.bashkevich.tennisscorekeeperbackend.model.match.ServeBody
-import com.bashkevich.tennisscorekeeperbackend.model.match.ServeInPairBody
+import com.bashkevich.tennisscorekeeperbackend.model.match.body.MatchStatusBody
+import com.bashkevich.tennisscorekeeperbackend.model.match.body.ServeBody
+import com.bashkevich.tennisscorekeeperbackend.model.match.body.ServeInPairBody
 import com.bashkevich.tennisscorekeeperbackend.model.match.ShortMatchDto
 import com.bashkevich.tennisscorekeeperbackend.model.tournament.TournamentType
 import com.bashkevich.tennisscorekeeperbackend.plugins.dbQuery

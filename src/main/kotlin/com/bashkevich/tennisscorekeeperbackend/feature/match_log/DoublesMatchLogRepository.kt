@@ -1,6 +1,6 @@
 package com.bashkevich.tennisscorekeeperbackend.feature.match_log
 
-import com.bashkevich.tennisscorekeeperbackend.model.match.ScoreType
+import com.bashkevich.tennisscorekeeperbackend.model.match.body.ScoreType
 import com.bashkevich.tennisscorekeeperbackend.model.match_log.doubles.DoublesMatchLogEvent
 import com.bashkevich.tennisscorekeeperbackend.model.match_log.doubles.DoublesMatchLogTable
 import org.jetbrains.exposed.v1.core.SortOrder

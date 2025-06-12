@@ -1,6 +1,6 @@
 package com.bashkevich.tennisscorekeeperbackend.model.match_log.singles
 
-import com.bashkevich.tennisscorekeeperbackend.model.match.ScoreType
+import com.bashkevich.tennisscorekeeperbackend.model.match.body.ScoreType
 import com.bashkevich.tennisscorekeeperbackend.model.match.singles.SinglesMatchTable
 import com.bashkevich.tennisscorekeeperbackend.model.participant.singles.SinglesParticipantTable
 import org.jetbrains.exposed.v1.core.dao.id.CompositeIdTable

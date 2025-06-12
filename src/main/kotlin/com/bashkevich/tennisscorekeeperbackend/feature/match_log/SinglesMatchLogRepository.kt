@@ -2,7 +2,7 @@ package com.bashkevich.tennisscorekeeperbackend.feature.match_log
 
 import com.bashkevich.tennisscorekeeperbackend.model.match_log.singles.SinglesMatchLogEvent
 import com.bashkevich.tennisscorekeeperbackend.model.match_log.singles.SinglesMatchLogTable
-import com.bashkevich.tennisscorekeeperbackend.model.match.ScoreType
+import com.bashkevich.tennisscorekeeperbackend.model.match.body.ScoreType
 import org.jetbrains.exposed.v1.core.SortOrder
 import org.jetbrains.exposed.v1.core.SqlExpressionBuilder.eq
 import org.jetbrains.exposed.v1.core.SqlExpressionBuilder.greater

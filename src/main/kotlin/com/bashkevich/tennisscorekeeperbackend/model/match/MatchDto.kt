@@ -1,5 +1,6 @@
 package com.bashkevich.tennisscorekeeperbackend.model.match
 
+import com.bashkevich.tennisscorekeeperbackend.model.match.body.ScoreType
 import com.bashkevich.tennisscorekeeperbackend.model.match_log.doubles.DoublesMatchLogEvent
 import com.bashkevich.tennisscorekeeperbackend.model.match_log.singles.SinglesMatchLogEvent
 import com.bashkevich.tennisscorekeeperbackend.model.participant.ParticipantInMatchDto
@@ -16,6 +17,8 @@ data class MatchDto(
     val firstParticipant: ParticipantInMatchDto,
     @SerialName("second_participant")
     val secondParticipant: ParticipantInMatchDto,
+    @SerialName("status")
+    val status: MatchStatus,
     @SerialName("previous_sets")
     val previousSets: List<TennisSetDto>,
     @SerialName("current_set")

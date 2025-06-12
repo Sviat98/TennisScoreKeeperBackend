@@ -2,11 +2,11 @@ package com.bashkevich.tennisscorekeeperbackend.feature.match
 
 import com.bashkevich.tennisscorekeeperbackend.feature.match.websocket.MatchConnectionManager
 import com.bashkevich.tennisscorekeeperbackend.feature.match.websocket.MatchObserver
-import com.bashkevich.tennisscorekeeperbackend.model.match.ChangeScoreBody
+import com.bashkevich.tennisscorekeeperbackend.model.match.body.ChangeScoreBody
 import com.bashkevich.tennisscorekeeperbackend.model.match.MatchBody
-import com.bashkevich.tennisscorekeeperbackend.model.match.MatchStatusBody
-import com.bashkevich.tennisscorekeeperbackend.model.match.ServeBody
-import com.bashkevich.tennisscorekeeperbackend.model.match.ServeInPairBody
+import com.bashkevich.tennisscorekeeperbackend.model.match.body.MatchStatusBody
+import com.bashkevich.tennisscorekeeperbackend.model.match.body.ServeBody
+import com.bashkevich.tennisscorekeeperbackend.model.match.body.ServeInPairBody
 import com.bashkevich.tennisscorekeeperbackend.plugins.receiveBodyCatching
 import com.bashkevich.tennisscorekeeperbackend.plugins.respondWithMessageBody
 import io.ktor.http.HttpStatusCode

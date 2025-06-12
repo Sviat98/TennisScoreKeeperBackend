@@ -2,8 +2,8 @@ package com.bashkevich.tennisscorekeeperbackend.model.participant
 
 import com.bashkevich.tennisscorekeeperbackend.model.participant.doubles.DoublesParticipantEntity
 import com.bashkevich.tennisscorekeeperbackend.model.participant.singles.SinglesParticipantEntity
-import com.bashkevich.tennisscorekeeperbackend.model.player.PlayerDto
-import com.bashkevich.tennisscorekeeperbackend.model.player.toDto
+import com.bashkevich.tennisscorekeeperbackend.model.player.PlayerInParticipantDto
+import com.bashkevich.tennisscorekeeperbackend.model.player.toPlayerInParticipantDto
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
@@ -19,7 +19,7 @@ sealed class ParticipantInShortMatchDto{
 
 @Serializable
 @SerialName("singles_participant")
-data class ShortMatchSinglesParticipantDto(
+data class ParticipantInShortSinglesMatchDto(
     @SerialName("id")
     override val id: String,
     @SerialName("seed")
@@ -27,12 +27,12 @@ data class ShortMatchSinglesParticipantDto(
     @SerialName("is_winner")
     override val isWinner: Boolean,
     @SerialName("player")
-    val player: PlayerDto
+    val player: PlayerInParticipantDto
 ) : ParticipantInShortMatchDto()
 
 @Serializable
 @SerialName("doubles_participant")
-data class ShortMatchDoublesParticipantDto(
+data class ParticipantInShortDoublesMatchDto(
     @SerialName("id")
     override val id: String,
     @SerialName("seed")
@@ -40,22 +40,22 @@ data class ShortMatchDoublesParticipantDto(
     @SerialName("is_winner")
     override val isWinner: Boolean,
     @SerialName("first_player")
-    val firstPlayer: PlayerDto,
+    val firstPlayer: PlayerInParticipantDto,
     @SerialName("second_player")
-    val secondPlayer: PlayerDto,
+    val secondPlayer: PlayerInParticipantDto,
 ) : ParticipantInShortMatchDto()
 
-fun SinglesParticipantEntity.toShortMatchParticipantDto(winningParticipantId: Int?) = ShortMatchSinglesParticipantDto(
+fun SinglesParticipantEntity.toShortMatchParticipantDto(winningParticipantId: Int?) = ParticipantInShortSinglesMatchDto(
     id = this.id.value.toString(),
     seed = this.seed,
     isWinner = this.id.value == winningParticipantId,
-    player = this.player.toDto(),
+    player = this.player.toPlayerInParticipantDto(),
 )
 
-fun DoublesParticipantEntity.toShortMatchParticipantDto(winningParticipantId: Int?) = ShortMatchDoublesParticipantDto(
+fun DoublesParticipantEntity.toShortMatchParticipantDto(winningParticipantId: Int?) = ParticipantInShortDoublesMatchDto(
     id = this.id.value.toString(),
     seed = this.seed,
     isWinner = this.id.value == winningParticipantId,
-    firstPlayer = this.firstPlayer.toDto(),
-    secondPlayer = this.secondPlayer.toDto()
+    firstPlayer = this.firstPlayer.toPlayerInParticipantDto(),
+    secondPlayer = this.secondPlayer.toPlayerInParticipantDto()
 )
