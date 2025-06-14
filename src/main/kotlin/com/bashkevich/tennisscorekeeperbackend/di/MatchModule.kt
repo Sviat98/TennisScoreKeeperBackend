@@ -7,13 +7,11 @@ import com.bashkevich.tennisscorekeeperbackend.feature.match_log.DoublesMatchLog
 import com.bashkevich.tennisscorekeeperbackend.feature.match_log.SinglesMatchLogRepository
 import com.bashkevich.tennisscorekeeperbackend.feature.match.singles.SinglesMatchRepository
 import com.bashkevich.tennisscorekeeperbackend.feature.match.singles.SinglesMatchService
-import com.bashkevich.tennisscorekeeperbackend.feature.set_template.SetTemplateRepository
 import org.koin.core.module.dsl.singleOf
 import org.koin.dsl.module
 
 val matchModule = module {
     singleOf(::MatchServiceRouter)
-    singleOf(::SetTemplateRepository)
 
     singleOf(::SinglesMatchRepository)
     singleOf(::SinglesMatchLogRepository)

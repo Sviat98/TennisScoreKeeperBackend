@@ -27,5 +27,14 @@ fun Route.tournamentRoutes(){
 
             call.respond(status = HttpStatusCode.Created, message = newTournament)
         }
+        route("/{id}"){
+            get{
+                val tournamentId = call.pathParameters["id"]?.toIntOrNull() ?: 0
+
+                val tournament = tournamentService.getTournamentById(tournamentId)
+
+                call.respond(tournament)
+            }
+        }
     }
 }
