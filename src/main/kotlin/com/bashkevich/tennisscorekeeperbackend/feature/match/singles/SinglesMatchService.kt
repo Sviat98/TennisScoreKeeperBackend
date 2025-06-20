@@ -154,10 +154,14 @@ class SinglesMatchService(
 
         val currentSet = when {
             lastPoint?.scoreType == ScoreType.SET -> null
-            currentSetMode == SpecialSetMode.SUPER_TIEBREAK -> TennisSetDto(
-                firstParticipantGames = lastPoint?.firstParticipantPoints ?: 0,
-                secondParticipantGames = lastPoint?.secondParticipantPoints ?: 0,
-            )
+            // если матч начинается с супер тай-брейка, то lastPoint = null, свалимся в последнюю ветку
+            // в противном случае выводим счет супер тай-брейка, как будто это сет
+            currentSetMode == SpecialSetMode.SUPER_TIEBREAK -> lastPoint?.let {
+                TennisSetDto(
+                    firstParticipantGames = lastPoint.firstParticipantPoints,
+                    secondParticipantGames = lastPoint.secondParticipantPoints,
+                )
+            }
             // берем счет с последнего гейма, если первый гейм и начат, то выводим 0:0,
             // если первый розыгрыш - то ничего не выводим
             else -> lastGame?.toTennisSetDto() ?: if (lastPoint?.scoreType == ScoreType.POINT) TennisSetDto(
