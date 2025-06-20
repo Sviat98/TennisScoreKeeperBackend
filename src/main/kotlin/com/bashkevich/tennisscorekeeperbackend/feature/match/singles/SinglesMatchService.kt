@@ -138,7 +138,7 @@ class SinglesMatchService(
 
         val winnerParticipantId = matchEntity.winner?.id?.value
 
-        if (winnerParticipantId!=null){
+        if (winnerParticipantId==null){
             val setNumber = previousSets.size + 1
             val setsToWin = matchEntity.setsToWin
 
@@ -171,6 +171,7 @@ class SinglesMatchService(
                 else -> lastPoint?.toTennisGameDto()
             }
         }else{
+            // если в матче есть победитель, все зануляем (подача также зануляется, но в общем алгоритме)
             currentSetMode = null
             currentSet = null
             currentGame = null
