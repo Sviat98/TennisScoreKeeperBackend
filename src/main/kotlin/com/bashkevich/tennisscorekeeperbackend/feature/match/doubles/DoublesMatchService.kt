@@ -14,6 +14,7 @@ import com.bashkevich.tennisscorekeeperbackend.model.match.body.ServeBody
 import com.bashkevich.tennisscorekeeperbackend.model.match.body.ServeInPairBody
 import com.bashkevich.tennisscorekeeperbackend.model.match.ShortMatchDto
 import com.bashkevich.tennisscorekeeperbackend.model.match.SpecialSetMode
+import com.bashkevich.tennisscorekeeperbackend.model.match.TennisGameDto
 import com.bashkevich.tennisscorekeeperbackend.model.match.TennisSetDto
 import com.bashkevich.tennisscorekeeperbackend.model.match.doubles.DoublesMatchEntity
 import com.bashkevich.tennisscorekeeperbackend.model.match.toShortMatchDto
@@ -169,15 +170,7 @@ class DoublesMatchService(
         val previousSets =
             doublesMatchLogRepository.getPreviousSets(matchId, lastPointNumber).map { it.toTennisSetDto() }
 
-        val setNumber = previousSets.size + 1
-
         val lastPoint = doublesMatchLogRepository.getLastPoint(matchId, lastPointNumber)
-
-        val setsToWin = matchEntity.setsToWin
-
-        val currentSetTemplate = findSetTemplate(matchEntity, setNumber, setsToWin)
-
-        val currentSetMode = calculateCurrentSetMode(currentSetTemplate)
 
         val firstParticipantId = matchEntity.firstParticipant.id.value
         val firstParticipantToServe = matchEntity.firstServe?.id?.value
@@ -186,16 +179,67 @@ class DoublesMatchService(
             if (firstParticipantToServe == firstParticipantId) matchEntity.firstParticipantFirstServe?.id?.value else
                 matchEntity.secondParticipantFirstServe?.id?.value
 
+        // Почему не сделали currentServe = null, если есть победитель?
+        // После последнего выигранного розыгрыша serve и так становится равным null, поэтому лишней проверки не нужно
         val currentServe = when {
             lastPoint == null -> matchEntity.firstServe?.id?.value
             else -> lastPoint.currentServe
         }
+
+        // Почему не сделали currentServe = null, если есть победитель?
+        // После последнего выигранного розыгрыша serve и так становится равным null, поэтому лишней проверки не нужно
         val currentPlayerToServe = when {
             lastPoint == null -> firstPlayerToServe
             else -> lastPoint.currentServeInPair
         }
 
+        var currentSetMode: SpecialSetMode?
+        var currentSet: TennisSetDto?
+        var currentGame: TennisGameDto?
+
         val winnerParticipantId = matchEntity.winner?.id?.value
+
+        if (winnerParticipantId!=null){
+            val setNumber = previousSets.size + 1
+
+
+            val setsToWin = matchEntity.setsToWin
+
+            val currentSetTemplate = findSetTemplate(matchEntity, setNumber, setsToWin)
+
+            currentSetMode = calculateCurrentSetMode(currentSetTemplate)
+
+            val lastGame = doublesMatchLogRepository.getCurrentSet(matchId, setNumber, lastPointNumber)
+
+            currentSet = when {
+                lastPoint?.scoreType == ScoreType.SET -> null
+                // если матч начинается с супер тай-брейка, то lastPoint = null, свалимся в последнюю ветку
+                // в противном случае выводим счет супер тай-брейка, как будто это сет
+                currentSetMode == SpecialSetMode.SUPER_TIEBREAK -> lastPoint?.let {
+                    TennisSetDto(
+                        firstParticipantGames = lastPoint.firstParticipantPoints,
+                        secondParticipantGames = lastPoint.secondParticipantPoints,
+                    )
+                }
+                // берем счет с последнего гейма, если первый гейм и начат, то выводим 0:0,
+                // если первый розыгрыш - то ничего не выводим
+                else -> lastGame?.toTennisSetDto() ?: if (lastPoint?.scoreType == ScoreType.POINT) TennisSetDto(
+                    firstParticipantGames = 0,
+                    secondParticipantGames = 0,
+                ) else null
+            }
+
+            currentGame = when {
+                currentSetMode == SpecialSetMode.SUPER_TIEBREAK -> null
+                lastPoint?.scoreType in listOf(ScoreType.GAME, ScoreType.SET) -> null
+                else -> lastPoint?.toTennisGameDto()
+            }
+        }else{
+            currentSetMode = null
+            currentSet = null
+            currentGame = null
+        }
+
         val firstParticipant = matchEntity.firstParticipant.toParticipantInMatchDto(
             displayName = matchEntity.firstParticipantDisplayName,
             servingParticipantId = currentServe,
@@ -209,32 +253,6 @@ class DoublesMatchService(
             servingInPairPlayerId = currentPlayerToServe,
             winningParticipantId = winnerParticipantId
         )
-
-        val lastGame = doublesMatchLogRepository.getCurrentSet(matchId, setNumber, lastPointNumber)
-
-        val currentSet = when {
-            lastPoint?.scoreType == ScoreType.SET -> null
-            // если матч начинается с супер тай-брейка, то lastPoint = null, свалимся в последнюю ветку
-            // в противном случае выводим счет супер тай-брейка, как будто это сет
-            currentSetMode == SpecialSetMode.SUPER_TIEBREAK -> lastPoint?.let {
-                TennisSetDto(
-                    firstParticipantGames = lastPoint.firstParticipantPoints,
-                    secondParticipantGames = lastPoint.secondParticipantPoints,
-                )
-            }
-            // берем счет с последнего гейма, если первый гейм и начат, то выводим 0:0,
-            // если первый розыгрыш - то ничего не выводим
-            else -> lastGame?.toTennisSetDto() ?: if (lastPoint?.scoreType == ScoreType.POINT) TennisSetDto(
-                firstParticipantGames = 0,
-                secondParticipantGames = 0,
-            ) else null
-        }
-
-        val currentGame = when {
-            currentSetMode == SpecialSetMode.SUPER_TIEBREAK -> null
-            lastPoint?.scoreType in listOf(ScoreType.GAME, ScoreType.SET) -> null
-            else -> lastPoint?.toTennisGameDto()
-        }
 
         val matchDto = MatchDto(
             id = matchId.toString(),
