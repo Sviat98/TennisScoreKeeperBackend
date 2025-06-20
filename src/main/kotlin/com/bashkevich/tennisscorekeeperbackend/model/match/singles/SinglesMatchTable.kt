@@ -23,7 +23,7 @@ object SinglesMatchTable: IdTable<Int>("singles_match"){
     val status = enumerationByName("status", 50, MatchStatus::class)
     val firstServe = reference("first_serve_player_id", SinglesParticipantTable).nullable()
     val setsToWin = integer("sets_to_win")
-    val regularSet = reference("regular_set_id", SetTemplateTable)
+    val regularSet = reference("regular_set_id", SetTemplateTable).nullable()
     val decidingSet = reference("deciding_set_id", SetTemplateTable)
     val pointShift = integer("point_shift")
     val winner = reference("winner_player_id", SinglesParticipantTable).nullable()

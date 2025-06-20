@@ -17,7 +17,7 @@ class SinglesMatchRepository {
         it[secondParticipantDisplayName] = matchBody.secondParticipant.displayName
         it[status] = MatchStatus.NOT_STARTED
         it[setsToWin] = matchBody.setsToWin
-        it[regularSet] = matchBody.regularSet.toInt()
+        it[regularSet] = matchBody.regularSet?.toInt()
         it[decidingSet] = matchBody.decidingSet.toInt()
         it[pointShift] = 0
         it[winner] = null

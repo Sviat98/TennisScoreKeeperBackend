@@ -33,7 +33,7 @@ class SinglesMatchEntity(id: EntityID<Int>) : IntEntity(id) {
     var status by SinglesMatchTable.status
     val firstServe by SinglesParticipantEntity optionalReferencedOn SinglesMatchTable.firstServe
     var setsToWin by SinglesMatchTable.setsToWin
-    val regularSet by SetTemplateEntity referencedOn  SinglesMatchTable.regularSet
+    val regularSet by SetTemplateEntity optionalReferencedOn  SinglesMatchTable.regularSet
     val decidingSet by SetTemplateEntity referencedOn SinglesMatchTable.decidingSet
     var pointShift by SinglesMatchTable.pointShift
     val winner by SinglesParticipantEntity optionalReferencedOn SinglesMatchTable.winner

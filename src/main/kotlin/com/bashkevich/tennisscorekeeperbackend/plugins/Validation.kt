@@ -18,14 +18,17 @@ fun Application.configureValidation() {
 
             val secondPlayerId = body.secondParticipant.id.toIntOrNull() ?: 0
 
-            val regularSetId = body.regularSet.toIntOrNull() ?: 0
+            val setsToWin = body.setsToWin
+
+            val regularSetId = body.regularSet?.toIntOrNull() ?: 0
             val decidingSetId = body.decidingSet.toIntOrNull() ?: 0
 
             when {
                 firstPlayerId == 0 -> ValidationResult.Invalid("First player id is wrong!")
                 secondPlayerId == 0 -> ValidationResult.Invalid("Second player id is wrong!")
                 firstPlayerId == secondPlayerId -> ValidationResult.Invalid("Players should be different!")
-                regularSetId == 0 -> ValidationResult.Invalid("Regular set id is wrong!")
+                regularSetId == 0 && setsToWin > 1 -> ValidationResult.Invalid("Regular set id is wrong or empty!")
+                regularSetId != 0 && setsToWin < 2 -> ValidationResult.Invalid("Regular set is redundant!")
                 decidingSetId == 0 -> ValidationResult.Invalid("Deciding set id is wrong!")
                 else -> ValidationResult.Valid
             }
@@ -54,6 +57,7 @@ suspend inline fun <reified T : Any> validateBody(
 ) {
     try {
         val errorMessage = validation(requestBody)
+        println(errorMessage)
         if (errorMessage.isNotEmpty()) {
             throw BadRequestException(errorMessage)
         }

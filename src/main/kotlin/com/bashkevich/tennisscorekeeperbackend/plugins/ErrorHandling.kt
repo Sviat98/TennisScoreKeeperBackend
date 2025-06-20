@@ -52,8 +52,6 @@ suspend inline fun <reified T : Any> ApplicationCall.receiveBodyCatching(): T {
         throw InvalidBodyException("Invalid JSON format: ${e.message}")
     } catch (e: ContentTransformationException) {
         throw InvalidBodyException("Failed to parse body: ${e.message}")
-    } catch (e: Exception) {
-        throw InvalidBodyException("Unexpected error: ${e.message}")
     }
 }
 

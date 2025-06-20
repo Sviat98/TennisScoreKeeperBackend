@@ -26,7 +26,7 @@ object DoublesMatchTable : IdTable<Int>("doubles_match") {
     val firstServeInFirstPair = reference("first_serve_in_first_pair_player_id", PlayerTable).nullable()
     val firstServeInSecondPair = reference("first_serve_in_second_pair_player_id", PlayerTable).nullable()
     val setsToWin = integer("sets_to_win")
-    val regularSet = reference("regular_set_id", SetTemplateTable)
+    val regularSet = reference("regular_set_id", SetTemplateTable).nullable()
     val decidingSet = reference("deciding_set_id", SetTemplateTable)
     val pointShift = integer("point_shift")
     val winner = reference("winner_participant_id", DoublesParticipantTable).nullable()

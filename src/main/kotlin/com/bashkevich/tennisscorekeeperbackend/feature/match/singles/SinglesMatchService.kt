@@ -38,11 +38,13 @@ class SinglesMatchService(
             val firstParticipantId = matchBody.firstParticipant.id.toInt()
             val secondParticipantId = matchBody.secondParticipant.id.toInt()
 
-            val regularSetId = matchBody.regularSet.toInt()
+            val regularSetId = matchBody.regularSet?.toInt() ?: 0
             val decidingSetId = matchBody.decidingSet.toInt()
 
             val firstParticipant = singlesParticipantRepository.getParticipantById(firstParticipantId)
             val secondParticipant = singlesParticipantRepository.getParticipantById(secondParticipantId)
+
+            val setsToWin = matchBody.setsToWin
 
             val regularSet = setTemplateRepository.getSetTemplateById(regularSetId)
             val decidingSet = setTemplateRepository.getSetTemplateById(decidingSetId)
@@ -50,7 +52,7 @@ class SinglesMatchService(
             when {
                 firstParticipant == null -> "First player does not exist"
                 secondParticipant == null -> "Second player does not exist"
-                regularSet == null -> "Regular set does not exist"
+                setsToWin > 1 && regularSet == null -> "Regular set does not exist"
                 decidingSet == null -> "Deciding set does not exist"
                 else -> ""
             }
@@ -200,7 +202,7 @@ class SinglesMatchService(
                 "Scoring player id is not in match" else ""
         }
 
-        if (matchEntity.status!= MatchStatus.IN_PROGRESS){
+        if (matchEntity.status != MatchStatus.IN_PROGRESS) {
             throw BadRequestException("Cannot update score. The match is not in progress")
         }
 
@@ -414,11 +416,10 @@ class SinglesMatchService(
         val isDecidingSet = setNumber == 2 * setsToWin - 1
 
         val currentSetTemplate = if (isDecidingSet) {
-            setTemplateRepository.getSetTemplateById(matchEntity.decidingSet.id.value)
-                ?: throw NotFoundException("No deciding set template found in match!")
+            matchEntity.decidingSet
         } else {
-            setTemplateRepository.getSetTemplateById(matchEntity.regularSet.id.value)
-                ?: throw NotFoundException("No regular set template found in match!")
+            // regularSet ВСЕГДА будет проставлен для матчей, где для победы нужно выиграть более 1 сета
+            matchEntity.regularSet!!
         }
 
         return currentSetTemplate

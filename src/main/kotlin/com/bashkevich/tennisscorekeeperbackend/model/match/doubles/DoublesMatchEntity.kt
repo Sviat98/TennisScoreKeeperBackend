@@ -22,7 +22,7 @@ class DoublesMatchEntity(id: EntityID<Int>) : IntEntity(id) {
     val firstParticipantFirstServe by PlayerEntity optionalReferencedOn DoublesMatchTable.firstServeInFirstPair
     val secondParticipantFirstServe by PlayerEntity optionalReferencedOn DoublesMatchTable.firstServeInSecondPair
     var setsToWin by DoublesMatchTable.setsToWin
-    val regularSet by SetTemplateEntity referencedOn  DoublesMatchTable.regularSet
+    val regularSet by SetTemplateEntity optionalReferencedOn  DoublesMatchTable.regularSet
     val decidingSet by SetTemplateEntity referencedOn DoublesMatchTable.decidingSet
     var pointShift by DoublesMatchTable.pointShift
     val winner by DoublesParticipantEntity optionalReferencedOn  DoublesMatchTable.winner

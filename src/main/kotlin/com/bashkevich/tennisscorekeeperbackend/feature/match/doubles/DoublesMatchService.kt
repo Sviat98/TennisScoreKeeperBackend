@@ -38,8 +38,10 @@ class DoublesMatchService(
             val firstParticipantId = matchBody.firstParticipant.id.toInt()
             val secondParticipantId = matchBody.secondParticipant.id.toInt()
 
-            val regularSetId = matchBody.regularSet.toInt()
+            val regularSetId = matchBody.regularSet?.toInt() ?: 0
             val decidingSetId = matchBody.decidingSet.toInt()
+
+            val setsToWin = matchBody.setsToWin
 
             val firstParticipant = doublesParticipantRepository.getParticipantById(firstParticipantId)
             val secondParticipant = doublesParticipantRepository.getParticipantById(secondParticipantId)
@@ -50,7 +52,7 @@ class DoublesMatchService(
             when {
                 firstParticipant == null -> "First player does not exist"
                 secondParticipant == null -> "Second player does not exist"
-                regularSet == null -> "Regular set does not exist"
+                setsToWin > 1 && regularSet == null -> "Regular set does not exist"
                 decidingSet == null -> "Deciding set does not exist"
                 else -> ""
             }
@@ -538,11 +540,10 @@ class DoublesMatchService(
         val isDecidingSet = setNumber == 2 * setsToWin - 1
 
         val currentSetTemplate = if (isDecidingSet) {
-            setTemplateRepository.getSetTemplateById(matchEntity.decidingSet.id.value)
-                ?: throw NotFoundException("No deciding set template found in match!")
+            matchEntity.decidingSet
         } else {
-            setTemplateRepository.getSetTemplateById(matchEntity.regularSet.id.value)
-                ?: throw NotFoundException("No regular set template found in match!")
+            // regularSet ВСЕГДА будет проставлен для матчей, где для победы нужно выиграть более 1 сета
+            matchEntity.regularSet!!
         }
 
         return currentSetTemplate
@@ -649,7 +650,7 @@ class DoublesMatchService(
 
             when {
                 (currentStatus == MatchStatus.NOT_STARTED && newStatus == MatchStatus.IN_PROGRESS) -> {
-                    when{
+                    when {
                         firstServeParticipant == null -> "Cannot update status to $newStatus: No first serve is set"
                         firstServeInFirstPair == null -> "Cannot update status to $newStatus: No first serve in first pair is set"
                         firstServeInSecondPair == null -> "Cannot update status to $newStatus: No first serve in second pair is set"
