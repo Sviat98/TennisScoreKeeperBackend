@@ -8,7 +8,6 @@ import io.ktor.server.application.install
 import io.ktor.server.plugins.BadRequestException
 import io.ktor.server.plugins.requestvalidation.RequestValidation
 import io.ktor.server.plugins.requestvalidation.ValidationResult
-import io.ktor.server.request.ContentTransformationException
 
 fun Application.configureValidation() {
 
@@ -51,19 +50,12 @@ fun Application.configureValidation() {
 }
 
 // данная валидация нужна для проверки сущностей в базе
-suspend inline fun <reified T : Any> validateBody(
-    requestBody: T,
-    noinline validation: suspend (T) -> String,
+suspend inline fun validateRequestConditions(
+    noinline validation: suspend () -> String,
 ) {
-    try {
-        val errorMessage = validation(requestBody)
-        println(errorMessage)
-        if (errorMessage.isNotEmpty()) {
-            throw BadRequestException(errorMessage)
-        }
-    } catch (e: ContentTransformationException) {
-        throw BadRequestException("Invalid request body format")
-    } catch (e: Exception) {
-        throw e
+    val errorMessage = validation()
+    println(errorMessage)
+    if (errorMessage.isNotEmpty()) {
+        throw BadRequestException(errorMessage)
     }
 }

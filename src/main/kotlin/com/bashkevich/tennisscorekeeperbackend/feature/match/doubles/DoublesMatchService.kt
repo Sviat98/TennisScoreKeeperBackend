@@ -24,7 +24,7 @@ import com.bashkevich.tennisscorekeeperbackend.model.match_log.doubles.DoublesMa
 import com.bashkevich.tennisscorekeeperbackend.model.participant.toParticipantInMatchDto
 import com.bashkevich.tennisscorekeeperbackend.model.set_template.SetTemplateEntity
 import com.bashkevich.tennisscorekeeperbackend.model.set_template.TiebreakMode
-import com.bashkevich.tennisscorekeeperbackend.plugins.validateBody
+import com.bashkevich.tennisscorekeeperbackend.plugins.validateRequestConditions
 import io.ktor.server.plugins.BadRequestException
 import io.ktor.server.plugins.NotFoundException
 
@@ -35,7 +35,7 @@ class DoublesMatchService(
     private val doublesParticipantRepository: DoublesParticipantRepository,
 ) {
     suspend fun addMatch(tournamentId: Int, matchBody: MatchBody): ShortMatchDto {
-        validateBody(matchBody) {
+        validateRequestConditions {
             val firstParticipantId = matchBody.firstParticipant.id.toInt()
             val secondParticipantId = matchBody.secondParticipant.id.toInt()
 
@@ -99,13 +99,16 @@ class DoublesMatchService(
 
         val matchEntity = doublesMatchRepository.getMatchById(matchId) ?: throw NotFoundException("No match found!")
 
-        validateBody(serveBody) {
-            if (firstServeParticipantId !in listOf(
+        validateRequestConditions {
+            when {
+                firstServeParticipantId !in listOf(
                     matchEntity.firstParticipant.id.value,
                     matchEntity.secondParticipant.id.value
-                )
-            )
-                "Serve player id is not in match" else ""
+                ) -> "Serve player id is not in match"
+
+                matchEntity.status != MatchStatus.NOT_STARTED -> "Can't update serve. The match should be in status NOT_STARTED"
+                else -> ""
+            }
         }
 
         doublesMatchRepository.updateServe(matchId, firstServeParticipantId)
@@ -126,29 +129,36 @@ class DoublesMatchService(
 
         var isFirstPair = false
 
-        validateBody(serveInPairBody) {
+        validateRequestConditions {
 
-            when (firstServePlayerId) {
-                in listOf(
-                    firstParticipant.firstPlayer.id.value,
-                    firstParticipant.secondPlayer.id.value
-                ),
-                    -> {
-                    isFirstPair = true
-                    ""
+            when {
+                matchEntity.status != MatchStatus.NOT_STARTED -> "Can't update serve in pair. The match should be in status NOT_STARTED"
+                else -> {
+                    when (firstServePlayerId) {
+                        in listOf(
+                            firstParticipant.firstPlayer.id.value,
+                            firstParticipant.secondPlayer.id.value
+                        ),
+                            -> {
+                            isFirstPair = true
+                            ""
+                        }
+
+                        in listOf(
+                            secondParticipant.firstPlayer.id.value,
+                            secondParticipant.secondPlayer.id.value
+                        ),
+                            -> {
+                            isFirstPair = false
+                            ""
+                        }
+
+                        else -> "Serve player id is not in any of participants"
+                    }
                 }
-
-                in listOf(
-                    secondParticipant.firstPlayer.id.value,
-                    secondParticipant.secondPlayer.id.value
-                ),
-                    -> {
-                    isFirstPair = false
-                    ""
-                }
-
-                else -> "Serve player id is not in any of participants"
             }
+
+
         }
 
         if (isFirstPair) {
@@ -199,7 +209,7 @@ class DoublesMatchService(
 
         val winnerParticipantId = matchEntity.winner?.id?.value
 
-        if (winnerParticipantId==null){
+        if (winnerParticipantId == null) {
             val setNumber = previousSets.size + 1
 
 
@@ -234,7 +244,7 @@ class DoublesMatchService(
                 lastPoint?.scoreType in listOf(ScoreType.GAME, ScoreType.SET) -> null
                 else -> lastPoint?.toTennisGameDto()
             }
-        }else{
+        } else {
             // если в матче есть победитель, все зануляем (подача также зануляется, но в общем алгоритме)
             currentSetMode = null
             currentSet = null
@@ -272,22 +282,13 @@ class DoublesMatchService(
 
     suspend fun updateScore(matchId: Int, changeScoreBody: ChangeScoreBody) {
         if (matchId == 0) throw BadRequestException("Incorrect id")
-        val scoringParticipantId = changeScoreBody.participantId.toInt()
+        val scoringParticipantId = changeScoreBody.participantId.toIntOrNull() ?: 0
 
         val matchEntity = doublesMatchRepository.getMatchById(matchId) ?: throw NotFoundException("No match found!")
 
         val firstParticipantId = matchEntity.firstParticipant.id.value
 
         val secondParticipantId = matchEntity.secondParticipant.id.value
-
-        validateBody(changeScoreBody) {
-            if (scoringParticipantId !in listOf(firstParticipantId, secondParticipantId))
-                "Scoring player id is not in match" else ""
-        }
-
-        if (matchEntity.status != MatchStatus.IN_PROGRESS) {
-            throw BadRequestException("Cannot update score. The match is not in progress")
-        }
 
         val firstParticipantToServeInMatch = matchEntity.firstServe!!.id.value
 
@@ -337,6 +338,21 @@ class DoublesMatchService(
 
         val lastPoint = doublesMatchLogRepository.getLastPoint(matchId, lastPointNumber)
 
+        validateRequestConditions {
+            when {
+                scoringParticipantId !in listOf(
+                    firstParticipantId,
+                    secondParticipantId
+                ) -> "Scoring player id is not in match"
+
+                matchEntity.status != MatchStatus.IN_PROGRESS -> "Cannot update score. The match should be in status IN_PROGRESS"
+                changeScoreBody.scoreType == ScoreType.GAME && lastPoint?.scoreType == ScoreType.POINT -> "Cannot add game to a score"
+                matchEntity.winner != null -> "Cannot update score. The match already has the winner"
+                else -> ""
+            }
+
+        }
+
         if (matchEntity.pointShift < 0) {
             doublesMatchRepository.updatePointShift(matchId = matchId, newPointShift = 0)
 
@@ -356,14 +372,8 @@ class DoublesMatchService(
 
         var firstParticipantPoints = 0
         var secondParticipantPoints = 0
-        var scoreType: ScoreType
 
-        if (changeScoreBody.scoreType == ScoreType.GAME) {
-            if (lastPoint?.scoreType == ScoreType.POINT) throw BadRequestException("Cannot add game")
-            scoreType = ScoreType.GAME
-        } else {
-            scoreType = ScoreType.POINT
-        }
+        var scoreType = changeScoreBody.scoreType
 
         // после сыгранного сета увеличиваем set_number на 1
         if (lastPoint?.scoreType == ScoreType.SET) {
@@ -597,8 +607,13 @@ class DoublesMatchService(
 
         val lastPointNumber = (lastPointInTable?.pointNumber ?: 0) + newPointShift
 
-        if (lastPointNumber < 0) throw BadRequestException("Cannot undo the point")
-
+        validateRequestConditions {
+            when {
+                lastPointNumber < 0 -> "Cannot undo the point. There are no points behind"
+                matchEntity.status != MatchStatus.IN_PROGRESS -> "Cannot undo the point. The match should be in status IN_PROGRESS"
+                else -> ""
+            }
+        }
         matchEntity.winner?.let {
             doublesMatchRepository.updateWinner(matchId = matchId, winnerParticipantId = null)
         }
@@ -620,7 +635,13 @@ class DoublesMatchService(
 
         val pointShift = matchEntity.pointShift
 
-        if (pointShift == 0) throw BadRequestException("Cannot redo the point")
+        validateRequestConditions {
+            when {
+                pointShift == 0 -> "Cannot redo the point. There are no points ahead"
+                matchEntity.status != MatchStatus.IN_PROGRESS -> "Cannot redo the point. The match should be in status IN_PROGRESS"
+                else -> ""
+            }
+        }
 
         val newPointShift = pointShift + 1
 
@@ -661,7 +682,7 @@ class DoublesMatchService(
             doublesMatchRepository.getMatchById(matchId) ?: throw NotFoundException("No match found!")
 
         val newStatus = matchStatusBody.status
-        validateBody(matchStatusBody) {
+        validateRequestConditions {
             val currentStatus = matchEntity.status
 
             val winnerParticipantId = matchEntity.winner
