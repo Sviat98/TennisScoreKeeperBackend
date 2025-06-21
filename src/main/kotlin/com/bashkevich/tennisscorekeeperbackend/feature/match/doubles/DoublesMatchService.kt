@@ -95,7 +95,7 @@ class DoublesMatchService(
 
     suspend fun updateServe(matchId: Int, serveBody: ServeBody) {
         if (matchId == 0) throw BadRequestException("Incorrect id")
-        val firstServeParticipantId = serveBody.servingParticipantId.toIntOrNull() ?: 0
+        val firstServeParticipantId = serveBody.servingParticipantId.toInt() // тут будет Int значение, левые значения строк обработаны в RequestValidation
 
         val matchEntity = doublesMatchRepository.getMatchById(matchId) ?: throw NotFoundException("No match found!")
 
@@ -120,7 +120,7 @@ class DoublesMatchService(
 
     suspend fun updateServeInPair(matchId: Int, serveInPairBody: ServeInPairBody) {
         if (matchId == 0) throw BadRequestException("Incorrect id")
-        val firstServePlayerId = serveInPairBody.servingPlayerId.toIntOrNull() ?: 0
+        val firstServePlayerId = serveInPairBody.servingPlayerId.toInt() // тут будет Int значение, левые значения строк обработаны в RequestValidation
 
         val matchEntity = doublesMatchRepository.getMatchById(matchId) ?: throw NotFoundException("No match found!")
 
@@ -282,7 +282,7 @@ class DoublesMatchService(
 
     suspend fun updateScore(matchId: Int, changeScoreBody: ChangeScoreBody) {
         if (matchId == 0) throw BadRequestException("Incorrect id")
-        val scoringParticipantId = changeScoreBody.participantId.toIntOrNull() ?: 0
+        val scoringParticipantId = changeScoreBody.participantId.toInt() // тут будет Int значение, левые значения строк обработаны в RequestValidation
 
         val matchEntity = doublesMatchRepository.getMatchById(matchId) ?: throw NotFoundException("No match found!")
 

@@ -3,6 +3,8 @@ package com.bashkevich.tennisscorekeeperbackend.plugins
 import com.bashkevich.tennisscorekeeperbackend.model.match.body.ChangeScoreBody
 import com.bashkevich.tennisscorekeeperbackend.model.match.MatchBody
 import com.bashkevich.tennisscorekeeperbackend.model.match.body.ScoreType
+import com.bashkevich.tennisscorekeeperbackend.model.match.body.ServeBody
+import com.bashkevich.tennisscorekeeperbackend.model.match.body.ServeInPairBody
 import io.ktor.server.application.Application
 import io.ktor.server.application.install
 import io.ktor.server.plugins.BadRequestException
@@ -43,6 +45,23 @@ fun Application.configureValidation() {
                     ScoreType.POINT
                 ) -> ValidationResult.Invalid("Wrong score type!")
 
+                else -> ValidationResult.Valid
+            }
+        }
+        validate<ServeBody> { body ->
+
+            val servingParticipantId = body.servingParticipantId.toIntOrNull() ?: 0
+
+            when {
+                servingParticipantId == 0 -> ValidationResult.Invalid("Serving participant id is wrong!")
+                else -> ValidationResult.Valid
+            }
+        }
+        validate<ServeInPairBody> { body ->
+            val servingPlayerId = body.servingPlayerId.toIntOrNull() ?: 0
+
+            when {
+                servingPlayerId == 0 -> ValidationResult.Invalid("Serving player id in pair is wrong!")
                 else -> ValidationResult.Valid
             }
         }

@@ -95,7 +95,7 @@ class SinglesMatchService(
 
     suspend fun updateServe(matchId: Int, serveBody: ServeBody) {
         if (matchId == 0) throw BadRequestException("Incorrect id")
-        val firstServeParticipantId = serveBody.servingParticipantId.toInt()
+        val firstServeParticipantId = serveBody.servingParticipantId.toInt() // тут будет Int значение, левые значения строк обработаны в RequestValidation
 
         val matchEntity = singlesMatchRepository.getMatchById(matchId) ?: throw NotFoundException("No match found!")
 
@@ -209,7 +209,7 @@ class SinglesMatchService(
 
     suspend fun updateScore(matchId: Int, changeScoreBody: ChangeScoreBody) {
         if (matchId == 0) throw BadRequestException("Incorrect id")
-        val scoringParticipantId = changeScoreBody.participantId.toIntOrNull() ?: 0
+        val scoringParticipantId = changeScoreBody.participantId.toInt() // тут будет Int значение, левые значения строк обработаны в RequestValidation
 
         val matchEntity = singlesMatchRepository.getMatchById(matchId) ?: throw NotFoundException("No match found!")
 
