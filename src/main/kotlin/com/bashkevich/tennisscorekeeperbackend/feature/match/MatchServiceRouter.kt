@@ -10,6 +10,7 @@ import com.bashkevich.tennisscorekeeperbackend.model.match.body.MatchStatusBody
 import com.bashkevich.tennisscorekeeperbackend.model.match.body.ServeBody
 import com.bashkevich.tennisscorekeeperbackend.model.match.body.ServeInPairBody
 import com.bashkevich.tennisscorekeeperbackend.model.match.ShortMatchDto
+import com.bashkevich.tennisscorekeeperbackend.model.tournament.TournamentStatus
 import com.bashkevich.tennisscorekeeperbackend.model.tournament.TournamentType
 import com.bashkevich.tennisscorekeeperbackend.plugins.dbQuery
 import io.ktor.server.plugins.BadRequestException
@@ -26,6 +27,10 @@ class MatchServiceRouter(
             if (tournamentId == 0) throw BadRequestException("Wrong format of tournament id")
             val tournament = tournamentRepository.getTournamentById(tournamentId)
                 ?: throw NotFoundException("No tournament found by that id")
+
+            if(tournament.status!= TournamentStatus.IN_PROGRESS){
+                throw BadRequestException("Cannot add match. Tournament is not in status IN_PROGRESS")
+            }
 
             val shortMatchDto = when (tournament.type){
                 TournamentType.SINGLES -> singlesMatchService.addMatch(tournamentId, matchBody)

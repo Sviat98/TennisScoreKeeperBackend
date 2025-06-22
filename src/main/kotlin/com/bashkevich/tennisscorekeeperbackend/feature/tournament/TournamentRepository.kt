@@ -8,6 +8,7 @@ import com.bashkevich.tennisscorekeeperbackend.model.tournament.TournamentStatus
 import com.bashkevich.tennisscorekeeperbackend.model.tournament.TournamentTable
 import org.jetbrains.exposed.v1.jdbc.select
 import org.jetbrains.exposed.v1.jdbc.unionAll
+import org.jetbrains.exposed.v1.jdbc.update
 
 class TournamentRepository {
 
@@ -31,6 +32,12 @@ class TournamentRepository {
             )
 
         return TournamentEntity.wrapRows(query).firstOrNull()
+    }
+
+    suspend fun updateStatus(tournamentId: Int, tournamentStatus: TournamentStatus) {
+        TournamentTable.update({ TournamentTable.id eq tournamentId }) {
+            it[status] = tournamentStatus
+        }
     }
 
 }

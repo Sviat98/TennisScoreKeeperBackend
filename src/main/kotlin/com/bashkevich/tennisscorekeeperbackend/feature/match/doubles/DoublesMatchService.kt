@@ -95,7 +95,8 @@ class DoublesMatchService(
 
     suspend fun updateServe(matchId: Int, serveBody: ServeBody) {
         if (matchId == 0) throw BadRequestException("Incorrect id")
-        val firstServeParticipantId = serveBody.servingParticipantId.toInt() // тут будет Int значение, левые значения строк обработаны в RequestValidation
+        val firstServeParticipantId =
+            serveBody.servingParticipantId.toInt() // тут будет Int значение, левые значения строк обработаны в RequestValidation
 
         val matchEntity = doublesMatchRepository.getMatchById(matchId) ?: throw NotFoundException("No match found!")
 
@@ -120,7 +121,8 @@ class DoublesMatchService(
 
     suspend fun updateServeInPair(matchId: Int, serveInPairBody: ServeInPairBody) {
         if (matchId == 0) throw BadRequestException("Incorrect id")
-        val firstServePlayerId = serveInPairBody.servingPlayerId.toInt() // тут будет Int значение, левые значения строк обработаны в RequestValidation
+        val firstServePlayerId =
+            serveInPairBody.servingPlayerId.toInt() // тут будет Int значение, левые значения строк обработаны в RequestValidation
 
         val matchEntity = doublesMatchRepository.getMatchById(matchId) ?: throw NotFoundException("No match found!")
 
@@ -282,7 +284,8 @@ class DoublesMatchService(
 
     suspend fun updateScore(matchId: Int, changeScoreBody: ChangeScoreBody) {
         if (matchId == 0) throw BadRequestException("Incorrect id")
-        val scoringParticipantId = changeScoreBody.participantId.toInt() // тут будет Int значение, левые значения строк обработаны в RequestValidation
+        val scoringParticipantId =
+            changeScoreBody.participantId.toInt() // тут будет Int значение, левые значения строк обработаны в RequestValidation
 
         val matchEntity = doublesMatchRepository.getMatchById(matchId) ?: throw NotFoundException("No match found!")
 
@@ -692,6 +695,7 @@ class DoublesMatchService(
             val firstServeInSecondPair = matchEntity.secondParticipantFirstServe
 
             when {
+                currentStatus == newStatus -> ""
                 (currentStatus == MatchStatus.NOT_STARTED && newStatus == MatchStatus.IN_PROGRESS) -> {
                     when {
                         firstServeParticipant == null -> "Cannot update status to $newStatus: No first serve is set"
@@ -701,6 +705,13 @@ class DoublesMatchService(
                     }
                 }
 
+                (currentStatus == MatchStatus.IN_PROGRESS && newStatus == MatchStatus.PAUSED) -> {
+                    if (winnerParticipantId != null) {
+                        "Cannot update status to $newStatus: There is already a winner"
+                    } else ""
+                }
+
+                (currentStatus == MatchStatus.PAUSED && newStatus == MatchStatus.IN_PROGRESS) -> ""
                 (currentStatus == MatchStatus.IN_PROGRESS && newStatus == MatchStatus.COMPLETED) -> {
                     if (winnerParticipantId == null) {
                         "Cannot update status to $newStatus: There is no winner in match yet"
