@@ -17,12 +17,9 @@ class SinglesMatchRepository {
         it[firstParticipantDisplayName] = matchBody.firstParticipant.displayName
         it[secondParticipant] = matchBody.secondParticipant.id.toInt()
         it[secondParticipantDisplayName] = matchBody.secondParticipant.displayName
-        it[status] = MatchStatus.NOT_STARTED
         it[setsToWin] = matchBody.setsToWin
-        it[regularSet] = matchBody.regularSet?.toInt()
-        it[decidingSet] = matchBody.decidingSet.toInt()
-        it[pointShift] = 0
-        it[winner] = null
+        it[regularSetTemplate] = matchBody.regularSet?.toInt()
+        it[decidingSetTemplate] = matchBody.decidingSet.toInt()
     }
 
     fun getMatches(tournamentId: Int) = SinglesMatchEntity.find({ SinglesMatchTable.tournament eq tournamentId}).toList()
@@ -31,7 +28,7 @@ class SinglesMatchRepository {
 
     suspend fun updateServe(matchId: Int, firstServeParticipantId: Int) =
         SinglesMatchTable.update({ SinglesMatchTable.id eq matchId }) {
-            it[firstServe] = firstServeParticipantId
+            it[firstServingParticipant] = firstServeParticipantId
         }
 
     suspend fun updatePointShift(matchId: Int, newPointShift: Int) =
@@ -41,7 +38,7 @@ class SinglesMatchRepository {
 
     suspend fun updateWinner(matchId: Int, winnerParticipantId: Int?) =
         SinglesMatchTable.update({ SinglesMatchTable.id eq matchId }) {
-            it[winner] = winnerParticipantId
+            it[winnerParticipant] = winnerParticipantId
         }
 
     suspend fun updateStatus(matchId: Int, matchStatus: MatchStatus) {

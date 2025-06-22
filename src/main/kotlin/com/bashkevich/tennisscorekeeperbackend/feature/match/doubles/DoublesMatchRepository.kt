@@ -17,12 +17,9 @@ class DoublesMatchRepository {
         it[firstParticipantDisplayName] = matchBody.firstParticipant.displayName
         it[secondParticipant] = matchBody.secondParticipant.id.toInt()
         it[secondParticipantDisplayName] = matchBody.secondParticipant.displayName
-        it[status] = MatchStatus.NOT_STARTED
         it[setsToWin] = matchBody.setsToWin
-        it[regularSet] = matchBody.regularSet?.toInt()
-        it[decidingSet] = matchBody.decidingSet.toInt()
-        it[pointShift] = 0
-        it[winner] = null
+        it[regularSetTemplate] = matchBody.regularSet?.toInt()
+        it[decidingSetTemplate] = matchBody.decidingSet.toInt()
     }
 
     fun getMatches(tournamentId: Int) =
@@ -32,17 +29,17 @@ class DoublesMatchRepository {
 
     suspend fun updateServe(matchId: Int, firstServeParticipantId: Int) =
         DoublesMatchTable.update({ DoublesMatchTable.id eq matchId }) {
-            it[firstServe] = firstServeParticipantId
+            it[firstServingParticipant] = firstServeParticipantId
         }
 
     suspend fun updateServeInFirstPair(matchId: Int, firstServePlayerId: Int) =
         DoublesMatchTable.update({ DoublesMatchTable.id eq matchId }) {
-            it[firstServeInFirstPair] = firstServePlayerId
+            it[firstServingPlayerInFirstPair] = firstServePlayerId
         }
 
     suspend fun updateServeInSecondPair(matchId: Int, firstServePlayerId: Int) =
         DoublesMatchTable.update({ DoublesMatchTable.id eq matchId }) {
-            it[firstServeInSecondPair] = firstServePlayerId
+            it[firstServingPlayerInSecondPair] = firstServePlayerId
         }
 
     suspend fun updatePointShift(matchId: Int, newPointShift: Int) =
@@ -52,7 +49,7 @@ class DoublesMatchRepository {
 
     suspend fun updateWinner(matchId: Int, winnerParticipantId: Int?) =
         DoublesMatchTable.update({ DoublesMatchTable.id eq matchId }) {
-            it[winner] = winnerParticipantId
+            it[winnerParticipant] = winnerParticipantId
         }
 
     suspend fun updateStatus(matchId: Int, matchStatus: MatchStatus) {

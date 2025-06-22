@@ -132,7 +132,7 @@ class SinglesMatchService(
         // Почему не сделали currentServe = null, если есть победитель?
         // После последнего выигранного розыгрыша serve и так становится равным null, поэтому лишней проверки не нужно
         val currentServe = when {
-            lastPoint == null -> matchEntity.firstServe?.id?.value
+            lastPoint == null -> matchEntity.firstServingParticipant?.id?.value
             else -> lastPoint.currentServe
         }
 
@@ -140,7 +140,9 @@ class SinglesMatchService(
         var currentSet: TennisSetDto?
         var currentGame: TennisGameDto?
 
-        val winnerParticipantId = matchEntity.winner?.id?.value
+        val winnerParticipantId = matchEntity.winnerParticipant?.id?.value
+
+        val retiredParticipantId = matchEntity.retiredParticipant?.id?.value
 
         if (winnerParticipantId == null) {
             val setNumber = previousSets.size + 1
@@ -183,14 +185,20 @@ class SinglesMatchService(
 
         val firstParticipant = matchEntity.firstParticipant.toParticipantInMatchDto(
             displayName = matchEntity.firstParticipantDisplayName,
+            primaryColor = matchEntity.firstParticipantPrimaryColor,
+            secondaryColor = matchEntity.firstParticipantSecondaryColor,
             servingParticipantId = currentServe,
-            winningParticipantId = winnerParticipantId
+            winningParticipantId = winnerParticipantId,
+            retiredParticipantId = retiredParticipantId
         )
 
         val secondParticipant = matchEntity.secondParticipant.toParticipantInMatchDto(
             displayName = matchEntity.secondParticipantDisplayName,
+            primaryColor = matchEntity.secondParticipantPrimaryColor,
+            secondaryColor = matchEntity.secondParticipantSecondaryColor,
             servingParticipantId = currentServe,
-            winningParticipantId = winnerParticipantId
+            winningParticipantId = winnerParticipantId,
+            retiredParticipantId = retiredParticipantId
         )
 
         val matchDto = MatchDto(
@@ -219,7 +227,7 @@ class SinglesMatchService(
 
         val secondParticipantId = matchEntity.secondParticipant.id.value
 
-        val firstParticipantToServeInMatch = matchEntity.firstServe!!.id.value
+        val firstParticipantToServeInMatch = matchEntity.firstServingParticipant!!.id.value
 
         val secondParticipantToServeInMatch =
             if (firstParticipantToServeInMatch == firstParticipantId) secondParticipantId else firstParticipantId
@@ -241,7 +249,7 @@ class SinglesMatchService(
 
                 matchEntity.status != MatchStatus.IN_PROGRESS -> "Cannot update score. The match should be in status IN_PROGRESS"
                 changeScoreBody.scoreType == ScoreType.GAME && lastPoint?.scoreType == ScoreType.POINT -> "Cannot add game to a score"
-                matchEntity.winner != null -> "Cannot update score. The match already has the winner"
+                matchEntity.winnerParticipant != null -> "Cannot update score. The match already has the winner"
                 else -> ""
             }
 
@@ -438,10 +446,10 @@ class SinglesMatchService(
         val isDecidingSet = setNumber == 2 * setsToWin - 1
 
         val currentSetTemplate = if (isDecidingSet) {
-            matchEntity.decidingSet
+            matchEntity.decidingSetTemplate
         } else {
             // regularSet ВСЕГДА будет проставлен для матчей, где для победы нужно выиграть более 1 сета
-            matchEntity.regularSet!!
+            matchEntity.regularSetTemplate!!
         }
 
         return currentSetTemplate
@@ -481,7 +489,7 @@ class SinglesMatchService(
             }
         }
 
-        if (matchEntity.winner != null) {
+        if (matchEntity.winnerParticipant != null) {
             singlesMatchRepository.updateWinner(matchId = matchId, winnerParticipantId = null)
         }
 
@@ -551,9 +559,9 @@ class SinglesMatchService(
         validateRequestConditions {
             val currentStatus = matchEntity.status
 
-            val winnerParticipantId = matchEntity.winner
+            val winnerParticipantId = matchEntity.winnerParticipant
 
-            val firstServeParticipant = matchEntity.firstServe
+            val firstServeParticipant = matchEntity.firstServingParticipant
 
             when {
                 currentStatus == newStatus -> ""

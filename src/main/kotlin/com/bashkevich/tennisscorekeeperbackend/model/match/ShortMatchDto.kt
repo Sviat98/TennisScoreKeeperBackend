@@ -35,16 +35,28 @@ data class PlayerInShortMatchDto(
 
 fun DoublesMatchEntity.toShortMatchDto(finalScore: List<TennisSetDto> = emptyList()) = ShortMatchDto(
     id = this.id.toString(),
-    firstParticipant = this.firstParticipant.toShortMatchParticipantDto(winningParticipantId = this.winner?.id?.value),
-    secondParticipant = this.secondParticipant.toShortMatchParticipantDto(winningParticipantId = this.winner?.id?.value),
+    firstParticipant = this.firstParticipant.toShortMatchParticipantDto(
+        winningParticipantId = this.winnerParticipant?.id?.value,
+        retiredParticipantId = this.retiredParticipant?.id?.value
+    ),
+    secondParticipant = this.secondParticipant.toShortMatchParticipantDto(
+        winningParticipantId = this.winnerParticipant?.id?.value,
+        retiredParticipantId = this.retiredParticipant?.id?.value
+    ),
     status = this.status,
     finalScore = finalScore
 )
 
 fun SinglesMatchEntity.toShortMatchDto(finalScore: List<TennisSetDto> = emptyList()) = ShortMatchDto(
     id = this.id.toString(),
-    firstParticipant = this.firstParticipant.toShortMatchParticipantDto(winningParticipantId = this.winner?.id?.value),
-    secondParticipant = this.secondParticipant.toShortMatchParticipantDto(winningParticipantId = this.winner?.id?.value),
+    firstParticipant = this.firstParticipant.toShortMatchParticipantDto(
+        winningParticipantId = this.winnerParticipant?.id?.value,
+        retiredParticipantId = this.retiredParticipant?.id?.value
+    ),
+    secondParticipant = this.secondParticipant.toShortMatchParticipantDto(
+        winningParticipantId = this.winnerParticipant?.id?.value,
+        retiredParticipantId = this.retiredParticipant?.id?.value
+    ),
     status = this.status,
     finalScore = finalScore
 )

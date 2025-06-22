@@ -15,15 +15,20 @@ class DoublesMatchEntity(id: EntityID<Int>) : IntEntity(id) {
     val tournament by TournamentEntity referencedOn  DoublesMatchTable.tournament
     val firstParticipant by DoublesParticipantEntity referencedOn DoublesMatchTable.firstParticipant
     var firstParticipantDisplayName by DoublesMatchTable.firstParticipantDisplayName
+    val firstParticipantPrimaryColor by DoublesMatchTable.firstParticipantPrimaryColor
+    val firstParticipantSecondaryColor by DoublesMatchTable.firstParticipantSecondaryColor
     val secondParticipant by DoublesParticipantEntity referencedOn DoublesMatchTable.secondParticipant
     var secondParticipantDisplayName by DoublesMatchTable.secondParticipantDisplayName
+    val secondParticipantPrimaryColor by DoublesMatchTable.secondParticipantPrimaryColor
+    val secondParticipantSecondaryColor by DoublesMatchTable.secondParticipantSecondaryColor
     var status by DoublesMatchTable.status
-    val firstServe by DoublesParticipantEntity optionalReferencedOn DoublesMatchTable.firstServe
-    val firstParticipantFirstServe by PlayerEntity optionalReferencedOn DoublesMatchTable.firstServeInFirstPair
-    val secondParticipantFirstServe by PlayerEntity optionalReferencedOn DoublesMatchTable.firstServeInSecondPair
+    val firstServingParticipant by DoublesParticipantEntity optionalReferencedOn DoublesMatchTable.firstServingParticipant
+    val firstServingPlayerInFirstParticipant by PlayerEntity optionalReferencedOn DoublesMatchTable.firstServingPlayerInFirstPair
+    val firstServingPlayerInSecondParticipant by PlayerEntity optionalReferencedOn DoublesMatchTable.firstServingPlayerInSecondPair
     var setsToWin by DoublesMatchTable.setsToWin
-    val regularSet by SetTemplateEntity optionalReferencedOn  DoublesMatchTable.regularSet
-    val decidingSet by SetTemplateEntity referencedOn DoublesMatchTable.decidingSet
+    val regularSetTemplate by SetTemplateEntity optionalReferencedOn  DoublesMatchTable.regularSetTemplate
+    val decidingSetTemplate by SetTemplateEntity referencedOn DoublesMatchTable.decidingSetTemplate
     var pointShift by DoublesMatchTable.pointShift
-    val winner by DoublesParticipantEntity optionalReferencedOn  DoublesMatchTable.winner
+    val winnerParticipant by DoublesParticipantEntity optionalReferencedOn  DoublesMatchTable.winnerParticipant
+    val retiredParticipant by DoublesParticipantEntity optionalReferencedOn  DoublesMatchTable.retiredParticipant
 }

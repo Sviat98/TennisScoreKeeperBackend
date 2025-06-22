@@ -12,9 +12,9 @@ data class MatchBody(
     @SerialName("sets_to_win")
     val setsToWin: Int,
     @SerialName("regular_set_id")
-    val regularSet: String?=null,
+    val regularSet: String? = null,
     @SerialName("deciding_set_id")
-    val decidingSet: String
+    val decidingSet: String,
 )
 
 @Serializable

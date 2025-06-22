@@ -22,11 +22,11 @@ data class MatchDto(
     @SerialName("previous_sets")
     val previousSets: List<TennisSetDto>,
     @SerialName("current_set")
-    val currentSet: TennisSetDto? = null,
+    val currentSet: TennisSetDto?,
     @SerialName("current_set_mode")
-    val currentSetMode: SpecialSetMode? = null,
+    val currentSetMode: SpecialSetMode?,
     @SerialName("current_game")
-    val currentGame: TennisGameDto? = null,
+    val currentGame: TennisGameDto?,
 )
 
 @Serializable
