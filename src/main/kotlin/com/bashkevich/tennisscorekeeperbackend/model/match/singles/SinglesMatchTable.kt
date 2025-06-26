@@ -10,7 +10,7 @@ import org.jetbrains.exposed.v1.core.dao.id.IdTable
 import org.jetbrains.exposed.v1.core.nextIntVal
 
 
-object SinglesMatchTable: IdTable<Int>("singles_match"){
+object SinglesMatchTable : IdTable<Int>("singles_match") {
     override val id = integer("id").defaultExpression(
         // Используем существующий sequence
         Sequence(MATCH_SEQUENCE).nextIntVal()
@@ -18,12 +18,12 @@ object SinglesMatchTable: IdTable<Int>("singles_match"){
     val tournament = reference("tournament_id", TournamentTable)
     val firstParticipant = reference("first_participant_id", SinglesParticipantTable)
     val firstParticipantDisplayName = varchar("first_participant_display_name", 50)
-    val firstParticipantPrimaryColor = varchar("first_participant_primary_color", 7).default("#ffffff")
-    val firstParticipantSecondaryColor = varchar("first_participant_secondary_color", 7).nullable()
+    val firstParticipantPrimaryColor = varchar("first_participant_primary_color", 6).default("ffffff")
+    val firstParticipantSecondaryColor = varchar("first_participant_secondary_color", 6).nullable()
     val secondParticipant = reference("second_participant_id", SinglesParticipantTable)
     val secondParticipantDisplayName = varchar("second_participant_display_name", 50)
-    val secondParticipantPrimaryColor = varchar("second_participant_primary_color", 7).default("#ffffff")
-    val secondParticipantSecondaryColor = varchar("second_participant_secondary_color", 7).nullable()
+    val secondParticipantPrimaryColor = varchar("second_participant_primary_color", 6).default("ffffff")
+    val secondParticipantSecondaryColor = varchar("second_participant_secondary_color", 6).nullable()
     val status = enumerationByName("status", 50, MatchStatus::class).default(MatchStatus.NOT_STARTED)
     val firstServingParticipant = reference("first_serving_participant_id", SinglesParticipantTable).nullable()
     val setsToWin = integer("sets_to_win")
