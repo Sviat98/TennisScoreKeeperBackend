@@ -15,8 +15,12 @@ class DoublesMatchRepository {
         it[tournament] = tournamentId
         it[firstParticipant] = matchBody.firstParticipant.id.toInt()
         it[firstParticipantDisplayName] = matchBody.firstParticipant.displayName
+        it[firstParticipantPrimaryColor] = matchBody.firstParticipant.primaryColor
+        it[firstParticipantSecondaryColor] = matchBody.firstParticipant.secondaryColor
         it[secondParticipant] = matchBody.secondParticipant.id.toInt()
         it[secondParticipantDisplayName] = matchBody.secondParticipant.displayName
+        it[secondParticipantPrimaryColor] = matchBody.secondParticipant.primaryColor
+        it[secondParticipantSecondaryColor] = matchBody.secondParticipant.secondaryColor
         it[setsToWin] = matchBody.setsToWin
         it[regularSetTemplate] = matchBody.regularSet?.toInt()
         it[decidingSetTemplate] = matchBody.decidingSet.toInt()
