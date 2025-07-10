@@ -389,9 +389,9 @@ class SinglesMatchService(
                         serveOrder = participantServingOrder,
                         currentServe = currentSet.currentServe!! //currentServe = null ТОЛЬКО после окончания матча
                     )
-
-                    setNumber % 2 == 0 -> secondParticipantToServeInMatch
-                    else -> firstParticipantToServeInMatch
+                    // если завершается первый сет, а геймов не было (к примеру, супер тай-брейк), то в следующем сете подает второй по очереди игрок
+                    setNumber % 2 == 0 -> firstParticipantToServeInMatch
+                    else -> secondParticipantToServeInMatch
                 }
             }
         }
