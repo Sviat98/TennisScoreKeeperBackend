@@ -109,13 +109,20 @@ fun DoublesParticipantEntity.toParticipantInMatchDto(
     primaryColor: String,
     secondaryColor: String?,
     servingParticipantId: Int?,
-    servingInPairPlayerId: Int?,
     winningParticipantId: Int?,
     retiredParticipantId: Int?,
+    nowServingPlayerId: Int?,
+    nextServingPlayerId: Int?,
 ): ParticipantInMatchDto {
 
-    val firstPlayerInBaseDto = this.firstPlayer.toPlayerInDoublesMatchDto(servingPlayerId = servingInPairPlayerId)
-    val secondPlayerInBaseDto = this.secondPlayer.toPlayerInDoublesMatchDto(servingPlayerId = servingInPairPlayerId)
+    val firstPlayerInBaseDto = this.firstPlayer.toPlayerInDoublesMatchDto(
+        nowServingPlayerId = nowServingPlayerId,
+        nextServingPlayerId = nextServingPlayerId
+    )
+    val secondPlayerInBaseDto = this.secondPlayer.toPlayerInDoublesMatchDto(
+        nowServingPlayerId = nowServingPlayerId,
+        nextServingPlayerId = nextServingPlayerId
+    )
 
     val saveOrderAtDisplay = this.saveOrderAtDisplay
     return ParticipantInDoublesMatchDto(

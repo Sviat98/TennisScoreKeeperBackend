@@ -187,9 +187,33 @@ class DoublesMatchService(
         val firstParticipantId = matchEntity.firstParticipant.id.value
         val firstParticipantToServe = matchEntity.firstServingParticipant?.id?.value
 
-        val firstPlayerToServe =
-            if (firstParticipantToServe == firstParticipantId) matchEntity.firstServingPlayerInFirstParticipant?.id?.value else
-                matchEntity.firstServingPlayerInSecondParticipant?.id?.value
+        val firstServingPlayerInFirstParticipant = matchEntity.firstServingPlayerInFirstParticipant?.id?.value
+        val firstServingPlayerInSecondParticipant = matchEntity.firstServingPlayerInSecondParticipant?.id?.value
+
+        val firstParticipantFirstPlayerId = matchEntity.firstParticipant.firstPlayer.id.value
+
+        val firstParticipantSecondPlayerId = matchEntity.firstParticipant.secondPlayer.id.value
+
+        val secondParticipantFirstPlayerId = matchEntity.secondParticipant.firstPlayer.id.value
+
+        val secondParticipantSecondPlayerId = matchEntity.secondParticipant.secondPlayer.id.value
+
+        val (firstPlayerToServe, thirdPlayerToServe) = if (firstParticipantToServe == firstParticipantId) {
+            firstServingPlayerInFirstParticipant to
+                    (if (firstServingPlayerInFirstParticipant == firstParticipantFirstPlayerId) firstParticipantSecondPlayerId else firstParticipantFirstPlayerId)
+        } else {
+            firstServingPlayerInSecondParticipant to
+                    (if (firstServingPlayerInSecondParticipant == secondParticipantFirstPlayerId) secondParticipantSecondPlayerId else secondParticipantFirstPlayerId)
+        }
+
+        val (secondPlayerToServe, fourthPlayerToServe) = if (firstParticipantToServe == firstParticipantId) {
+            firstServingPlayerInSecondParticipant to
+                    (if (firstServingPlayerInSecondParticipant == secondParticipantFirstPlayerId) secondParticipantSecondPlayerId else secondParticipantFirstPlayerId)
+        } else {
+            firstServingPlayerInFirstParticipant to
+                    (if (firstServingPlayerInFirstParticipant == firstParticipantFirstPlayerId) firstParticipantSecondPlayerId else firstParticipantFirstPlayerId)
+        }
+
 
         // Почему не сделали currentServe = null, если есть победитель?
         // После последнего выигранного розыгрыша serve и так становится равным null, поэтому лишней проверки не нужно
@@ -203,6 +227,19 @@ class DoublesMatchService(
         val currentPlayerToServe = when {
             lastPoint == null -> firstPlayerToServe
             else -> lastPoint.currentServeInPair
+        }
+
+        val nextPlayerToServe = when {
+            lastPoint == null -> secondPlayerToServe
+            else -> {
+                when {
+                    lastPoint.currentServeInPair == firstPlayerToServe -> secondPlayerToServe
+                    lastPoint.currentServeInPair == secondPlayerToServe -> thirdPlayerToServe
+                    lastPoint.currentServeInPair == thirdPlayerToServe -> fourthPlayerToServe
+                    lastPoint.currentServeInPair == fourthPlayerToServe -> firstPlayerToServe
+                    else-> null
+                }
+            }
         }
 
         var currentSetMode: SpecialSetMode?
@@ -260,9 +297,10 @@ class DoublesMatchService(
             primaryColor = matchEntity.firstParticipantPrimaryColor,
             secondaryColor = matchEntity.firstParticipantSecondaryColor,
             servingParticipantId = currentServe,
-            servingInPairPlayerId = currentPlayerToServe,
             winningParticipantId = winnerParticipantId,
-            retiredParticipantId = retiredParticipantId
+            retiredParticipantId = retiredParticipantId,
+            nowServingPlayerId = currentPlayerToServe,
+            nextServingPlayerId = nextPlayerToServe
         )
 
         val secondParticipant = matchEntity.secondParticipant.toParticipantInMatchDto(
@@ -270,10 +308,11 @@ class DoublesMatchService(
             primaryColor = matchEntity.secondParticipantPrimaryColor,
             secondaryColor = matchEntity.secondParticipantSecondaryColor,
             servingParticipantId = currentServe,
-            servingInPairPlayerId = currentPlayerToServe,
             winningParticipantId = winnerParticipantId,
-            retiredParticipantId = retiredParticipantId
-        )
+            retiredParticipantId = retiredParticipantId,
+            nowServingPlayerId = currentPlayerToServe,
+            nextServingPlayerId = nextPlayerToServe
+            )
 
         val matchDto = MatchDto(
             id = matchId.toString(),
@@ -301,12 +340,12 @@ class DoublesMatchService(
 
         val secondParticipantId = matchEntity.secondParticipant.id.value
 
-        val firstParticipantToServeInMatch = matchEntity.firstServingParticipant!!.id.value
+        val firstParticipantToServe = matchEntity.firstServingParticipant!!.id.value
 
-        val secondParticipantToServeInMatch =
-            if (firstParticipantToServeInMatch == firstParticipantId) secondParticipantId else firstParticipantId
+        val secondParticipantToServe =
+            if (firstParticipantToServe == firstParticipantId) secondParticipantId else firstParticipantId
 
-        val participantServingOrder = listOf(firstParticipantToServeInMatch, secondParticipantToServeInMatch)
+        val participantServingOrder = listOf(firstParticipantToServe, secondParticipantToServe)
 
         val firstParticipantFirstPlayerId = matchEntity.firstParticipant.firstPlayer.id.value
 
@@ -316,24 +355,24 @@ class DoublesMatchService(
 
         val secondParticipantSecondPlayerId = matchEntity.secondParticipant.secondPlayer.id.value
 
-        val firstParticipantFirstServePlayerId = matchEntity.firstServingPlayerInFirstParticipant!!.id.value
+        val firstServingPlayerInFirstParticipant = matchEntity.firstServingPlayerInFirstParticipant!!.id.value
 
-        val secondParticipantFirstServePlayerId = matchEntity.firstServingPlayerInSecondParticipant!!.id.value
+        val firstServingPlayerInSecondParticipant = matchEntity.firstServingPlayerInSecondParticipant!!.id.value
 
-        val (firstPlayerToServe, thirdPlayerToServe) = if (firstParticipantToServeInMatch == firstParticipantId) {
-            firstParticipantFirstServePlayerId to
-                    (if (firstParticipantFirstServePlayerId == firstParticipantFirstPlayerId) firstParticipantSecondPlayerId else firstParticipantFirstPlayerId)
+        val (firstPlayerToServe, thirdPlayerToServe) = if (firstParticipantToServe == firstParticipantId) {
+            firstServingPlayerInFirstParticipant to
+                    (if (firstServingPlayerInFirstParticipant == firstParticipantFirstPlayerId) firstParticipantSecondPlayerId else firstParticipantFirstPlayerId)
         } else {
-            secondParticipantFirstServePlayerId to
-                    (if (secondParticipantFirstServePlayerId == secondParticipantFirstPlayerId) secondParticipantSecondPlayerId else secondParticipantFirstPlayerId)
+            firstServingPlayerInSecondParticipant to
+                    (if (firstServingPlayerInSecondParticipant == secondParticipantFirstPlayerId) secondParticipantSecondPlayerId else secondParticipantFirstPlayerId)
         }
 
-        val (secondPlayerToServe, fourthPlayerToServe) = if (firstParticipantToServeInMatch == firstParticipantId) {
-            secondParticipantFirstServePlayerId to
-                    (if (secondParticipantFirstServePlayerId == secondParticipantFirstPlayerId) secondParticipantSecondPlayerId else secondParticipantFirstPlayerId)
+        val (secondPlayerToServe, fourthPlayerToServe) = if (firstParticipantToServe == firstParticipantId) {
+            firstServingPlayerInSecondParticipant to
+                    (if (firstServingPlayerInSecondParticipant == secondParticipantFirstPlayerId) secondParticipantSecondPlayerId else secondParticipantFirstPlayerId)
         } else {
-            firstParticipantFirstServePlayerId to
-                    (if (firstParticipantFirstServePlayerId == firstParticipantFirstPlayerId) firstParticipantSecondPlayerId else firstParticipantFirstPlayerId)
+            firstServingPlayerInFirstParticipant to
+                    (if (firstServingPlayerInFirstParticipant == firstParticipantFirstPlayerId) firstParticipantSecondPlayerId else firstParticipantFirstPlayerId)
         }
 
         val playerServingOrder = listOf(
@@ -378,7 +417,7 @@ class DoublesMatchService(
 
         pointNumber++
 
-        var currentServe = lastPoint?.currentServe ?: firstParticipantToServeInMatch
+        var currentServe = lastPoint?.currentServe ?: firstParticipantToServe
         var currentPlayerToServe = lastPoint?.currentServeInPair ?: firstPlayerToServe
 
         var firstParticipantPoints = 0
@@ -512,8 +551,8 @@ class DoublesMatchService(
                     )
 
                     // если завершается первый сет, а геймов не было (к примеру, супер тай-брейк), то в следующем сете подает второй по очереди игрок
-                    setNumber % 2 == 0 -> firstParticipantToServeInMatch
-                    else -> secondParticipantToServeInMatch
+                    setNumber % 2 == 0 -> firstParticipantToServe
+                    else -> secondParticipantToServe
                 }
                 currentPlayerToServe = when {
                     currentSet != null -> calculateNextServe(

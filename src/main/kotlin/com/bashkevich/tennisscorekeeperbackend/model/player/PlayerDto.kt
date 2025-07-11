@@ -58,8 +58,10 @@ data class PlayerInDoublesMatchDto(
     override val surname: String,
     @SerialName("name")
     override val name: String,
-    @SerialName("is_serving")
-    val isServing: Boolean,
+    @SerialName("is_serving_now")
+    val isServingNow: Boolean,
+    @SerialName("is_serving_next")
+    val isServingNext: Boolean,
 ) : PlayerInMatchDto()
 
 
@@ -69,11 +71,12 @@ fun PlayerEntity.toPlayerInSinglesMatchDto(): PlayerInMatchDto = PlayerInSingles
     name = this.name
 )
 
-fun PlayerEntity.toPlayerInDoublesMatchDto(servingPlayerId: Int?): PlayerInMatchDto = PlayerInDoublesMatchDto(
+fun PlayerEntity.toPlayerInDoublesMatchDto(nowServingPlayerId: Int?, nextServingPlayerId: Int?): PlayerInMatchDto = PlayerInDoublesMatchDto(
     id = this.id.value.toString(),
     surname = this.surname,
     name = this.name,
-    isServing = this.id.value == servingPlayerId
+    isServingNow = this.id.value == nowServingPlayerId,
+    isServingNext = this.id.value == nextServingPlayerId
 )
 
 fun PlayerEntity.toDto() = PlayerDto(
