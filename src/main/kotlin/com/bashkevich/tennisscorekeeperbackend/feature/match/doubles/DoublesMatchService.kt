@@ -184,35 +184,11 @@ class DoublesMatchService(
 
         val lastPoint = doublesMatchLogRepository.getLastPoint(matchId, lastPointNumber)
 
-        val firstParticipantId = matchEntity.firstParticipant.id.value
-        val firstParticipantToServe = matchEntity.firstServingParticipant?.id?.value
+        val playerServingOrder = buildPlayerServeOrder(matchEntity)
 
-        val firstServingPlayerInFirstParticipant = matchEntity.firstServingPlayerInFirstParticipant?.id?.value
-        val firstServingPlayerInSecondParticipant = matchEntity.firstServingPlayerInSecondParticipant?.id?.value
+        val firstPlayerToServe = playerServingOrder[0]
 
-        val firstParticipantFirstPlayerId = matchEntity.firstParticipant.firstPlayer.id.value
-
-        val firstParticipantSecondPlayerId = matchEntity.firstParticipant.secondPlayer.id.value
-
-        val secondParticipantFirstPlayerId = matchEntity.secondParticipant.firstPlayer.id.value
-
-        val secondParticipantSecondPlayerId = matchEntity.secondParticipant.secondPlayer.id.value
-
-        val (firstPlayerToServe, thirdPlayerToServe) = if (firstParticipantToServe == firstParticipantId) {
-            firstServingPlayerInFirstParticipant to
-                    (if (firstServingPlayerInFirstParticipant == firstParticipantFirstPlayerId) firstParticipantSecondPlayerId else firstParticipantFirstPlayerId)
-        } else {
-            firstServingPlayerInSecondParticipant to
-                    (if (firstServingPlayerInSecondParticipant == secondParticipantFirstPlayerId) secondParticipantSecondPlayerId else secondParticipantFirstPlayerId)
-        }
-
-        val (secondPlayerToServe, fourthPlayerToServe) = if (firstParticipantToServe == firstParticipantId) {
-            firstServingPlayerInSecondParticipant to
-                    (if (firstServingPlayerInSecondParticipant == secondParticipantFirstPlayerId) secondParticipantSecondPlayerId else secondParticipantFirstPlayerId)
-        } else {
-            firstServingPlayerInFirstParticipant to
-                    (if (firstServingPlayerInFirstParticipant == firstParticipantFirstPlayerId) firstParticipantSecondPlayerId else firstParticipantFirstPlayerId)
-        }
+        val secondPlayerToServe = playerServingOrder[1]
 
 
         // Почему не сделали currentServe = null, если есть победитель?
@@ -232,13 +208,9 @@ class DoublesMatchService(
         val nextPlayerToServe = when {
             lastPoint == null -> secondPlayerToServe
             else -> {
-                when {
-                    lastPoint.currentServeInPair == firstPlayerToServe -> secondPlayerToServe
-                    lastPoint.currentServeInPair == secondPlayerToServe -> thirdPlayerToServe
-                    lastPoint.currentServeInPair == thirdPlayerToServe -> fourthPlayerToServe
-                    lastPoint.currentServeInPair == fourthPlayerToServe -> firstPlayerToServe
-                    else-> null
-                }
+                val currentServingPlayerIndex = playerServingOrder.indexOf(lastPoint.currentServeInPair)
+
+                playerServingOrder[(currentServingPlayerIndex+1)%4]
             }
         }
 
@@ -347,40 +319,9 @@ class DoublesMatchService(
 
         val participantServingOrder = listOf(firstParticipantToServe, secondParticipantToServe)
 
-        val firstParticipantFirstPlayerId = matchEntity.firstParticipant.firstPlayer.id.value
+        val playerServingOrder = buildPlayerServeOrder(matchEntity).filterNotNull()
 
-        val firstParticipantSecondPlayerId = matchEntity.firstParticipant.secondPlayer.id.value
-
-        val secondParticipantFirstPlayerId = matchEntity.secondParticipant.firstPlayer.id.value
-
-        val secondParticipantSecondPlayerId = matchEntity.secondParticipant.secondPlayer.id.value
-
-        val firstServingPlayerInFirstParticipant = matchEntity.firstServingPlayerInFirstParticipant!!.id.value
-
-        val firstServingPlayerInSecondParticipant = matchEntity.firstServingPlayerInSecondParticipant!!.id.value
-
-        val (firstPlayerToServe, thirdPlayerToServe) = if (firstParticipantToServe == firstParticipantId) {
-            firstServingPlayerInFirstParticipant to
-                    (if (firstServingPlayerInFirstParticipant == firstParticipantFirstPlayerId) firstParticipantSecondPlayerId else firstParticipantFirstPlayerId)
-        } else {
-            firstServingPlayerInSecondParticipant to
-                    (if (firstServingPlayerInSecondParticipant == secondParticipantFirstPlayerId) secondParticipantSecondPlayerId else secondParticipantFirstPlayerId)
-        }
-
-        val (secondPlayerToServe, fourthPlayerToServe) = if (firstParticipantToServe == firstParticipantId) {
-            firstServingPlayerInSecondParticipant to
-                    (if (firstServingPlayerInSecondParticipant == secondParticipantFirstPlayerId) secondParticipantSecondPlayerId else secondParticipantFirstPlayerId)
-        } else {
-            firstServingPlayerInFirstParticipant to
-                    (if (firstServingPlayerInFirstParticipant == firstParticipantFirstPlayerId) firstParticipantSecondPlayerId else firstParticipantFirstPlayerId)
-        }
-
-        val playerServingOrder = listOf(
-            firstPlayerToServe,
-            secondPlayerToServe,
-            thirdPlayerToServe,
-            fourthPlayerToServe
-        )
+        val firstPlayerToServe = playerServingOrder[0]
 
         val lastPointInTable = doublesMatchLogRepository.getLastPoint(matchId)
 
@@ -617,6 +558,40 @@ class DoublesMatchService(
         val matchDto = buildMatchById(matchId = matchId, lastPointNumber = pointNumber)
 
         MatchObserver.notifyChange(matchDto)
+    }
+
+    private fun buildPlayerServeOrder(matchEntity: DoublesMatchEntity): List<Int?>{
+        val firstParticipantId = matchEntity.firstParticipant.id.value
+        val firstParticipantToServe = matchEntity.firstServingParticipant?.id?.value
+
+        val firstServingPlayerInFirstParticipant = matchEntity.firstServingPlayerInFirstParticipant?.id?.value
+        val firstServingPlayerInSecondParticipant = matchEntity.firstServingPlayerInSecondParticipant?.id?.value
+
+        val firstParticipantFirstPlayerId = matchEntity.firstParticipant.firstPlayer.id.value
+
+        val firstParticipantSecondPlayerId = matchEntity.firstParticipant.secondPlayer.id.value
+
+        val secondParticipantFirstPlayerId = matchEntity.secondParticipant.firstPlayer.id.value
+
+        val secondParticipantSecondPlayerId = matchEntity.secondParticipant.secondPlayer.id.value
+
+        val (firstPlayerToServe, thirdPlayerToServe) = if (firstParticipantToServe == firstParticipantId) {
+            firstServingPlayerInFirstParticipant to
+                    (if (firstServingPlayerInFirstParticipant == firstParticipantFirstPlayerId) firstParticipantSecondPlayerId else firstParticipantFirstPlayerId)
+        } else {
+            firstServingPlayerInSecondParticipant to
+                    (if (firstServingPlayerInSecondParticipant == secondParticipantFirstPlayerId) secondParticipantSecondPlayerId else secondParticipantFirstPlayerId)
+        }
+
+        val (secondPlayerToServe, fourthPlayerToServe) = if (firstParticipantToServe == firstParticipantId) {
+            firstServingPlayerInSecondParticipant to
+                    (if (firstServingPlayerInSecondParticipant == secondParticipantFirstPlayerId) secondParticipantSecondPlayerId else secondParticipantFirstPlayerId)
+        } else {
+            firstServingPlayerInFirstParticipant to
+                    (if (firstServingPlayerInFirstParticipant == firstParticipantFirstPlayerId) firstParticipantSecondPlayerId else firstParticipantFirstPlayerId)
+        }
+
+        return listOf(firstPlayerToServe,secondPlayerToServe,thirdPlayerToServe,fourthPlayerToServe)
     }
 
     private fun findSetTemplate(matchEntity: DoublesMatchEntity, setNumber: Int, setsToWin: Int): SetTemplateEntity {
