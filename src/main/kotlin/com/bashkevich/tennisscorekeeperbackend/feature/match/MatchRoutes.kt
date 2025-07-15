@@ -5,6 +5,7 @@ import com.bashkevich.tennisscorekeeperbackend.feature.match.websocket.MatchObse
 import com.bashkevich.tennisscorekeeperbackend.model.match.body.ChangeScoreBody
 import com.bashkevich.tennisscorekeeperbackend.model.match.MatchBody
 import com.bashkevich.tennisscorekeeperbackend.model.match.body.MatchStatusBody
+import com.bashkevich.tennisscorekeeperbackend.model.match.body.RetiredParticipantBody
 import com.bashkevich.tennisscorekeeperbackend.model.match.body.ServeBody
 import com.bashkevich.tennisscorekeeperbackend.model.match.body.ServeInPairBody
 import com.bashkevich.tennisscorekeeperbackend.plugins.receiveBodyCatching
@@ -146,6 +147,15 @@ fun Route.matchRoutes(){
                 matchServiceRouter.updateScore(matchId,changeScoreBody)
 
                 call.respondWithMessageBody(message ="Successfully updated the score")
+            }
+            patch("/retire"){
+                val matchId = call.pathParameters["id"]?.toIntOrNull() ?: 0
+
+                val retiredParticipantBody = call.receiveBodyCatching<RetiredParticipantBody>()
+
+                matchServiceRouter.setParticipantRetired(matchId,retiredParticipantBody)
+
+                call.respondWithMessageBody(message ="Participant successfully retired")
             }
             patch("/undo"){
                 val matchId = call.pathParameters["id"]?.toIntOrNull() ?: 0

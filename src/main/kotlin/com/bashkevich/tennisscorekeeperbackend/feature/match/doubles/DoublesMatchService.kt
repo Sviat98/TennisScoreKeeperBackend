@@ -16,6 +16,7 @@ import com.bashkevich.tennisscorekeeperbackend.model.match.ShortMatchDto
 import com.bashkevich.tennisscorekeeperbackend.model.match.SpecialSetMode
 import com.bashkevich.tennisscorekeeperbackend.model.match.TennisGameDto
 import com.bashkevich.tennisscorekeeperbackend.model.match.TennisSetDto
+import com.bashkevich.tennisscorekeeperbackend.model.match.body.RetiredParticipantBody
 import com.bashkevich.tennisscorekeeperbackend.model.match.doubles.DoublesMatchEntity
 import com.bashkevich.tennisscorekeeperbackend.model.match.toShortMatchDto
 import com.bashkevich.tennisscorekeeperbackend.model.match.toTennisGameDto
@@ -234,23 +235,10 @@ class DoublesMatchService(
 
             val lastGame = doublesMatchLogRepository.getCurrentSet(matchId, setNumber, lastPointNumber)
 
-            currentSet = when {
-                lastPoint?.scoreType == ScoreType.SET -> null
-                // если матч начинается с супер тай-брейка, то lastPoint = null, свалимся в последнюю ветку
-                // в противном случае выводим счет супер тай-брейка, как будто это сет
-                currentSetMode == SpecialSetMode.SUPER_TIEBREAK -> lastPoint?.let {
-                    TennisSetDto(
-                        firstParticipantGames = lastPoint.firstParticipantPoints,
-                        secondParticipantGames = lastPoint.secondParticipantPoints,
-                    )
-                }
-                // берем счет с последнего гейма, если первый гейм и начат, то выводим 0:0,
-                // если первый розыгрыш - то ничего не выводим
-                else -> lastGame?.toTennisSetDto() ?: if (lastPoint?.scoreType == ScoreType.POINT) TennisSetDto(
-                    firstParticipantGames = 0,
-                    secondParticipantGames = 0,
-                ) else null
-            }
+            currentSet = calculateCurrentSetScore(
+                lastPoint = lastPoint, lastGame = lastGame,
+                currentSetMode = currentSetMode
+            )
 
             currentGame = when {
                 currentSetMode == SpecialSetMode.SUPER_TIEBREAK -> null
@@ -535,6 +523,8 @@ class DoublesMatchService(
             if (firstParticipantSetsWon == setsToWin || secondParticipantSetsWon == setsToWin) {
                 val winnerParticipantId =
                     if (firstParticipantSetsWon == setsToWin) firstParticipantId else secondParticipantId
+                scoreType =
+                    if (winnerParticipantId == firstParticipantId) ScoreType.FINAL_SET_FIRST else ScoreType.FINAL_SET_SECOND
                 doublesMatchRepository.updateWinner(matchId = matchId, winnerParticipantId = winnerParticipantId)
                 // матч закончился, вставляем currentServe и currentPlayerToServe, равные null
                 currentServeToInsert = null
@@ -620,6 +610,125 @@ class DoublesMatchService(
         return serveOrder[newServeIndex % size]
     }
 
+
+    private fun calculateCurrentSetScore(
+        lastPoint: DoublesMatchLogEvent?,
+        lastGame: DoublesMatchLogEvent?,
+        currentSetMode: SpecialSetMode?,
+    ): TennisSetDto? {
+        return when {
+            lastPoint?.scoreType == ScoreType.SET -> null
+            // если матч начинается с супер тай-брейка, то lastPoint = null, свалимся в последнюю ветку
+            // в противном случае выводим счет супер тай-брейка, как будто это сет
+            currentSetMode == SpecialSetMode.SUPER_TIEBREAK -> lastPoint?.let {
+                TennisSetDto(
+                    firstParticipantGames = lastPoint.firstParticipantPoints,
+                    secondParticipantGames = lastPoint.secondParticipantPoints,
+                )
+            }
+            // берем счет с последнего гейма, если первый гейм и начат, то выводим 0:0,
+            // если первый розыгрыш - то ничего не выводим
+            else -> lastGame?.toTennisSetDto() ?: if (lastPoint?.scoreType == ScoreType.POINT) TennisSetDto(
+                firstParticipantGames = 0,
+                secondParticipantGames = 0,
+            ) else null
+        }
+    }
+
+    suspend fun setParticipantRetired(matchId: Int, retiredParticipantBody: RetiredParticipantBody) {
+        if (matchId == 0) throw BadRequestException("Incorrect id")
+
+        val matchEntity =
+            doublesMatchRepository.getMatchById(matchId) ?: throw NotFoundException("No match found!")
+
+        val firstParticipantId = matchEntity.firstParticipant.id.value
+        val secondParticipantId = matchEntity.secondParticipant.id.value
+
+
+        val retiredParticipantId =
+            retiredParticipantBody.retiredParticipantId.toInt() // тут будет Int значение, левые значения строк обработаны в RequestValidation
+
+        val lastPointInTable = doublesMatchLogRepository.getLastPoint(matchId)
+
+        validateRequestConditions {
+            when {
+                retiredParticipantId !in listOf(
+                    firstParticipantId,
+                    secondParticipantId
+                ) -> "Serve player id is not in match"
+
+                matchEntity.status != MatchStatus.PAUSED -> "Cannot retire the participant. The match should be in status PAUSED"
+                else -> ""
+            }
+        }
+
+        val pointShift = matchEntity.pointShift
+
+        val lastPointNumber = (lastPointInTable?.pointNumber ?: 0) + pointShift
+
+        if (matchEntity.pointShift < 0) {
+            doublesMatchRepository.updatePointShift(matchId = matchId, newPointShift = 0)
+
+            doublesMatchLogRepository.removeEvents(matchId = matchId, pointNumber = lastPointNumber)
+        }
+
+        var winnerParticipantId: Int
+        var scoreType: ScoreType
+
+        if (retiredParticipantId == firstParticipantId) {
+            scoreType = ScoreType.RETIREMENT_FIRST
+            winnerParticipantId = secondParticipantId
+        } else {
+            scoreType = ScoreType.RETIREMENT_SECOND
+            winnerParticipantId = firstParticipantId
+        }
+
+        // для предыдущих партий всегда возвращаем ORDINARY, здесь нам нужен только сам счет
+        val previousSets =
+            doublesMatchLogRepository.getPreviousSets(matchId, lastPointNumber).map { it.toTennisSetDto() }
+
+        val setNumber = previousSets.size + 1
+
+        val setsToWin = matchEntity.setsToWin
+
+        val currentSetTemplate = findSetTemplate(matchEntity, setNumber, setsToWin)
+        val currentSetMode = calculateCurrentSetMode(currentSetTemplate)
+
+        val lastPoint = doublesMatchLogRepository.getLastPoint(matchId, lastPointNumber)
+        val lastGame = doublesMatchLogRepository.getCurrentSet(matchId, setNumber, lastPointNumber)
+
+        val currentSetScore = calculateCurrentSetScore(
+            lastPoint = lastPoint, lastGame = lastGame,
+            currentSetMode = currentSetMode
+        ) ?: TennisSetDto(firstParticipantGames = 0, secondParticipantGames = 0)
+
+        val firstParticipantPoints = currentSetScore.firstParticipantGames
+        val secondParticipantPoints = currentSetScore.secondParticipantGames
+
+        val newPointNumber = lastPointNumber + 1
+
+        doublesMatchRepository.setParticipantRetired(matchId = matchId, retiredParticipantId = retiredParticipantId)
+        doublesMatchRepository.updateWinner(matchId = matchId, winnerParticipantId = winnerParticipantId)
+        doublesMatchRepository.updateStatus(matchId = matchId, matchStatus = MatchStatus.IN_PROGRESS)
+
+        val doublesMatchLogEvent = DoublesMatchLogEvent(
+            matchId = matchId,
+            setNumber = setNumber,
+            pointNumber = newPointNumber,
+            scoreType = scoreType,
+            currentServe = null,
+            currentServeInPair = null,
+            firstParticipantPoints = firstParticipantPoints,
+            secondParticipantPoints = secondParticipantPoints
+        )
+
+        doublesMatchLogRepository.insertMatchLogEvent(doublesMatchLogEvent)
+
+        val matchDto = buildMatchById(matchId = matchId, lastPointNumber= newPointNumber)
+
+        MatchObserver.notifyChange(matchDto)
+    }
+
     suspend fun undoPoint(matchId: Int) {
         if (matchId == 0) throw BadRequestException("Incorrect id")
         val matchEntity =
@@ -642,6 +751,10 @@ class DoublesMatchService(
         }
         matchEntity.winnerParticipant?.let {
             doublesMatchRepository.updateWinner(matchId = matchId, winnerParticipantId = null)
+
+            matchEntity.retiredParticipant?.let {
+                doublesMatchRepository.setParticipantRetired(matchId = matchId, retiredParticipantId = null)
+            }
         }
 
         doublesMatchRepository.updatePointShift(matchId = matchId, newPointShift = newPointShift)
@@ -675,24 +788,33 @@ class DoublesMatchService(
 
         doublesMatchRepository.updatePointShift(matchId = matchId, newPointShift = newPointShift)
 
+        val firstParticipantId = matchEntity.firstParticipant.id.value
+        val secondParticipantId = matchEntity.secondParticipant.id.value
+
+        var retiredParticipantId: Int
+        var winnerParticipantId: Int
+
         val lastPoint = doublesMatchLogRepository.getLastPoint(matchId, lastPointNumber)
 
-        if (lastPoint?.scoreType == ScoreType.SET) {
-            val previousSets = doublesMatchLogRepository.getPreviousSets(matchId, lastPointNumber)
+        if (lastPoint?.scoreType in listOf(ScoreType.FINAL_SET_FIRST, ScoreType.FINAL_SET_SECOND)) {
+            winnerParticipantId =
+                if (lastPoint?.scoreType == ScoreType.FINAL_SET_FIRST) firstParticipantId else secondParticipantId
 
-            val setsToWin = matchEntity.setsToWin
-            val firstParticipantId = matchEntity.firstParticipant.id.value
-            val secondParticipantId = matchEntity.secondParticipant.id.value
+            doublesMatchRepository.updateWinner(matchId = matchId, winnerParticipantId = winnerParticipantId)
+        }
 
-            val (firstParticipantSetsWon, secondParticipantSetsWon) =
-                previousSets.partition { it.firstParticipantPoints > it.secondParticipantPoints }
-                    .let { it.first.size to it.second.size }
+        if (lastPoint?.scoreType in listOf(ScoreType.RETIREMENT_FIRST, ScoreType.RETIREMENT_SECOND)) {
 
-            if (firstParticipantSetsWon == setsToWin || secondParticipantSetsWon == setsToWin) {
-                val winnerParticipantId =
-                    if (firstParticipantSetsWon == setsToWin) firstParticipantId else secondParticipantId
-                doublesMatchRepository.updateWinner(matchId = matchId, winnerParticipantId = winnerParticipantId)
+            if (lastPoint?.scoreType == ScoreType.RETIREMENT_FIRST) {
+                retiredParticipantId = firstParticipantId
+                winnerParticipantId = secondParticipantId
+            } else {
+                retiredParticipantId = secondParticipantId
+                winnerParticipantId = firstParticipantId
             }
+
+            doublesMatchRepository.setParticipantRetired(matchId = matchId, retiredParticipantId = retiredParticipantId)
+            doublesMatchRepository.updateWinner(matchId = matchId, winnerParticipantId = winnerParticipantId)
         }
 
         val matchDto = buildMatchById(matchId, lastPointNumber)

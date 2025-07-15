@@ -2,6 +2,7 @@ package com.bashkevich.tennisscorekeeperbackend.plugins
 
 import com.bashkevich.tennisscorekeeperbackend.model.match.body.ChangeScoreBody
 import com.bashkevich.tennisscorekeeperbackend.model.match.MatchBody
+import com.bashkevich.tennisscorekeeperbackend.model.match.body.RetiredParticipantBody
 import com.bashkevich.tennisscorekeeperbackend.model.match.body.ScoreType
 import com.bashkevich.tennisscorekeeperbackend.model.match.body.ServeBody
 import com.bashkevich.tennisscorekeeperbackend.model.match.body.ServeInPairBody
@@ -62,6 +63,15 @@ fun Application.configureValidation() {
 
             when {
                 servingPlayerId == 0 -> ValidationResult.Invalid("Serving player id in pair is wrong!")
+                else -> ValidationResult.Valid
+            }
+        }
+        validate<RetiredParticipantBody> { body ->
+
+            val retiredParticipantId = body.retiredParticipantId.toIntOrNull() ?: 0
+
+            when {
+                retiredParticipantId == 0 -> ValidationResult.Invalid("Retired participant id is wrong!")
                 else -> ValidationResult.Valid
             }
         }

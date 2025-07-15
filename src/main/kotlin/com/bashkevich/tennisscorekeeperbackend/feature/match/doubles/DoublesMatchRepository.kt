@@ -4,6 +4,7 @@ import com.bashkevich.tennisscorekeeperbackend.model.match.MatchBody
 import com.bashkevich.tennisscorekeeperbackend.model.match.MatchStatus
 import com.bashkevich.tennisscorekeeperbackend.model.match.doubles.DoublesMatchEntity
 import com.bashkevich.tennisscorekeeperbackend.model.match.doubles.DoublesMatchTable
+import com.bashkevich.tennisscorekeeperbackend.model.match.singles.SinglesMatchTable
 import org.jetbrains.exposed.v1.core.and
 import org.jetbrains.exposed.v1.jdbc.insertAndGetId
 import org.jetbrains.exposed.v1.jdbc.selectAll
@@ -54,6 +55,11 @@ class DoublesMatchRepository {
     suspend fun updateWinner(matchId: Int, winnerParticipantId: Int?) =
         DoublesMatchTable.update({ DoublesMatchTable.id eq matchId }) {
             it[winnerParticipant] = winnerParticipantId
+        }
+
+    suspend fun setParticipantRetired(matchId: Int, retiredParticipantId: Int?) =
+        SinglesMatchTable.update({ DoublesMatchTable.id eq matchId }) {
+            it[retiredParticipant] = retiredParticipantId
         }
 
     suspend fun updateStatus(matchId: Int, matchStatus: MatchStatus) {

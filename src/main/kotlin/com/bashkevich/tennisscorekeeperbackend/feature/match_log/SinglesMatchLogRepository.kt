@@ -11,6 +11,7 @@ import org.jetbrains.exposed.v1.jdbc.andWhere
 import org.jetbrains.exposed.v1.jdbc.deleteWhere
 import org.jetbrains.exposed.v1.jdbc.insert
 import org.jetbrains.exposed.v1.jdbc.selectAll
+
 //import org.jetbrains.exposed.v1.r2dbc.Query
 //import org.jetbrains.exposed.v1.r2dbc.selectAll as selectAll2
 
@@ -108,7 +109,13 @@ class SinglesMatchLogRepository {
         lastPointNumber: Int,
     ): List<SinglesMatchLogEvent> {
         return SinglesMatchLogTable.selectAll()
-            .where { (SinglesMatchLogTable.matchId eq matchId) and (SinglesMatchLogTable.scoreType eq ScoreType.SET) and (SinglesMatchLogTable.pointNumber lessEq lastPointNumber) }
+            .where {
+                (SinglesMatchLogTable.matchId eq matchId) and (SinglesMatchLogTable.scoreType inList listOf(
+                    ScoreType.SET,
+                    ScoreType.FINAL_SET_FIRST, ScoreType.FINAL_SET_SECOND,
+                    ScoreType.RETIREMENT_FIRST, ScoreType.RETIREMENT_SECOND
+                )) and (SinglesMatchLogTable.pointNumber lessEq lastPointNumber)
+            }
             .orderBy(
                 SinglesMatchLogTable.setNumber
             )

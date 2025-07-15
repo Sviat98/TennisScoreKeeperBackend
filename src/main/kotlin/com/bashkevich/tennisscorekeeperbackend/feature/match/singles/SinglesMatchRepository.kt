@@ -46,6 +46,11 @@ class SinglesMatchRepository {
             it[winnerParticipant] = winnerParticipantId
         }
 
+    suspend fun setParticipantRetired(matchId: Int, retiredParticipantId: Int?) =
+        SinglesMatchTable.update({ SinglesMatchTable.id eq matchId }) {
+            it[retiredParticipant] = retiredParticipantId
+        }
+
     suspend fun updateStatus(matchId: Int, matchStatus: MatchStatus) {
         SinglesMatchTable.update({ SinglesMatchTable.id eq matchId }) {
             it[status] = matchStatus

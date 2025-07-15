@@ -84,7 +84,11 @@ class DoublesMatchLogRepository {
         lastPointNumber: Int,
     ): List<DoublesMatchLogEvent> {
         return DoublesMatchLogTable.selectAll()
-            .where { (DoublesMatchLogTable.matchId eq matchId) and (DoublesMatchLogTable.scoreType eq ScoreType.SET) and (DoublesMatchLogTable.pointNumber lessEq lastPointNumber) }
+            .where { (DoublesMatchLogTable.matchId eq matchId) and (DoublesMatchLogTable.scoreType inList listOf(
+                ScoreType.SET,
+                ScoreType.FINAL_SET_FIRST, ScoreType.FINAL_SET_SECOND,
+                ScoreType.RETIREMENT_FIRST, ScoreType.RETIREMENT_SECOND
+            )) and (DoublesMatchLogTable.pointNumber lessEq lastPointNumber) }
             .orderBy(
                 DoublesMatchLogTable.setNumber
             )

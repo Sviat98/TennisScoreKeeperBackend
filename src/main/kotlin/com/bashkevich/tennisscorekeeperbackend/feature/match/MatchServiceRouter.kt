@@ -10,6 +10,7 @@ import com.bashkevich.tennisscorekeeperbackend.model.match.body.MatchStatusBody
 import com.bashkevich.tennisscorekeeperbackend.model.match.body.ServeBody
 import com.bashkevich.tennisscorekeeperbackend.model.match.body.ServeInPairBody
 import com.bashkevich.tennisscorekeeperbackend.model.match.ShortMatchDto
+import com.bashkevich.tennisscorekeeperbackend.model.match.body.RetiredParticipantBody
 import com.bashkevich.tennisscorekeeperbackend.model.tournament.TournamentStatus
 import com.bashkevich.tennisscorekeeperbackend.model.tournament.TournamentType
 import com.bashkevich.tennisscorekeeperbackend.plugins.dbQuery
@@ -150,6 +151,20 @@ class MatchServiceRouter(
             when (tournament.type){
                 TournamentType.SINGLES -> singlesMatchService.updateMatchStatus(matchId, matchStatusBody)
                 TournamentType.DOUBLES -> doublesMatchService.updateMatchStatus(matchId, matchStatusBody)
+                else -> throw IllegalStateException("Unknown tournament type: ${tournament.type}")
+            }
+        }
+    }
+
+    suspend fun setParticipantRetired(matchId: Int, retiredParticipantBody: RetiredParticipantBody) {
+        dbQuery {
+            if (matchId == 0) throw BadRequestException("Wrong format of match id")
+            val tournament = tournamentRepository.getTournamentByMatchId(matchId)
+                ?: throw NotFoundException("No tournament found by that id")
+
+            when (tournament.type){
+                TournamentType.SINGLES -> singlesMatchService.setParticipantRetired(matchId, retiredParticipantBody)
+                TournamentType.DOUBLES -> doublesMatchService.setParticipantRetired(matchId, retiredParticipantBody)
                 else -> throw IllegalStateException("Unknown tournament type: ${tournament.type}")
             }
         }
