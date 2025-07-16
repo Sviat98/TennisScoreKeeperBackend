@@ -870,9 +870,15 @@ class DoublesMatchService(
             }
         }
 
+        val lastPointInTable = doublesMatchLogRepository.getLastPoint(matchId)
+
+        val pointShift = matchEntity.pointShift
+
+        val lastPointNumber = (lastPointInTable?.pointNumber ?: 0) + pointShift
+
         doublesMatchRepository.updateStatus(matchId = matchId, matchStatus = newStatus)
 
-        val matchDto = buildMatchById(matchId, Int.MAX_VALUE)
+        val matchDto = buildMatchById(matchId = matchId, lastPointNumber = lastPointNumber)
 
         MatchObserver.notifyChange(matchDto)
     }
