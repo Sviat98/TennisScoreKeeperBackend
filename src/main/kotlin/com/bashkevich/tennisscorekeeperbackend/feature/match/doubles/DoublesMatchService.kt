@@ -211,7 +211,7 @@ class DoublesMatchService(
             else -> {
                 val currentServingPlayerIndex = playerServingOrder.indexOf(lastPoint.currentServeInPair)
 
-                playerServingOrder[(currentServingPlayerIndex+1)%4]
+                playerServingOrder[(currentServingPlayerIndex + 1) % 4]
             }
         }
 
@@ -242,7 +242,10 @@ class DoublesMatchService(
 
             currentGame = when {
                 currentSetMode == SpecialSetMode.SUPER_TIEBREAK -> null
-                lastPoint?.scoreType in listOf(ScoreType.GAME, ScoreType.SET) -> null
+                lastPoint?.scoreType in listOf(
+                    ScoreType.GAME, ScoreType.SET, ScoreType.RETIREMENT_FIRST, ScoreType.RETIREMENT_SECOND,
+                    ScoreType.FINAL_SET_FIRST, ScoreType.FINAL_SET_SECOND
+                ) -> null
                 else -> lastPoint?.toTennisGameDto()
             }
         } else {
@@ -272,7 +275,7 @@ class DoublesMatchService(
             retiredParticipantId = retiredParticipantId,
             nowServingPlayerId = currentPlayerToServe,
             nextServingPlayerId = nextPlayerToServe
-            )
+        )
 
         val matchDto = MatchDto(
             id = matchId.toString(),
@@ -550,7 +553,7 @@ class DoublesMatchService(
         MatchObserver.notifyChange(matchDto)
     }
 
-    private fun buildPlayerServeOrder(matchEntity: DoublesMatchEntity): List<Int?>{
+    private fun buildPlayerServeOrder(matchEntity: DoublesMatchEntity): List<Int?> {
         val firstParticipantId = matchEntity.firstParticipant.id.value
         val firstParticipantToServe = matchEntity.firstServingParticipant?.id?.value
 
@@ -581,7 +584,7 @@ class DoublesMatchService(
                     (if (firstServingPlayerInFirstParticipant == firstParticipantFirstPlayerId) firstParticipantSecondPlayerId else firstParticipantFirstPlayerId)
         }
 
-        return listOf(firstPlayerToServe,secondPlayerToServe,thirdPlayerToServe,fourthPlayerToServe)
+        return listOf(firstPlayerToServe, secondPlayerToServe, thirdPlayerToServe, fourthPlayerToServe)
     }
 
     private fun findSetTemplate(matchEntity: DoublesMatchEntity, setNumber: Int, setsToWin: Int): SetTemplateEntity {
@@ -724,7 +727,7 @@ class DoublesMatchService(
 
         doublesMatchLogRepository.insertMatchLogEvent(doublesMatchLogEvent)
 
-        val matchDto = buildMatchById(matchId = matchId, lastPointNumber= newPointNumber)
+        val matchDto = buildMatchById(matchId = matchId, lastPointNumber = newPointNumber)
 
         MatchObserver.notifyChange(matchDto)
     }
