@@ -161,7 +161,10 @@ class SinglesMatchService(
 
             currentGame = when {
                 currentSetMode == SpecialSetMode.SUPER_TIEBREAK -> null
-                lastPoint?.scoreType in listOf(ScoreType.GAME, ScoreType.SET) -> null
+                lastPoint?.scoreType in listOf(
+                    ScoreType.GAME, ScoreType.SET, ScoreType.RETIREMENT_FIRST, ScoreType.RETIREMENT_SECOND,
+                    ScoreType.FINAL_SET_FIRST, ScoreType.FINAL_SET_SECOND
+                ) -> null
                 else -> lastPoint?.toTennisGameDto()
             }
         } else {
