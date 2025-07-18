@@ -35,11 +35,12 @@ dependencies {
 
     implementation(libs.exposed.core)
     implementation(libs.exposed.jdbc)
-    //implementation(libs.exposed.r2dbc)
+    implementation(libs.exposed.r2dbc)
     implementation(libs.exposed.dao)
     implementation(libs.exposed.kotlin.datetime)
 
-    implementation(libs.postgres.driver)
+    //implementation(libs.postgres.jdbc.driver)
+    implementation(libs.postgres.r2dbc.driver)
     implementation(libs.ktor.server.netty)
     implementation(libs.logback.classic)
 

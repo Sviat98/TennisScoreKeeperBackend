@@ -6,9 +6,9 @@ import com.bashkevich.tennisscorekeeperbackend.model.match.doubles.DoublesMatchE
 import com.bashkevich.tennisscorekeeperbackend.model.match.doubles.DoublesMatchTable
 import com.bashkevich.tennisscorekeeperbackend.model.match.singles.SinglesMatchTable
 import org.jetbrains.exposed.v1.core.and
-import org.jetbrains.exposed.v1.jdbc.insertAndGetId
-import org.jetbrains.exposed.v1.jdbc.selectAll
-import org.jetbrains.exposed.v1.jdbc.update
+import org.jetbrains.exposed.v1.r2dbc.insertAndGetId
+import org.jetbrains.exposed.v1.r2dbc.selectAll
+import org.jetbrains.exposed.v1.r2dbc.update
 
 
 class DoublesMatchRepository {
@@ -27,8 +27,8 @@ class DoublesMatchRepository {
         it[decidingSetTemplate] = matchBody.decidingSet.toInt()
     }
 
-    fun getMatches(tournamentId: Int) =
-        DoublesMatchEntity.find({ DoublesMatchTable.tournament eq tournamentId }).toList()
+    suspend fun getMatches(tournamentId: Int) =
+        DoublesMatchEntity.find { DoublesMatchTable.tournament eq tournamentId }
 
     fun getMatchById(id: Int) = DoublesMatchEntity.findById(id)
 

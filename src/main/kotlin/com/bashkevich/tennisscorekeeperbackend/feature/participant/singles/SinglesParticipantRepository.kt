@@ -6,12 +6,12 @@ import org.jetbrains.exposed.v1.core.SortOrder
 import org.jetbrains.exposed.v1.core.SqlExpressionBuilder.eq
 import org.jetbrains.exposed.v1.core.SqlExpressionBuilder.notInList
 import org.jetbrains.exposed.v1.core.and
-import org.jetbrains.exposed.v1.jdbc.deleteWhere
-import org.jetbrains.exposed.v1.jdbc.upsert
+import org.jetbrains.exposed.v1.r2dbc.deleteWhere
+import org.jetbrains.exposed.v1.r2dbc.upsert
 
 class SinglesParticipantRepository {
 
-    fun upsertParticipant(tournamentId: Int, participantSeed: Int?, playerId: Int): Int {
+    suspend fun upsertParticipant(tournamentId: Int, participantSeed: Int?, playerId: Int): Int {
         return SinglesParticipantTable.upsert(
             SinglesParticipantTable.tournament, SinglesParticipantTable.player,
             onUpdate = {listOf(SinglesParticipantTable.seed to participantSeed)}
@@ -29,7 +29,7 @@ class SinglesParticipantRepository {
 
     fun getParticipantById(participantId: Int) = SinglesParticipantEntity.findById(participantId)
 
-    fun deleteUnnecessaryParticipants(tournamentId: Int, registeredParticipantIds: List<Int>) {
+    suspend fun deleteUnnecessaryParticipants(tournamentId: Int, registeredParticipantIds: List<Int>) {
         SinglesParticipantTable.deleteWhere { (SinglesParticipantTable.tournament eq tournamentId) and (SinglesParticipantTable.id notInList registeredParticipantIds)}
     }
 }

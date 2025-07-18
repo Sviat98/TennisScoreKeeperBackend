@@ -3,14 +3,17 @@ package com.bashkevich.tennisscorekeeperbackend.feature.match_log
 import com.bashkevich.tennisscorekeeperbackend.model.match.body.ScoreType
 import com.bashkevich.tennisscorekeeperbackend.model.match_log.doubles.DoublesMatchLogEvent
 import com.bashkevich.tennisscorekeeperbackend.model.match_log.doubles.DoublesMatchLogTable
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.singleOrNull
+import kotlinx.coroutines.flow.toList
 import org.jetbrains.exposed.v1.core.SortOrder
 import org.jetbrains.exposed.v1.core.SqlExpressionBuilder.eq
 import org.jetbrains.exposed.v1.core.SqlExpressionBuilder.greater
 import org.jetbrains.exposed.v1.core.and
-import org.jetbrains.exposed.v1.jdbc.andWhere
-import org.jetbrains.exposed.v1.jdbc.deleteWhere
-import org.jetbrains.exposed.v1.jdbc.insert
-import org.jetbrains.exposed.v1.jdbc.selectAll
+import org.jetbrains.exposed.v1.r2dbc.andWhere
+import org.jetbrains.exposed.v1.r2dbc.deleteWhere
+import org.jetbrains.exposed.v1.r2dbc.insert
+import org.jetbrains.exposed.v1.r2dbc.selectAll
 
 class DoublesMatchLogRepository {
     suspend fun insertMatchLogEvent(
@@ -91,7 +94,7 @@ class DoublesMatchLogRepository {
             )) and (DoublesMatchLogTable.pointNumber lessEq lastPointNumber) }
             .orderBy(
                 DoublesMatchLogTable.setNumber
-            )
+            ).toList()
             .map {
                 DoublesMatchLogEvent(
                     matchId = it[DoublesMatchLogTable.matchId].value,

@@ -16,7 +16,7 @@ fun main(args: Array<String>) {
     EngineMain.main(args)
 }
 
-fun Application.module() {
+suspend fun Application.module() {
     configureSerialization()
     configureCors()
     configureSockets()

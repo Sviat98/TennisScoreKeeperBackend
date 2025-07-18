@@ -11,20 +11,17 @@ import com.bashkevich.tennisscorekeeperbackend.model.set_template.SetTemplateTab
 import com.bashkevich.tennisscorekeeperbackend.model.player.PlayerTable
 import com.bashkevich.tennisscorekeeperbackend.model.tournament.TournamentTable
 import kotlinx.coroutines.Dispatchers
-import org.jetbrains.exposed.v1.core.DatabaseConfig
 import org.jetbrains.exposed.v1.core.Schema
 import org.jetbrains.exposed.v1.core.Sequence
 import org.jetbrains.exposed.v1.core.StdOutSqlLogger
-import org.jetbrains.exposed.v1.jdbc.Database
-import org.jetbrains.exposed.v1.jdbc.SchemaUtils
-import org.jetbrains.exposed.v1.jdbc.addLogger
-import org.jetbrains.exposed.v1.jdbc.transactions.experimental.newSuspendedTransaction
-import org.jetbrains.exposed.v1.jdbc.transactions.transaction
+import org.jetbrains.exposed.v1.r2dbc.R2dbcDatabase
+import org.jetbrains.exposed.v1.r2dbc.SchemaUtils
+import org.jetbrains.exposed.v1.r2dbc.transactions.suspendTransaction
 
 const val MATCH_SEQUENCE = "match_seq"
 const val PARTICIPANT_SEQUENCE = "participant_seq"
 
-fun configureDatabase() {
+suspend fun configureDatabase() {
     val cloudUsername = System.getenv("CLOUD_USERNAME")
 
     val cloudPassword = System.getenv("CLOUD_PASSWORD")
@@ -38,6 +35,9 @@ fun configureDatabase() {
     val remotejdbcURL =
         "jdbc:postgresql://ep-blue-fog-a2izbdkl-pooler.eu-central-1.aws.neon.tech/$cloudDB?sslmode=require"
 
+    val remoter2dbcURL =
+        "r2dbc:postgresql://ep-blue-fog-a2izbdkl-pooler.eu-central-1.aws.neon.tech/$cloudDB?sslmode=require"
+
     val localUsername = System.getenv("LOCAL_USERNAME")
 
     val localPassword = System.getenv("LOCAL_PASSWORD")
@@ -48,20 +48,20 @@ fun configureDatabase() {
 
 
     val driverClassName = "org.postgresql.Driver"
+    val r2dbcDriverClassName = "io.r2dbc.postgresql.PostgresqlConnectionFactoryProvider"
+
 
     //val schema = Schema(schemaName) // напоянтная ошибка с переключением схем БД, пока убрал это
 
     val schema = Schema(defaultSchemaName)
-    val databaseConfig = DatabaseConfig {
-        defaultSchema = schema
-    }
 
-    Database.connect(
-        url = remotejdbcURL,
-        driver = driverClassName,
+    R2dbcDatabase.connect(
+        url = remoter2dbcURL,
         user = cloudUsername,
         password = cloudPassword,
-        databaseConfig = databaseConfig,
+        databaseConfig = {
+            defaultSchema = schema
+        }
     )
     //Database.connect(url = localjdbcURL, driver = driverClassName, user = localUsername, password = localPassword, databaseConfig = databaseConfig)
 
@@ -69,7 +69,7 @@ fun configureDatabase() {
     val matchSequence = Sequence(MATCH_SEQUENCE)
     val participantSequence = Sequence(PARTICIPANT_SEQUENCE)
 
-    transaction {
+    suspendTransaction(Dispatchers.IO) {
         SchemaUtils.createSequence(matchSequence, participantSequence)
 
         SchemaUtils.create(
@@ -111,7 +111,7 @@ fun configureDatabase() {
 
 suspend fun isDbConnected(): Boolean {
     return try {
-        newSuspendedTransaction(Dispatchers.IO) {
+        suspendTransaction(Dispatchers.IO) {
             exec("SELECT 1")
             true
         }
@@ -121,7 +121,7 @@ suspend fun isDbConnected(): Boolean {
 }
 
 suspend fun <T> dbQuery(block: suspend () -> T): T =
-    newSuspendedTransaction(Dispatchers.IO) {
+    suspendTransaction(Dispatchers.IO) {
         addLogger(StdOutSqlLogger)
         block()
     }

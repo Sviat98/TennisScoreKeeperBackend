@@ -8,7 +8,7 @@ class CounterRepository {
 
     suspend fun getCounters(): List<CounterEntity> {
         return dbQuery {
-            CounterEntity.all().sortedBy { it.id.value }.toList()
+            CounterEntity.all().sorted { it.id.value }.toList()
         }
     }
 
