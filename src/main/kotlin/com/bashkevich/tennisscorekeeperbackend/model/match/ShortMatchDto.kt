@@ -17,8 +17,12 @@ data class ShortMatchDto(
     val secondParticipant: ParticipantInShortMatchDto,
     @SerialName("status")
     val status: MatchStatus,
-    @SerialName("final_score")
-    val finalScore: List<TennisSetDto>,
+    @SerialName("previous_sets")
+    val previousSets: List<TennisSetDto>,
+    @SerialName("current_set")
+    val currentSet: TennisSetDto?,
+    @SerialName("current_game")
+    val currentGame: TennisGameDto?,
 )
 
 @Serializable
@@ -33,7 +37,11 @@ data class PlayerInShortMatchDto(
     val winner: Boolean,
 )
 
-fun DoublesMatchEntity.toShortMatchDto(finalScore: List<TennisSetDto> = emptyList()) = ShortMatchDto(
+fun DoublesMatchEntity.toShortMatchDto(
+    previousSets: List<TennisSetDto> = emptyList(),
+    currentSet: TennisSetDto? = null,
+    currentGame: TennisGameDto? = null,
+) = ShortMatchDto(
     id = this.id.toString(),
     firstParticipant = this.firstParticipant.toShortMatchParticipantDto(
         winningParticipantId = this.winnerParticipant?.id?.value,
@@ -44,10 +52,16 @@ fun DoublesMatchEntity.toShortMatchDto(finalScore: List<TennisSetDto> = emptyLis
         retiredParticipantId = this.retiredParticipant?.id?.value
     ),
     status = this.status,
-    finalScore = finalScore
+    previousSets = previousSets,
+    currentSet = currentSet,
+    currentGame = currentGame
 )
 
-fun SinglesMatchEntity.toShortMatchDto(finalScore: List<TennisSetDto> = emptyList()) = ShortMatchDto(
+fun SinglesMatchEntity.toShortMatchDto(
+    previousSets: List<TennisSetDto> = emptyList(),
+    currentSet: TennisSetDto? = null,
+    currentGame: TennisGameDto? = null,
+) = ShortMatchDto(
     id = this.id.toString(),
     firstParticipant = this.firstParticipant.toShortMatchParticipantDto(
         winningParticipantId = this.winnerParticipant?.id?.value,
@@ -58,7 +72,9 @@ fun SinglesMatchEntity.toShortMatchDto(finalScore: List<TennisSetDto> = emptyLis
         retiredParticipantId = this.retiredParticipant?.id?.value
     ),
     status = this.status,
-    finalScore = finalScore
+    previousSets = previousSets,
+    currentSet = currentSet,
+    currentGame = currentGame
 )
 
 //fun PlayerInShortMatchEntity.toDto(winnerPlayerId: Int?) = PlayerInShortMatchDto(

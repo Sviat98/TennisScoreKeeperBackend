@@ -107,6 +107,25 @@ fun configureDatabase() {
 //            isRegularSet = true
 //            isDecidingSet = true
 //        }
+
+//    SetTemplateEntity.new {
+//        name = "До 4 геймов;Тай-брейк до 7 при счете 3-3"
+//        gamesToWin = 4
+//        decidingPoint = false
+//        tiebreakMode = TiebreakMode.EARLY
+//        tiebreakPointsToWin = 7
+//        isRegularSet = true
+//        isDecidingSet = true
+//    }
+//    SetTemplateEntity.new {
+//        name = "До 4 геймов;Тай-брейк до 7 при счете 3-3;При счете ровно решающее очко"
+//        gamesToWin = 4
+//        decidingPoint = true
+//        tiebreakMode = TiebreakMode.EARLY
+//        tiebreakPointsToWin = 7
+//        isRegularSet = true
+//        isDecidingSet = true
+//    }
 }
 
 suspend fun isDbConnected(): Boolean {

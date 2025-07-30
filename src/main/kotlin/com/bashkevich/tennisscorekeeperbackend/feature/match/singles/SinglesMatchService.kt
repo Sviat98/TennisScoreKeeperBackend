@@ -69,14 +69,69 @@ class SinglesMatchService(
 
     suspend fun getMatches(tournamentId: Int): List<ShortMatchDto> {
         return singlesMatchRepository.getMatches(tournamentId).map { matchEntity ->
+            buildShortMatch(matchEntity)
+        }
+    }
 
-            val previousSets = if (matchEntity.status == MatchStatus.COMPLETED) {
-                singlesMatchLogRepository.getPreviousSets(
-                    matchId = matchEntity.id.value,
-                    lastPointNumber = Int.MAX_VALUE
-                ).map { it.toTennisSetDto() }
-            } else emptyList()
-            matchEntity.toShortMatchDto(finalScore = previousSets)
+    private suspend fun buildShortMatch(matchEntity: SinglesMatchEntity): ShortMatchDto {
+        val matchId = matchEntity.id.value
+        return when (matchEntity.status) {
+            MatchStatus.PAUSED -> {
+                val lastPointInTable = singlesMatchLogRepository.getLastPoint(matchId = matchId)
+
+                val lastPointNumber = (lastPointInTable?.pointNumber ?: 0) + matchEntity.pointShift
+
+                val lastPoint =
+                    singlesMatchLogRepository.getLastPoint(matchId = matchId, lastPointNumber = lastPointNumber)
+
+                val previousSets =
+                    singlesMatchLogRepository.getPreviousSets(matchId, lastPointNumber).map { it.toTennisSetDto() }
+
+                val setNumber = previousSets.size + 1
+
+                val setsToWin = matchEntity.setsToWin
+
+                val currentSetTemplate = findSetTemplate(matchEntity, setNumber, setsToWin)
+
+                val currentSetMode = calculateCurrentSetMode(currentSetTemplate)
+
+                val lastGame = singlesMatchLogRepository.getCurrentSet(matchId, setNumber, lastPointNumber)
+
+                val currentSet = calculateCurrentSetScore(
+                    lastPoint = lastPoint, lastGame = lastGame,
+                    currentSetMode = currentSetMode
+                )
+
+                val currentGame = when {
+                    currentSetMode == SpecialSetMode.SUPER_TIEBREAK -> null
+                    lastPoint?.scoreType in listOf(
+                        ScoreType.GAME, ScoreType.SET, ScoreType.RETIREMENT_FIRST, ScoreType.RETIREMENT_SECOND,
+                        ScoreType.FINAL_SET_FIRST, ScoreType.FINAL_SET_SECOND
+                    ) -> null
+
+                    else -> lastPoint?.toTennisGameDto()
+                }
+
+                matchEntity.toShortMatchDto(
+                    previousSets = previousSets,
+                    currentSet = currentSet,
+                    currentGame = currentGame
+                )
+            }
+
+            MatchStatus.COMPLETED -> {
+
+                val previousSets =
+                    singlesMatchLogRepository.getPreviousSets(
+                        matchId = matchId,
+                        lastPointNumber = Int.MAX_VALUE
+                    ).map { it.toTennisSetDto() }
+                matchEntity.toShortMatchDto(previousSets = previousSets)
+            }
+
+            else -> {
+                matchEntity.toShortMatchDto()
+            }
         }
     }
 
@@ -165,6 +220,7 @@ class SinglesMatchService(
                     ScoreType.GAME, ScoreType.SET, ScoreType.RETIREMENT_FIRST, ScoreType.RETIREMENT_SECOND,
                     ScoreType.FINAL_SET_FIRST, ScoreType.FINAL_SET_SECOND
                 ) -> null
+
                 else -> lastPoint?.toTennisGameDto()
             }
         } else {
@@ -573,7 +629,7 @@ class SinglesMatchService(
 
         singlesMatchLogRepository.insertMatchLogEvent(singlesMatchLogEvent)
 
-        val matchDto = buildMatchById(matchId = matchId, lastPointNumber= newPointNumber)
+        val matchDto = buildMatchById(matchId = matchId, lastPointNumber = newPointNumber)
 
         MatchObserver.notifyChange(matchDto)
     }
