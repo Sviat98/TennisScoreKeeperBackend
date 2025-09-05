@@ -40,6 +40,7 @@ class SinglesMatchEntity(id: EntityID<Int>) : IntEntity(id) {
     val regularSetTemplate by SetTemplateEntity optionalReferencedOn  SinglesMatchTable.regularSetTemplate
     val decidingSetTemplate by SetTemplateEntity referencedOn SinglesMatchTable.decidingSetTemplate
     var pointShift by SinglesMatchTable.pointShift
+    var videoLink by SinglesMatchTable.videoLink
     val winnerParticipant by SinglesParticipantEntity optionalReferencedOn SinglesMatchTable.winnerParticipant
     val retiredParticipant by SinglesParticipantEntity optionalReferencedOn SinglesMatchTable.retiredParticipant
 }

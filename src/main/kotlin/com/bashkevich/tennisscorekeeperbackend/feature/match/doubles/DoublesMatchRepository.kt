@@ -52,6 +52,11 @@ class DoublesMatchRepository {
             it[pointShift] = newPointShift
         }
 
+    suspend fun updateVideoLink(matchId: Int, videoId: String) =
+        DoublesMatchTable.update({ DoublesMatchTable.id eq matchId }) {
+            it[videoLink] = videoId
+        }
+
     suspend fun updateWinner(matchId: Int, winnerParticipantId: Int?) =
         DoublesMatchTable.update({ DoublesMatchTable.id eq matchId }) {
             it[winnerParticipant] = winnerParticipantId

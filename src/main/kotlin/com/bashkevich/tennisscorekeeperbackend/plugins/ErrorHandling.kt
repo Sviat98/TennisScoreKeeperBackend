@@ -23,6 +23,9 @@ fun Application.configureStatusPages(){
         exception<InvalidBodyException> { call, cause ->
             call.respondWithMessageBody(statusCode = HttpStatusCode.BadRequest, message = cause.message ?: "")
         }
+        exception<UnauthorizedException> { call, cause ->
+            call.respondWithMessageBody(statusCode = HttpStatusCode.Unauthorized, message = cause.message ?: "")
+        }
         exception<RequestValidationException> { call, cause ->
             call.respondWithMessageBody(statusCode = HttpStatusCode.BadRequest, message = cause.message ?: "")
         }
@@ -43,6 +46,8 @@ fun Application.configureStatusPages(){
         }
     }
 }
+class UnauthorizedException(message: String = "Token is not valid or has expired!") : Exception(message)
+
 class InvalidBodyException(message: String = "Invalid body format in request!") : Exception(message)
 
 suspend inline fun <reified T : Any> ApplicationCall.receiveBodyCatching(): T {

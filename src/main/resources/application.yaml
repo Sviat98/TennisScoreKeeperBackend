@@ -4,3 +4,8 @@ ktor:
             - com.bashkevich.tennisscorekeeperbackend.ApplicationKt.module
     deployment:
         port: 8080
+jwt:
+  secret: $JWT_SECRET
+  issuer: $JWT_ISSUER
+  audience: $JWT_AUDIENCE
+  realm: $JWT_REALM

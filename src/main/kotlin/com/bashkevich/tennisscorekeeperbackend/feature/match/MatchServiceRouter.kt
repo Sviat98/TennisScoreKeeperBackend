@@ -170,5 +170,19 @@ class MatchServiceRouter(
         }
     }
 
+   suspend fun setVideoLink(matchId: Int, videoLink: String) {
+        dbQuery {
+            if (matchId == 0) throw BadRequestException("Wrong format of match id")
+            val tournament = tournamentRepository.getTournamentByMatchId(matchId)
+                ?: throw NotFoundException("No tournament found by that id")
+
+            when (tournament.type){
+                TournamentType.SINGLES -> singlesMatchService.setVideoLink(matchId, videoLink)
+                TournamentType.DOUBLES -> doublesMatchService.setVideoLink(matchId, videoLink)
+                else -> throw IllegalStateException("Unknown tournament type: ${tournament.type}")
+            }
+        }
+    }
+
 
 }

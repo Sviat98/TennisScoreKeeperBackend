@@ -251,6 +251,7 @@ class SinglesMatchService(
         val matchDto = MatchDto(
             id = matchId.toString(),
             pointShift = matchEntity.pointShift,
+            videoLink = matchEntity.videoLink,
             firstParticipant = firstParticipant,
             secondParticipant = secondParticipant,
             status = matchEntity.status,
@@ -779,5 +780,11 @@ class SinglesMatchService(
         val matchDto = buildMatchById(matchId = matchId, lastPointNumber = lastPointNumber)
 
         MatchObserver.notifyChange(matchDto)
+    }
+
+    suspend fun setVideoLink(matchId: Int, videoLink: String) {
+        if (matchId == 0) throw BadRequestException("Incorrect id")
+
+        singlesMatchRepository.updateVideoLink(matchId,videoLink)
     }
 }

@@ -30,6 +30,7 @@ object SinglesMatchTable : IdTable<Int>("singles_match") {
     val regularSetTemplate = reference("regular_set_id", SetTemplateTable).nullable()
     val decidingSetTemplate = reference("deciding_set_id", SetTemplateTable)
     val pointShift = integer("point_shift").default(0)
+    val videoLink = varchar("video_link",50).nullable()
     val winnerParticipant = reference("winner_participant_id", SinglesParticipantTable).nullable()
     val retiredParticipant = reference("retired_participant_id", SinglesParticipantTable).nullable()
 

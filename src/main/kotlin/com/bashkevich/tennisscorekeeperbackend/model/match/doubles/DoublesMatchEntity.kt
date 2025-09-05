@@ -28,6 +28,7 @@ class DoublesMatchEntity(id: EntityID<Int>) : IntEntity(id) {
     var setsToWin by DoublesMatchTable.setsToWin
     val regularSetTemplate by SetTemplateEntity optionalReferencedOn  DoublesMatchTable.regularSetTemplate
     val decidingSetTemplate by SetTemplateEntity referencedOn DoublesMatchTable.decidingSetTemplate
+    var videoLink by DoublesMatchTable.videoLink
     var pointShift by DoublesMatchTable.pointShift
     val winnerParticipant by DoublesParticipantEntity optionalReferencedOn  DoublesMatchTable.winnerParticipant
     val retiredParticipant by DoublesParticipantEntity optionalReferencedOn  DoublesMatchTable.retiredParticipant

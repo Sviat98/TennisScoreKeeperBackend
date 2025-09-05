@@ -7,6 +7,8 @@ import com.bashkevich.tennisscorekeeperbackend.model.match.singles.SinglesMatchT
 import com.bashkevich.tennisscorekeeperbackend.model.match_log.doubles.DoublesMatchLogTable
 import com.bashkevich.tennisscorekeeperbackend.model.participant.doubles.DoublesParticipantTable
 import com.bashkevich.tennisscorekeeperbackend.model.participant.singles.SinglesParticipantTable
+import com.bashkevich.tennisscorekeeperbackend.model.auth.PlayerAuthTable
+import com.bashkevich.tennisscorekeeperbackend.model.auth.RefreshTokenTable
 import com.bashkevich.tennisscorekeeperbackend.model.set_template.SetTemplateTable
 import com.bashkevich.tennisscorekeeperbackend.model.player.PlayerTable
 import com.bashkevich.tennisscorekeeperbackend.model.tournament.TournamentTable
@@ -72,10 +74,26 @@ fun configureDatabase() {
         SchemaUtils.createSequence(matchSequence, participantSequence)
 
         SchemaUtils.create(
-            CounterTable, PlayerTable, SetTemplateTable, TournamentTable,
+            CounterTable, PlayerTable, PlayerAuthTable, RefreshTokenTable, SetTemplateTable, TournamentTable,
             SinglesParticipantTable, SinglesMatchTable, SinglesMatchLogTable,
             DoublesParticipantTable, DoublesMatchTable, DoublesMatchLogTable
         )
+//
+//        PlayerTable.insert {
+//            it[id] = 123
+//            it[surname] = "Test"
+//            it[name] = "Admin"
+//            it[dateBirth] = LocalDate(1970,1,1)
+//        }
+//
+//        val passwordHash = BCrypt.withDefaults().hash(12, "Test_123".toByteArray(StandardCharsets.UTF_8))
+//
+//        PlayerAuthTable.insert {
+//            it[playerId] = 123
+//            it[login] = "test@gmail.com"
+//            it[password] = passwordHash
+//            it[isAdmin] = true
+//        }
     }
 
 //        SetTemplateEntity.new {

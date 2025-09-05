@@ -1,5 +1,6 @@
 package com.bashkevich.tennisscorekeeperbackend.plugins
 
+import com.bashkevich.tennisscorekeeperbackend.feature.auth.authRoutes
 import com.bashkevich.tennisscorekeeperbackend.feature.counter.counterRoutes
 import com.bashkevich.tennisscorekeeperbackend.feature.match.matchRoutes
 import com.bashkevich.tennisscorekeeperbackend.feature.participant.participantRoutes
@@ -21,6 +22,7 @@ fun Application.configureRouting() {
             if (isDbConnected()) call.respond("OK")
             else call.respond(HttpStatusCode.ServiceUnavailable)
         }
+        authRoutes()
         counterRoutes()
         tournamentRoutes()
         playerRoutes()

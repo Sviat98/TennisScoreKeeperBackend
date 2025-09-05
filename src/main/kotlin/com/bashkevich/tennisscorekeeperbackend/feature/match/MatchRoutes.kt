@@ -8,6 +8,7 @@ import com.bashkevich.tennisscorekeeperbackend.model.match.body.MatchStatusBody
 import com.bashkevich.tennisscorekeeperbackend.model.match.body.RetiredParticipantBody
 import com.bashkevich.tennisscorekeeperbackend.model.match.body.ServeBody
 import com.bashkevich.tennisscorekeeperbackend.model.match.body.ServeInPairBody
+import com.bashkevich.tennisscorekeeperbackend.model.match.body.VideoLinkBody
 import com.bashkevich.tennisscorekeeperbackend.plugins.receiveBodyCatching
 import com.bashkevich.tennisscorekeeperbackend.plugins.respondWithMessageBody
 import io.ktor.http.HttpStatusCode
@@ -168,6 +169,17 @@ fun Route.matchRoutes(){
                 val matchId = call.pathParameters["id"]?.toIntOrNull() ?: 0
 
                 matchServiceRouter.redoPoint(matchId)
+
+                call.respondWithMessageBody(message ="Successfully redone the point")
+            }
+            patch("/video"){
+                val matchId = call.pathParameters["id"]?.toIntOrNull() ?: 0
+
+                val videoLinkBody = call.receiveBodyCatching<VideoLinkBody>()
+
+                val videoLink = videoLinkBody.videoLink
+
+                matchServiceRouter.setVideoLink(matchId,videoLink)
 
                 call.respondWithMessageBody(message ="Successfully redone the point")
             }
