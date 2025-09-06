@@ -7,7 +7,6 @@ import io.ktor.server.request.receiveParameters
 import io.ktor.server.response.respond
 import io.ktor.server.routing.Route
 import io.ktor.server.routing.application
-import io.ktor.server.routing.get
 import io.ktor.server.routing.post
 import org.koin.ktor.ext.inject
 
@@ -32,7 +31,7 @@ fun Route.authRoutes() {
         call.respondWithMessageBody(message = "Successfully logged out")
     }
 
-    get("/refreshToken") {
+    post("/refreshToken") {
         val formParameters = call.receiveParameters()
 
         val refreshToken = formParameters["refreshToken"]
@@ -42,7 +41,7 @@ fun Route.authRoutes() {
         call.respond(loginResponse)
     }
 
-    get("/refreshTokenStatus") {
+    post("/refreshTokenStatus") {
         val formParameters = call.receiveParameters()
 
         val refreshToken = formParameters["refreshToken"]
