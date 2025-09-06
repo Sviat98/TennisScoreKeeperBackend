@@ -7,6 +7,7 @@ import com.bashkevich.tennisscorekeeperbackend.model.auth.JwtConfig
 import io.ktor.server.application.Application
 import io.ktor.server.application.install
 import io.ktor.server.auth.Authentication
+import io.ktor.server.auth.jwt.JWTPrincipal
 import io.ktor.server.auth.jwt.jwt
 
 fun Application.configureAuthentication(){
@@ -24,8 +25,11 @@ fun Application.configureAuthentication(){
                 .withAudience(jwtConfig.audience)
                 .withIssuer(jwtConfig.issuer)
                 .build())
+            validate { credential->
+                JWTPrincipal(credential.payload)
+            }
             challenge {_,_->
-                throw UnauthorizedException("Token is not valid or has expired\"")
+                throw UnauthorizedException("Token is not valid or has expired")
             }
         }
     }
