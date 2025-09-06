@@ -2,6 +2,7 @@ package com.bashkevich.tennisscorekeeperbackend.feature.match
 
 import com.bashkevich.tennisscorekeeperbackend.feature.match.websocket.MatchConnectionManager
 import com.bashkevich.tennisscorekeeperbackend.feature.match.websocket.MatchObserver
+import com.bashkevich.tennisscorekeeperbackend.model.auth.JWT_AUTH
 import com.bashkevich.tennisscorekeeperbackend.model.match.body.ChangeScoreBody
 import com.bashkevich.tennisscorekeeperbackend.model.match.MatchBody
 import com.bashkevich.tennisscorekeeperbackend.model.match.body.MatchStatusBody
@@ -12,6 +13,7 @@ import com.bashkevich.tennisscorekeeperbackend.model.match.body.VideoLinkBody
 import com.bashkevich.tennisscorekeeperbackend.plugins.receiveBodyCatching
 import com.bashkevich.tennisscorekeeperbackend.plugins.respondWithMessageBody
 import io.ktor.http.HttpStatusCode
+import io.ktor.server.auth.authenticate
 import io.ktor.server.response.respond
 import io.ktor.server.routing.Route
 import io.ktor.server.routing.application
@@ -30,10 +32,10 @@ import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import org.koin.ktor.ext.inject
 
-fun Route.matchRoutes(){
+fun Route.matchRoutes() {
     val matchServiceRouter by application.inject<MatchServiceRouter>()
 
-    route("/tournaments/{id}/matches"){
+    route("/tournaments/{id}/matches") {
         get {
             val tournamentId = call.pathParameters["id"]?.toIntOrNull() ?: 0
 
@@ -46,9 +48,9 @@ fun Route.matchRoutes(){
 
             val matchBody = call.receiveBodyCatching<MatchBody>()
 
-            val newMatch = matchServiceRouter.addMatch(tournamentId,matchBody)
+            val newMatch = matchServiceRouter.addMatch(tournamentId, matchBody)
 
-            call.respond(HttpStatusCode.Created,newMatch)
+            call.respond(HttpStatusCode.Created, newMatch)
         }
     }
 
@@ -89,7 +91,7 @@ fun Route.matchRoutes(){
 
                 val job = launch {
                     matchFlow.onStart {
-                        if(matchFlow.replayCache.isEmpty()){
+                        if (matchFlow.replayCache.isEmpty()) {
                             val initialMatch = matchServiceRouter.getMatchById(id)
                             emit(initialMatch)
                         }
@@ -113,76 +115,79 @@ fun Route.matchRoutes(){
                     }
                 }
             }
-            patch("/firstServe"){
-                val matchId = call.pathParameters["id"]?.toIntOrNull() ?: 0
+            authenticate(JWT_AUTH) {
+                patch("/firstServe") {
+                    val matchId = call.pathParameters["id"]?.toIntOrNull() ?: 0
 
-                val serveBody = call.receiveBodyCatching<ServeBody>()
+                    val serveBody = call.receiveBodyCatching<ServeBody>()
 
-                matchServiceRouter.updateServe(matchId,serveBody)
+                    matchServiceRouter.updateServe(matchId, serveBody)
 
-                call.respondWithMessageBody(message ="Successfully chose first serve")
+                    call.respondWithMessageBody(message = "Successfully chose first serve")
+                }
+                patch("/firstServeInPair") {
+                    val matchId = call.pathParameters["id"]?.toIntOrNull() ?: 0
+
+                    val serveInPairBody = call.receiveBodyCatching<ServeInPairBody>()
+
+                    matchServiceRouter.updateServeInPair(matchId, serveInPairBody)
+
+                    call.respondWithMessageBody(message = "Successfully chose first serve in pair")
+                }
+                patch("/status") {
+                    val matchId = call.pathParameters["id"]?.toIntOrNull() ?: 0
+
+                    val matchStatusBody = call.receiveBodyCatching<MatchStatusBody>()
+
+                    matchServiceRouter.updateMatchStatus(matchId, matchStatusBody)
+
+                    call.respondWithMessageBody(message = "Successfully updated status to ${matchStatusBody.status}")
+                }
+                patch("/score") {
+                    val matchId = call.pathParameters["id"]?.toIntOrNull() ?: 0
+
+                    val changeScoreBody = call.receiveBodyCatching<ChangeScoreBody>()
+
+                    matchServiceRouter.updateScore(matchId, changeScoreBody)
+
+                    call.respondWithMessageBody(message = "Successfully updated the score")
+                }
+                patch("/retire") {
+                    val matchId = call.pathParameters["id"]?.toIntOrNull() ?: 0
+
+                    val retiredParticipantBody = call.receiveBodyCatching<RetiredParticipantBody>()
+
+                    matchServiceRouter.setParticipantRetired(matchId, retiredParticipantBody)
+
+                    call.respondWithMessageBody(message = "Participant successfully retired")
+                }
+                patch("/undo") {
+                    val matchId = call.pathParameters["id"]?.toIntOrNull() ?: 0
+
+                    matchServiceRouter.undoPoint(matchId)
+
+                    call.respondWithMessageBody(message = "Successfully undone the point")
+                }
+                patch("/redo") {
+                    val matchId = call.pathParameters["id"]?.toIntOrNull() ?: 0
+
+                    matchServiceRouter.redoPoint(matchId)
+
+                    call.respondWithMessageBody(message = "Successfully redone the point")
+                }
+                patch("/video") {
+                    val matchId = call.pathParameters["id"]?.toIntOrNull() ?: 0
+
+                    val videoLinkBody = call.receiveBodyCatching<VideoLinkBody>()
+
+                    val videoLink = videoLinkBody.videoLink
+
+                    matchServiceRouter.setVideoLink(matchId, videoLink)
+
+                    call.respondWithMessageBody(message = "Successfully redone the point")
+                }
             }
-            patch("/firstServeInPair"){
-                val matchId = call.pathParameters["id"]?.toIntOrNull() ?: 0
 
-                val serveInPairBody = call.receiveBodyCatching<ServeInPairBody>()
-
-                matchServiceRouter.updateServeInPair(matchId,serveInPairBody)
-
-                call.respondWithMessageBody(message ="Successfully chose first serve in pair")
-            }
-            patch("/status"){
-                val matchId = call.pathParameters["id"]?.toIntOrNull() ?: 0
-
-                val matchStatusBody = call.receiveBodyCatching<MatchStatusBody>()
-
-                matchServiceRouter.updateMatchStatus(matchId,matchStatusBody)
-
-                call.respondWithMessageBody(message ="Successfully updated status to ${matchStatusBody.status}")
-            }
-            patch("/score"){
-                val matchId = call.pathParameters["id"]?.toIntOrNull() ?: 0
-
-                val changeScoreBody = call.receiveBodyCatching<ChangeScoreBody>()
-
-                matchServiceRouter.updateScore(matchId,changeScoreBody)
-
-                call.respondWithMessageBody(message ="Successfully updated the score")
-            }
-            patch("/retire"){
-                val matchId = call.pathParameters["id"]?.toIntOrNull() ?: 0
-
-                val retiredParticipantBody = call.receiveBodyCatching<RetiredParticipantBody>()
-
-                matchServiceRouter.setParticipantRetired(matchId,retiredParticipantBody)
-
-                call.respondWithMessageBody(message ="Participant successfully retired")
-            }
-            patch("/undo"){
-                val matchId = call.pathParameters["id"]?.toIntOrNull() ?: 0
-
-                matchServiceRouter.undoPoint(matchId)
-
-                call.respondWithMessageBody(message = "Successfully undone the point")
-            }
-            patch("/redo"){
-                val matchId = call.pathParameters["id"]?.toIntOrNull() ?: 0
-
-                matchServiceRouter.redoPoint(matchId)
-
-                call.respondWithMessageBody(message ="Successfully redone the point")
-            }
-            patch("/video"){
-                val matchId = call.pathParameters["id"]?.toIntOrNull() ?: 0
-
-                val videoLinkBody = call.receiveBodyCatching<VideoLinkBody>()
-
-                val videoLink = videoLinkBody.videoLink
-
-                matchServiceRouter.setVideoLink(matchId,videoLink)
-
-                call.respondWithMessageBody(message ="Successfully redone the point")
-            }
         }
-   }
+    }
 }
