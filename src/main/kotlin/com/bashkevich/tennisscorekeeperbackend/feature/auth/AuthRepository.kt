@@ -4,6 +4,8 @@ import com.bashkevich.tennisscorekeeperbackend.model.auth.PlayerAuthEntity
 import com.bashkevich.tennisscorekeeperbackend.model.auth.PlayerAuthTable
 import com.bashkevich.tennisscorekeeperbackend.model.auth.RefreshTokenTable
 import kotlinx.datetime.LocalDateTime
+import org.jetbrains.exposed.v1.core.statements.UpsertSqlExpressionBuilder.less
+import org.jetbrains.exposed.v1.jdbc.deleteWhere
 import org.jetbrains.exposed.v1.jdbc.insert
 import org.jetbrains.exposed.v1.jdbc.select
 import org.jetbrains.exposed.v1.jdbc.selectAll
@@ -37,6 +39,10 @@ class AuthRepository {
         val expDateReal = RefreshTokenTable.select(RefreshTokenTable.expirationDateReal).where { RefreshTokenTable.refreshToken eq token }.map { it[RefreshTokenTable.expirationDateReal] }.firstOrNull()
 
         return expDateReal!=null
+    }
+
+    suspend fun removeAllExpiredRefreshTokens(dateTime: LocalDateTime) {
+        RefreshTokenTable.deleteWhere { RefreshTokenTable.expirationDateProjected less dateTime }
     }
 
     suspend fun makeRefreshTokenExpired(token: String, expDateReal: LocalDateTime) {

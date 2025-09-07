@@ -38,10 +38,6 @@ class AuthService(
                 val accessTokenExpiresAt = calculateExpirationDate(TokenType.ACCESS)
                 val refreshTokenExpiresAt = calculateExpirationDate(TokenType.REFRESH)
 
-                println("accessTokenExpiresAt = $accessTokenExpiresAt")
-                println("refreshTokenExpiresAt = $refreshTokenExpiresAt")
-
-
                 val accessToken = signToken(playerId, deviceId, accessTokenExpiresAt)
                 val refreshToken = signToken(playerId, deviceId, refreshTokenExpiresAt)
 
@@ -133,6 +129,17 @@ class AuthService(
                     LocalDateTime(currentDateTime.date.plus(1, DateTimeUnit.DAY), threeAM)
                 }
             }
+        }
+    }
+
+    @OptIn(ExperimentalTime::class)
+    suspend fun removeAllExpiredRefreshTokens(){
+        dbQuery {
+            val timeZone = TimeZone.of("Europe/Minsk")
+
+            val currentDateTime = Clock.System.now().toLocalDateTime(timeZone)
+
+            authRepository.removeAllExpiredRefreshTokens(currentDateTime)
         }
     }
 

@@ -6,6 +6,7 @@ import com.bashkevich.tennisscorekeeperbackend.plugins.configureDatabase
 import com.bashkevich.tennisscorekeeperbackend.plugins.configureDependencyInjection
 import com.bashkevich.tennisscorekeeperbackend.plugins.configureMonitoring
 import com.bashkevich.tennisscorekeeperbackend.plugins.configureRouting
+import com.bashkevich.tennisscorekeeperbackend.plugins.configureScheduler
 import com.bashkevich.tennisscorekeeperbackend.plugins.configureSerialization
 import com.bashkevich.tennisscorekeeperbackend.plugins.configureSockets
 import com.bashkevich.tennisscorekeeperbackend.plugins.configureStatusPages
@@ -26,6 +27,7 @@ fun Application.module() {
     configureMonitoring()
     configureDatabase()
     configureRouting()
+    configureScheduler()
     configureStatusPages()
     configureValidation()
 }
