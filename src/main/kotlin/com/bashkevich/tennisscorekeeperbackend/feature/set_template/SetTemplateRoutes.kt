@@ -14,10 +14,9 @@ fun Route.setTemplateRoutes() {
 
     route("/set-templates") {
         get {
-
             val setTemplateType = call.queryParameters["type"]?.uppercase() ?: SetTemplateTypeFilter.ALL.name
 
-            val setTemplateTypeFilter =setTemplateType.parseEnumSafe<SetTemplateTypeFilter>()
+            val setTemplateTypeFilter = setTemplateType.parseEnumSafe<SetTemplateTypeFilter>()
 
             val setTemplates = setTemplateService.getSetTemplates(setTemplateTypeFilter)
 

@@ -38,6 +38,10 @@ class AuthService(
                 val accessTokenExpiresAt = calculateExpirationDate(TokenType.ACCESS)
                 val refreshTokenExpiresAt = calculateExpirationDate(TokenType.REFRESH)
 
+                println("accessTokenExpiresAt = $accessTokenExpiresAt")
+                println("refreshTokenExpiresAt = $refreshTokenExpiresAt")
+
+
                 val accessToken = signToken(playerId, deviceId, accessTokenExpiresAt)
                 val refreshToken = signToken(playerId, deviceId, refreshTokenExpiresAt)
 
@@ -100,9 +104,11 @@ class AuthService(
     private fun signToken(playerId: Int, deviceId: UUID, expiresAt: LocalDateTime): String {
         val jwtConfig = JwtConfig.instance
 
+        val timeZone = ZoneId.of("Europe/Minsk")
+
         return JWT.create()
             .withIssuer(jwtConfig.issuer)
-            .withExpiresAt(expiresAt.toJavaLocalDateTime().atZone(ZoneId.systemDefault()).toInstant())
+            .withExpiresAt(expiresAt.toJavaLocalDateTime().atZone(timeZone).toInstant())
             .withClaim("playerId", playerId)
             .withClaim("deviceId", deviceId.toString())
             .withAudience(jwtConfig.audience)
@@ -111,10 +117,11 @@ class AuthService(
 
     @OptIn(ExperimentalTime::class)
     private fun calculateExpirationDate(tokenType: TokenType): LocalDateTime {
+        val timeZone = TimeZone.of("Europe/Minsk")
         return when (tokenType) {
-            TokenType.ACCESS -> Clock.System.now().plus(5.minutes).toLocalDateTime(TimeZone.currentSystemDefault())
+            TokenType.ACCESS -> Clock.System.now().plus(5.minutes).toLocalDateTime(timeZone)
             TokenType.REFRESH -> {
-                val currentDateTime = Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault())
+                val currentDateTime = Clock.System.now().toLocalDateTime(timeZone)
 
                 val threeAM = LocalTime(3, 0)
 
@@ -140,7 +147,7 @@ class AuthService(
 
         return try {
             refreshTokenVerifier.verify(refreshToken)
-            // если возвращается true, значит токен был отозван ДО момента истечения, и считается невалдиным
+            // если возвращается true, значит токен был отозван ДО момента истечения, и считается невалидным
             !authRepository.checkRefreshTokenIsRevoked(refreshToken)
         } catch (e: TokenExpiredException) {
             false

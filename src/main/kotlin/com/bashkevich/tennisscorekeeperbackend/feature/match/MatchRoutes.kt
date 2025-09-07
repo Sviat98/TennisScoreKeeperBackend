@@ -43,14 +43,16 @@ fun Route.matchRoutes() {
 
             call.respond(matchList)
         }
-        post {
-            val tournamentId = call.pathParameters["id"]?.toIntOrNull() ?: 0
+        authenticate(JWT_AUTH) {
+            post {
+                val tournamentId = call.pathParameters["id"]?.toIntOrNull() ?: 0
 
-            val matchBody = call.receiveBodyCatching<MatchBody>()
+                val matchBody = call.receiveBodyCatching<MatchBody>()
 
-            val newMatch = matchServiceRouter.addMatch(tournamentId, matchBody)
+                val newMatch = matchServiceRouter.addMatch(tournamentId, matchBody)
 
-            call.respond(HttpStatusCode.Created, newMatch)
+                call.respond(HttpStatusCode.Created, newMatch)
+            }
         }
     }
 
