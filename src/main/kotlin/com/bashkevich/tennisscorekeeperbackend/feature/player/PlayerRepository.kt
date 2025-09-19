@@ -4,6 +4,7 @@ import com.bashkevich.tennisscorekeeperbackend.model.player.PlayerEntity
 import com.bashkevich.tennisscorekeeperbackend.model.player.PlayerTable
 import kotlinx.datetime.LocalDate
 import org.jetbrains.exposed.v1.core.and
+import org.jetbrains.exposed.v1.core.eq
 import org.jetbrains.exposed.v1.core.upperCase
 
 

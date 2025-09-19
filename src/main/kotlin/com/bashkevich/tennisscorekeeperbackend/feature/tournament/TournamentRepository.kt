@@ -6,6 +6,7 @@ import com.bashkevich.tennisscorekeeperbackend.model.tournament.TournamentEntity
 import com.bashkevich.tennisscorekeeperbackend.model.tournament.TournamentRequestDto
 import com.bashkevich.tennisscorekeeperbackend.model.tournament.TournamentStatus
 import com.bashkevich.tennisscorekeeperbackend.model.tournament.TournamentTable
+import org.jetbrains.exposed.v1.core.eq
 import org.jetbrains.exposed.v1.jdbc.select
 import org.jetbrains.exposed.v1.jdbc.unionAll
 import org.jetbrains.exposed.v1.jdbc.update

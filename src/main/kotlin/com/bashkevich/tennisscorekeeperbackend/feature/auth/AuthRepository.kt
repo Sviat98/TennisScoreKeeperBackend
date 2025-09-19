@@ -4,7 +4,8 @@ import com.bashkevich.tennisscorekeeperbackend.model.auth.PlayerAuthEntity
 import com.bashkevich.tennisscorekeeperbackend.model.auth.PlayerAuthTable
 import com.bashkevich.tennisscorekeeperbackend.model.auth.RefreshTokenTable
 import kotlinx.datetime.LocalDateTime
-import org.jetbrains.exposed.v1.core.statements.UpsertSqlExpressionBuilder.less
+import org.jetbrains.exposed.v1.core.eq
+import org.jetbrains.exposed.v1.core.less
 import org.jetbrains.exposed.v1.jdbc.deleteWhere
 import org.jetbrains.exposed.v1.jdbc.insert
 import org.jetbrains.exposed.v1.jdbc.select
