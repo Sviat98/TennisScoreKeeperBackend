@@ -7,6 +7,7 @@ logback-version = "1.5.18"
 postgres-version = "42.7.7"
 dataframe-version = "1.0.0-Beta3"
 bcrypt-version = "0.10.2"
+mcp-kotlin = "0.7.2"
 #kotlinx-io-version = "0.7.0"
 
 [libraries]
@@ -38,6 +39,8 @@ postgres-driver = { module = "org.postgresql:postgresql", version.ref = "postgre
 logback-classic = { module = "ch.qos.logback:logback-classic", version.ref = "logback-version" }
 
 #kotlinx-io-core = { module = "org.jetbrains.kotlinx:kotlinx-io-core", version.ref = "kotlinx-io-version" }
+
+mcp-kotlin-server = { group = "io.modelcontextprotocol", name = "kotlin-sdk-server", version.ref = "mcp-kotlin" }
 
 dataframe-core = { module = "org.jetbrains.kotlinx:dataframe", version.ref = "dataframe-version"}
 dataframe-excel = { module = "org.jetbrains.kotlinx:dataframe-excel", version.ref = "dataframe-version"}

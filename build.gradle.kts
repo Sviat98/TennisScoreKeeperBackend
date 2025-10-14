@@ -49,6 +49,8 @@ dependencies {
     implementation(libs.dataframe.core)
     implementation(libs.dataframe.excel)
 
+    implementation(libs.mcp.kotlin.server)
+
     implementation(libs.ktor.server.config.yaml)
     testImplementation(libs.ktor.server.test.host)
     testImplementation(libs.kotlin.test.junit)

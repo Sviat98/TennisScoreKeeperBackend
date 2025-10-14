@@ -4,6 +4,7 @@ import com.bashkevich.tennisscorekeeperbackend.plugins.configureAuthentication
 import com.bashkevich.tennisscorekeeperbackend.plugins.configureCors
 import com.bashkevich.tennisscorekeeperbackend.plugins.configureDatabase
 import com.bashkevich.tennisscorekeeperbackend.plugins.configureDependencyInjection
+import com.bashkevich.tennisscorekeeperbackend.plugins.configureMcpRouting
 import com.bashkevich.tennisscorekeeperbackend.plugins.configureMonitoring
 import com.bashkevich.tennisscorekeeperbackend.plugins.configureRouting
 import com.bashkevich.tennisscorekeeperbackend.plugins.configureScheduler
@@ -27,6 +28,7 @@ fun Application.module() {
     configureMonitoring()
     configureDatabase()
     configureRouting()
+    configureMcpRouting()
     configureScheduler()
     configureStatusPages()
     configureValidation()
