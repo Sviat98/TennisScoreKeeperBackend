@@ -18,6 +18,10 @@ repositories {
     mavenCentral()
 }
 
+kotlin {
+    jvmToolchain(21)
+}
+
 dependencies {
     implementation(libs.ktor.server.core)
     implementation(libs.ktor.server.content.negotiation)
