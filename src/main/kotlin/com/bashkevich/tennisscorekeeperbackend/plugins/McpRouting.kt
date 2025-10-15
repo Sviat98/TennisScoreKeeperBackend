@@ -2,6 +2,8 @@ package com.bashkevich.tennisscorekeeperbackend.plugins
 
 import com.bashkevich.tennisscorekeeperbackend.feature.match.MatchServiceRouter
 import com.bashkevich.tennisscorekeeperbackend.feature.tournament.TournamentService
+import com.bashkevich.tennisscorekeeperbackend.model.tournament.TournamentRequestDto
+import com.bashkevich.tennisscorekeeperbackend.model.tournament.TournamentType
 import io.ktor.server.application.Application
 import io.modelcontextprotocol.kotlin.sdk.CallToolResult
 import io.modelcontextprotocol.kotlin.sdk.Implementation
@@ -13,8 +15,12 @@ import io.modelcontextprotocol.kotlin.sdk.server.ServerOptions
 import io.modelcontextprotocol.kotlin.sdk.server.mcp
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonPrimitive
+import kotlinx.serialization.json.add
 import kotlinx.serialization.json.buildJsonObject
+import kotlinx.serialization.json.decodeFromJsonElement
+import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.put
+import kotlinx.serialization.json.putJsonArray
 import kotlinx.serialization.json.putJsonObject
 import org.koin.ktor.ext.inject
 
@@ -40,6 +46,40 @@ fun Application.configureMcpRouting() {
 
                 val jsonTournaments = Json.encodeToString(tournaments)
                 CallToolResult(content = listOf(TextContent(jsonTournaments)))
+            }
+            addTool(
+                name = "add_tournament",
+                description = "добавить новый турнир",
+                inputSchema = Tool.Input(
+                    properties = buildJsonObject {
+                        putJsonObject("tournamentBody") {
+                            put("type","object")
+                            put("description", "тело турнира")
+
+                            putJsonObject("properties"){
+                                putJsonObject("name") {
+                                    put("type", "string")
+                                    put("description", "название турнира")
+                                }
+                                putJsonObject("type") {
+                                    putJsonArray("enum"){
+                                        add(TournamentType.SINGLES.name)
+                                        add(TournamentType.DOUBLES.name)
+                                    }
+                                    put("description", "тип турнира (одиночный или парный)")
+                                }
+                            }
+                        }
+                    },
+            )) { request ->
+                val tournamentBodyJson = request.arguments["tournamentBody"]?.jsonObject!!
+                val tournamentBody = Json.decodeFromJsonElement<TournamentRequestDto>(tournamentBodyJson)
+
+
+                val newTournament = tournamentService.addTournament(tournamentBody)
+
+                val jsonNewTournament = Json.encodeToString(newTournament)
+                CallToolResult(content = listOf(TextContent(jsonNewTournament)))
             }
             addTool(
                 name = "get_matches_by_tournament_id",
