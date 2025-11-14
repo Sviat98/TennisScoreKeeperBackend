@@ -26,31 +26,22 @@ const val MATCH_SEQUENCE = "match_seq"
 const val PARTICIPANT_SEQUENCE = "participant_seq"
 
 fun configureDatabase() {
-    val cloudUsername = System.getenv("CLOUD_USERNAME")
+    val databaseUsername = System.getenv("DB_USERNAME")
 
-    val cloudPassword = System.getenv("CLOUD_PASSWORD")
+    val databasePassword = System.getenv("DB_PASSWORD")
 
-    val cloudDB = System.getenv("CLOUD_DB")
+    val databaseBaseUrl = System.getenv("DB_BASE_URL")
+
+    val databaseName = System.getenv("DB_NAME")
 
     val defaultSchemaName = "public"
 
     val schemaName = "tennis_score_keeper"
 
-    val remotejdbcURL =
-        "jdbc:postgresql://ep-blue-fog-a2izbdkl-pooler.eu-central-1.aws.neon.tech/$cloudDB?sslmode=require"
-
-    val localUsername = System.getenv("LOCAL_USERNAME")
-
-    val localPassword = System.getenv("LOCAL_PASSWORD")
-
-    val localDB = System.getenv("LOCAL_DB")
-
-    val localjdbcURL = "jdbc:postgresql://localhost:5432/$localDB"
-
+    val databaseFullUrl =
+        "jdbc:postgresql://$databaseBaseUrl/$databaseName?sslmode=require"
 
     val driverClassName = "org.postgresql.Driver"
-
-    //val schema = Schema(schemaName) // напоянтная ошибка с переключением схем БД, пока убрал это
 
     val schema = Schema(defaultSchemaName)
     val databaseConfig = DatabaseConfig {
@@ -58,10 +49,10 @@ fun configureDatabase() {
     }
 
     Database.connect(
-        url = remotejdbcURL,
+        url = databaseFullUrl,
         driver = driverClassName,
-        user = cloudUsername,
-        password = cloudPassword,
+        user = databaseUsername,
+        password = databasePassword,
         databaseConfig = databaseConfig,
     )
     //Database.connect(url = localjdbcURL, driver = driverClassName, user = localUsername, password = localPassword, databaseConfig = databaseConfig)
