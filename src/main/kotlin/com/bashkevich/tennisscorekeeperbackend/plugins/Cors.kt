@@ -9,6 +9,7 @@ import io.ktor.server.plugins.cors.routing.CORS
 fun Application.configureCors(){
     install(CORS){
         allowHost("tennisscorekeeper.onrender.com")
+        allowHost("tennisscorekeeper.tech")
         allowHost("localhost:8080")
         allowHost("localhost:8081")
         allowHeader(HttpHeaders.Authorization)
