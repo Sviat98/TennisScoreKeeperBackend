@@ -77,7 +77,7 @@ fun configureDatabase() {
 //            it[dateBirth] = LocalDate(1970,1,1)
 //        }
 //
-//        val passwordHash = BCrypt.withDefaults().hash(12, "Test_123".toByteArray(StandardCharsets.UTF_8))
+//       val passwordHash = BCrypt.withDefaults().hash(12, "Test_123".toByteArray(StandardCharsets.UTF_8))
 //
 //        PlayerAuthTable.insert {
 //            it[playerId] = 123
@@ -85,8 +85,6 @@ fun configureDatabase() {
 //            it[password] = passwordHash
 //            it[isAdmin] = true
 //        }
-    }
-
 //        SetTemplateEntity.new {
 //            name = "До 6 геймов;Тай-брейк до 7 при счете 6-6"
 //            gamesToWin = 6
@@ -115,25 +113,26 @@ fun configureDatabase() {
 //            isRegularSet = true
 //            isDecidingSet = true
 //        }
-
-//    SetTemplateEntity.new {
-//        name = "До 4 геймов;Тай-брейк до 7 при счете 3-3"
-//        gamesToWin = 4
-//        decidingPoint = false
-//        tiebreakMode = TiebreakMode.EARLY
-//        tiebreakPointsToWin = 7
-//        isRegularSet = true
-//        isDecidingSet = true
-//    }
-//    SetTemplateEntity.new {
-//        name = "До 4 геймов;Тай-брейк до 7 при счете 3-3;При счете ровно решающее очко"
-//        gamesToWin = 4
-//        decidingPoint = true
-//        tiebreakMode = TiebreakMode.EARLY
-//        tiebreakPointsToWin = 7
-//        isRegularSet = true
-//        isDecidingSet = true
-//    }
+//
+//        SetTemplateEntity.new {
+//            name = "До 4 геймов;Тай-брейк до 7 при счете 3-3"
+//            gamesToWin = 4
+//            decidingPoint = false
+//            tiebreakMode = TiebreakMode.EARLY
+//            tiebreakPointsToWin = 7
+//            isRegularSet = true
+//            isDecidingSet = true
+//        }
+//        SetTemplateEntity.new {
+//            name = "До 4 геймов;Тай-брейк до 7 при счете 3-3;При счете ровно решающее очко"
+//            gamesToWin = 4
+//            decidingPoint = true
+//            tiebreakMode = TiebreakMode.EARLY
+//            tiebreakPointsToWin = 7
+//            isRegularSet = true
+//            isDecidingSet = true
+//        }
+    }
 }
 
 suspend fun isDbConnected(): Boolean {
