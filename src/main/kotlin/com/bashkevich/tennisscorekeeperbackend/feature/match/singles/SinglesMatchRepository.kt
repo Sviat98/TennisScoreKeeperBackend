@@ -2,7 +2,6 @@ package com.bashkevich.tennisscorekeeperbackend.feature.match.singles
 
 import com.bashkevich.tennisscorekeeperbackend.model.match.MatchBody
 import com.bashkevich.tennisscorekeeperbackend.model.match.MatchStatus
-import com.bashkevich.tennisscorekeeperbackend.model.match.doubles.DoublesMatchTable
 import com.bashkevich.tennisscorekeeperbackend.model.match.singles.SinglesMatchEntity
 import com.bashkevich.tennisscorekeeperbackend.model.match.singles.SinglesMatchTable
 import org.jetbrains.exposed.v1.core.and
@@ -45,7 +44,7 @@ class SinglesMatchRepository {
         }
 
     suspend fun updateVideoLink(matchId: Int, videoId: String) =
-        DoublesMatchTable.update({ DoublesMatchTable.id eq matchId }) {
+        SinglesMatchTable.update({ SinglesMatchTable.id eq matchId }) {
             it[videoLink] = videoId
         }
 

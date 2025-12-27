@@ -28,9 +28,7 @@ class ParticipantServiceRouter(
                 ?: throw NotFoundException("No tournament found by that id")
 
             val excelBytes = loadExcelBytesFromMultipart(fileData)
-
-            if (excelBytes == null)
-                throw BadRequestException("No Excel file found in request or incorrect part name/content type. Please use 'excelFile' as field name and application/vnd.openxmlformats-officedocument.spreadsheetml.sheet as content type.")
+                ?: throw BadRequestException("No Excel file found in request or incorrect part name/content type. Please use 'excelFile' as field name and application/vnd.openxmlformats-officedocument.spreadsheetml.sheet as content type.")
 
             val participants = when (tournament.type) {
                 TournamentType.SINGLES -> {

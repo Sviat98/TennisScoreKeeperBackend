@@ -186,7 +186,7 @@ fun Route.matchRoutes() {
 
                     matchServiceRouter.setVideoLink(matchId, videoLink)
 
-                    call.respondWithMessageBody(message = "Successfully redone the point")
+                    call.respondWithMessageBody(message = "Successfully added video link")
                 }
             }
 
