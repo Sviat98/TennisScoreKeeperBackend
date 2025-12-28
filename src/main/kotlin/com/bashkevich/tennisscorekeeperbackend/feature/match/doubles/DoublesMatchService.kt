@@ -940,6 +940,19 @@ class DoublesMatchService(
     suspend fun setVideoLink(matchId: Int, videoLink: String) {
         if (matchId == 0) throw BadRequestException("Incorrect id")
 
+        val matchEntity =
+            doublesMatchRepository.getMatchById(matchId) ?: throw NotFoundException("No match found!")
+
+        val lastPointInTable = doublesMatchLogRepository.getLastPoint(matchId)
+
+        val pointShift = matchEntity.pointShift
+
+        val lastPointNumber = (lastPointInTable?.pointNumber ?: 0) + pointShift
+
         doublesMatchRepository.updateVideoLink(matchId,videoLink)
+
+        val matchDto = buildMatchById(matchId = matchId, lastPointNumber = lastPointNumber)
+
+        MatchObserver.notifyChange(matchDto)
     }
 }
