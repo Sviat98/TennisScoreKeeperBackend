@@ -45,6 +45,7 @@ dependencies {
     //implementation(libs.exposed.r2dbc)
     implementation(libs.exposed.dao)
     implementation(libs.exposed.kotlin.datetime)
+    implementation(libs.exposed.json)
 
     implementation(libs.postgres.driver)
     implementation(libs.ktor.server.netty)
@@ -77,5 +78,13 @@ ktor {
             )
         )
 
+    }
+}
+
+gradle.taskGraph.whenReady {
+    val lastTask = allTasks.lastOrNull()
+    lastTask?.doLast {
+        if (this.state.failure != null) return@doLast
+        println("✅ TASK SUCCESSFUL. Some messages suppressed by logging.level=warn")
     }
 }

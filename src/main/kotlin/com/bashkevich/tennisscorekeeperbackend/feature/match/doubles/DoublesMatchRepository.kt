@@ -27,6 +27,7 @@ class DoublesMatchRepository {
         it[setsToWin] = matchBody.setsToWin
         it[regularSetTemplate] = matchBody.regularSet?.toInt()
         it[decidingSetTemplate] = matchBody.decidingSet.toInt()
+        it[theme] = matchBody.themeId.toInt()
     }
 
     fun getMatches(tournamentId: Int) =

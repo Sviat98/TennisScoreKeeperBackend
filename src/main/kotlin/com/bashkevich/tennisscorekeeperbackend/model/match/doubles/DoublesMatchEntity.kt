@@ -3,6 +3,7 @@ package com.bashkevich.tennisscorekeeperbackend.model.match.doubles
 import com.bashkevich.tennisscorekeeperbackend.model.participant.doubles.DoublesParticipantEntity
 import com.bashkevich.tennisscorekeeperbackend.model.player.PlayerEntity
 import com.bashkevich.tennisscorekeeperbackend.model.set_template.SetTemplateEntity
+import com.bashkevich.tennisscorekeeperbackend.model.theme.ThemeEntity
 import com.bashkevich.tennisscorekeeperbackend.model.tournament.TournamentEntity
 import org.jetbrains.exposed.v1.core.dao.id.EntityID
 import org.jetbrains.exposed.v1.dao.IntEntity
@@ -28,6 +29,7 @@ class DoublesMatchEntity(id: EntityID<Int>) : IntEntity(id) {
     var setsToWin by DoublesMatchTable.setsToWin
     val regularSetTemplate by SetTemplateEntity optionalReferencedOn  DoublesMatchTable.regularSetTemplate
     val decidingSetTemplate by SetTemplateEntity referencedOn DoublesMatchTable.decidingSetTemplate
+    val theme by ThemeEntity referencedOn DoublesMatchTable.theme
     var videoLink by DoublesMatchTable.videoLink
     var pointShift by DoublesMatchTable.pointShift
     val winnerParticipant by DoublesParticipantEntity optionalReferencedOn  DoublesMatchTable.winnerParticipant

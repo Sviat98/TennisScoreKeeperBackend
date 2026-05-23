@@ -20,11 +20,13 @@ import kotlinx.datetime.toJavaLocalDateTime
 import kotlinx.datetime.toLocalDateTime
 import java.nio.charset.StandardCharsets
 import java.time.ZoneId
-import java.util.UUID
+import kotlin.uuid.Uuid
 import kotlin.time.Clock
 import kotlin.time.Duration.Companion.minutes
 import kotlin.time.ExperimentalTime
+import kotlin.uuid.ExperimentalUuidApi
 
+@OptIn(ExperimentalUuidApi::class)
 class AuthService(
     private val authRepository: AuthRepository,
 ) {
@@ -34,7 +36,7 @@ class AuthService(
 
             if (isUserVerified(authInfo.hashedPassword, password)) {
                 val playerId = authInfo.id
-                val deviceId = UUID.randomUUID()
+                val deviceId = Uuid.random()
                 val accessTokenExpiresAt = calculateExpirationDate(TokenType.ACCESS)
                 val refreshTokenExpiresAt = calculateExpirationDate(TokenType.REFRESH)
 
@@ -82,7 +84,7 @@ class AuthService(
 
             val decodedToken = JWT.decode(refreshToken)
             val playerId = decodedToken.getClaim("playerId").toString().toInt()
-            val deviceId = UUID.fromString(decodedToken.getClaim("deviceId").asString())
+            val deviceId = Uuid.parse(decodedToken.getClaim("deviceId").asString())
 
             val accessToken = signToken(playerId = playerId, deviceId = deviceId, expiresAt = accessTokenExpDate)
 
@@ -97,7 +99,7 @@ class AuthService(
         ).verified
     }
 
-    private fun signToken(playerId: Int, deviceId: UUID, expiresAt: LocalDateTime): String {
+    private fun signToken(playerId: Int, deviceId: Uuid, expiresAt: LocalDateTime): String {
         val jwtConfig = JwtConfig.instance
 
         val timeZone = ZoneId.of("Europe/Minsk")

@@ -10,9 +10,11 @@ import com.bashkevich.tennisscorekeeperbackend.model.participant.singles.Singles
 import com.bashkevich.tennisscorekeeperbackend.model.auth.PlayerAuthTable
 import com.bashkevich.tennisscorekeeperbackend.model.auth.RefreshTokenTable
 import com.bashkevich.tennisscorekeeperbackend.model.set_template.SetTemplateTable
+import com.bashkevich.tennisscorekeeperbackend.model.theme.ThemeTable
 import com.bashkevich.tennisscorekeeperbackend.model.player.PlayerTable
 import com.bashkevich.tennisscorekeeperbackend.model.tournament.TournamentTable
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import org.jetbrains.exposed.v1.core.DatabaseConfig
 import org.jetbrains.exposed.v1.core.Schema
 import org.jetbrains.exposed.v1.core.Sequence
@@ -20,6 +22,7 @@ import org.jetbrains.exposed.v1.core.StdOutSqlLogger
 import org.jetbrains.exposed.v1.jdbc.Database
 import org.jetbrains.exposed.v1.jdbc.SchemaUtils
 import org.jetbrains.exposed.v1.jdbc.transactions.experimental.newSuspendedTransaction
+import org.jetbrains.exposed.v1.jdbc.transactions.suspendTransaction
 import org.jetbrains.exposed.v1.jdbc.transactions.transaction
 
 const val MATCH_SEQUENCE = "match_seq"
@@ -65,7 +68,7 @@ fun configureDatabase() {
         SchemaUtils.createSequence(matchSequence, participantSequence)
 
         SchemaUtils.create(
-            CounterTable, PlayerTable, PlayerAuthTable, RefreshTokenTable, SetTemplateTable, TournamentTable,
+            CounterTable, PlayerTable, PlayerAuthTable, RefreshTokenTable, SetTemplateTable, ThemeTable, TournamentTable,
             SinglesParticipantTable, SinglesMatchTable, SinglesMatchLogTable,
             DoublesParticipantTable, DoublesMatchTable, DoublesMatchLogTable
         )
@@ -132,14 +135,25 @@ fun configureDatabase() {
 //            isRegularSet = true
 //            isDecidingSet = true
 //        }
+
+//        ThemeEntity.new {
+//            name = "Default"
+//            content = ThemeContent(backgroundColor = ThemeColor("0000f5"), textColor = ThemeColor("FFFFFF"))
+//        }
+//        ThemeEntity.new {
+//            name = "Roland Garros"
+//            content = ThemeContent(backgroundColor = ThemeColor("073328"), textColor = ThemeColor("FFFFFF"))
+//        }
     }
 }
 
 suspend fun isDbConnected(): Boolean {
     return try {
-        newSuspendedTransaction(Dispatchers.IO) {
-            exec("SELECT 1")
-            true
+        withContext(Dispatchers.IO){
+            suspendTransaction {
+                exec("SELECT 1")
+                true
+            }
         }
     } catch (e: Exception) {
         false
@@ -147,7 +161,9 @@ suspend fun isDbConnected(): Boolean {
 }
 
 suspend fun <T> dbQuery(block: suspend () -> T): T =
-    newSuspendedTransaction(Dispatchers.IO) {
-        addLogger(StdOutSqlLogger)
-        block()
+    withContext(Dispatchers.IO) {
+        suspendTransaction {
+            addLogger(StdOutSqlLogger)
+            block()
+        }
     }

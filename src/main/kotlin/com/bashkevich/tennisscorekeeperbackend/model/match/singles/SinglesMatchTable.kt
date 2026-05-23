@@ -3,6 +3,7 @@ package com.bashkevich.tennisscorekeeperbackend.model.match.singles
 import com.bashkevich.tennisscorekeeperbackend.model.match.MatchStatus
 import com.bashkevich.tennisscorekeeperbackend.model.participant.singles.SinglesParticipantTable
 import com.bashkevich.tennisscorekeeperbackend.model.set_template.SetTemplateTable
+import com.bashkevich.tennisscorekeeperbackend.model.theme.ThemeTable
 import com.bashkevich.tennisscorekeeperbackend.model.tournament.TournamentTable
 import com.bashkevich.tennisscorekeeperbackend.plugins.MATCH_SEQUENCE
 import org.jetbrains.exposed.v1.core.Sequence
@@ -29,6 +30,7 @@ object SinglesMatchTable : IdTable<Int>("singles_match") {
     val setsToWin = integer("sets_to_win")
     val regularSetTemplate = reference("regular_set_id", SetTemplateTable).nullable()
     val decidingSetTemplate = reference("deciding_set_id", SetTemplateTable)
+    val theme = reference("theme_id", ThemeTable)
     val pointShift = integer("point_shift").default(0)
     val videoLink = varchar("video_link",100).nullable()
     val winnerParticipant = reference("winner_participant_id", SinglesParticipantTable).nullable()

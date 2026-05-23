@@ -11,7 +11,8 @@ import org.jetbrains.exposed.v1.jdbc.insert
 import org.jetbrains.exposed.v1.jdbc.select
 import org.jetbrains.exposed.v1.jdbc.selectAll
 import org.jetbrains.exposed.v1.jdbc.update
-import java.util.UUID
+import kotlin.uuid.Uuid
+import kotlin.uuid.ExperimentalUuidApi
 
 class AuthRepository {
 
@@ -26,7 +27,8 @@ class AuthRepository {
                 )
             }.firstOrNull()
 
-    suspend fun insertRefreshToken(playerId: Int, deviceId: UUID, token: String, expDateProjected: LocalDateTime) {
+    @OptIn(ExperimentalUuidApi::class)
+    suspend fun insertRefreshToken(playerId: Int, deviceId: Uuid, token: String, expDateProjected: LocalDateTime) {
         RefreshTokenTable.insert {
             it[player] = playerId
             it[device] = deviceId

@@ -17,6 +17,8 @@ data class ShortMatchDto(
     val secondParticipant: ParticipantInShortMatchDto,
     @SerialName("status")
     val status: MatchStatus,
+    @SerialName("theme_id")
+    val themeId: String,
     @SerialName("previous_sets")
     val previousSets: List<TennisSetDto>,
     @SerialName("current_set")
@@ -52,6 +54,7 @@ fun DoublesMatchEntity.toShortMatchDto(
         retiredParticipantId = this.retiredParticipant?.id?.value
     ),
     status = this.status,
+    themeId = this.theme.id.value.toString(),
     previousSets = previousSets,
     currentSet = currentSet,
     currentGame = currentGame
@@ -72,6 +75,7 @@ fun SinglesMatchEntity.toShortMatchDto(
         retiredParticipantId = this.retiredParticipant?.id?.value
     ),
     status = this.status,
+    themeId = this.theme.id.value.toString(),
     previousSets = previousSets,
     currentSet = currentSet,
     currentGame = currentGame

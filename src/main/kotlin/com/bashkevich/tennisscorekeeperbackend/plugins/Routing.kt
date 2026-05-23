@@ -6,6 +6,7 @@ import com.bashkevich.tennisscorekeeperbackend.feature.match.matchRoutes
 import com.bashkevich.tennisscorekeeperbackend.feature.participant.participantRoutes
 import com.bashkevich.tennisscorekeeperbackend.feature.player.playerRoutes
 import com.bashkevich.tennisscorekeeperbackend.feature.set_template.setTemplateRoutes
+import com.bashkevich.tennisscorekeeperbackend.feature.theme.themeRoutes
 import com.bashkevich.tennisscorekeeperbackend.feature.tournament.tournamentRoutes
 import io.ktor.http.HttpStatusCode
 import io.ktor.server.application.*
@@ -28,6 +29,7 @@ fun Application.configureRouting() {
         playerRoutes()
         matchRoutes()
         setTemplateRoutes()
+        themeRoutes()
         participantRoutes()
     }
 }
