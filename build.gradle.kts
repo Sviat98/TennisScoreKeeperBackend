@@ -45,6 +45,7 @@ dependencies {
     //implementation(libs.exposed.r2dbc)
     implementation(libs.exposed.dao)
     implementation(libs.exposed.kotlin.datetime)
+    implementation(libs.exposed.json)
 
     implementation(libs.postgres.driver)
     implementation(libs.ktor.server.netty)

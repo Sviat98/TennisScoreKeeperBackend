@@ -10,7 +10,11 @@ import com.bashkevich.tennisscorekeeperbackend.model.participant.singles.Singles
 import com.bashkevich.tennisscorekeeperbackend.model.auth.PlayerAuthTable
 import com.bashkevich.tennisscorekeeperbackend.model.auth.RefreshTokenTable
 import com.bashkevich.tennisscorekeeperbackend.model.set_template.SetTemplateTable
+import com.bashkevich.tennisscorekeeperbackend.model.theme.ThemeTable
 import com.bashkevich.tennisscorekeeperbackend.model.player.PlayerTable
+import com.bashkevich.tennisscorekeeperbackend.model.theme.ThemeColor
+import com.bashkevich.tennisscorekeeperbackend.model.theme.ThemeContent
+import com.bashkevich.tennisscorekeeperbackend.model.theme.ThemeEntity
 import com.bashkevich.tennisscorekeeperbackend.model.tournament.TournamentTable
 import kotlinx.coroutines.Dispatchers
 import org.jetbrains.exposed.v1.core.DatabaseConfig
@@ -65,7 +69,7 @@ fun configureDatabase() {
         SchemaUtils.createSequence(matchSequence, participantSequence)
 
         SchemaUtils.create(
-            CounterTable, PlayerTable, PlayerAuthTable, RefreshTokenTable, SetTemplateTable, TournamentTable,
+            CounterTable, PlayerTable, PlayerAuthTable, RefreshTokenTable, SetTemplateTable, ThemeTable, TournamentTable,
             SinglesParticipantTable, SinglesMatchTable, SinglesMatchLogTable,
             DoublesParticipantTable, DoublesMatchTable, DoublesMatchLogTable
         )
@@ -131,6 +135,15 @@ fun configureDatabase() {
 //            tiebreakPointsToWin = 7
 //            isRegularSet = true
 //            isDecidingSet = true
+//        }
+
+//        ThemeEntity.new {
+//            name = "Default"
+//            content = ThemeContent(backgroundColor = ThemeColor("0000f5"), textColor = ThemeColor("FFFFFF"))
+//        }
+//        ThemeEntity.new {
+//            name = "Roland Garros"
+//            content = ThemeContent(backgroundColor = ThemeColor("073328"), textColor = ThemeColor("FFFFFF"))
 //        }
     }
 }

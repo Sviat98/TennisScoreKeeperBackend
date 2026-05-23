@@ -252,6 +252,7 @@ class SinglesMatchService(
             id = matchId.toString(),
             pointShift = matchEntity.pointShift,
             videoLink = matchEntity.videoLink,
+            themeId = matchEntity.theme.id.value.toString(),
             firstParticipant = firstParticipant,
             secondParticipant = secondParticipant,
             status = matchEntity.status,
