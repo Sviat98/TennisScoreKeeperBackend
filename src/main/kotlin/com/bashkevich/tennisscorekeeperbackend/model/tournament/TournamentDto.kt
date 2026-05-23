@@ -13,11 +13,20 @@ data class TournamentDto(
     val type: TournamentType,
     @SerialName("status")
     val status: TournamentStatus,
+    @SerialName("regular_set_id")
+    val regularSetId: String,
+    @SerialName("deciding_set_id")
+    val decidingSetId: String,
+    @SerialName("theme_id")
+    val themeId: String,
 )
 
 fun TournamentEntity.toDto() = TournamentDto(
     id = this.id.value.toString(),
     name = this.name,
     type = this.type,
-    status = this.status
+    status = this.status,
+    regularSetId = this.regularSetTemplate.id.value.toString(),
+    decidingSetId = this.decidingSetTemplate.id.value.toString(),
+    themeId = this.theme.id.value.toString(),
 )

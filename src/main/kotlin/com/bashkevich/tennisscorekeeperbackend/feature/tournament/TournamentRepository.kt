@@ -2,6 +2,8 @@ package com.bashkevich.tennisscorekeeperbackend.feature.tournament
 
 import com.bashkevich.tennisscorekeeperbackend.model.match.doubles.DoublesMatchTable
 import com.bashkevich.tennisscorekeeperbackend.model.match.singles.SinglesMatchTable
+import com.bashkevich.tennisscorekeeperbackend.model.set_template.SetTemplateEntity
+import com.bashkevich.tennisscorekeeperbackend.model.theme.ThemeEntity
 import com.bashkevich.tennisscorekeeperbackend.model.tournament.TournamentEntity
 import com.bashkevich.tennisscorekeeperbackend.model.tournament.TournamentRequestDto
 import com.bashkevich.tennisscorekeeperbackend.model.tournament.TournamentStatus
@@ -18,6 +20,9 @@ class TournamentRepository {
             name = tournamentRequestDto.name
             type = tournamentRequestDto.type
             status = TournamentStatus.NOT_STARTED
+            regularSetTemplate = SetTemplateEntity[tournamentRequestDto.regularSetId.toInt()]
+            decidingSetTemplate = SetTemplateEntity[tournamentRequestDto.decidingSetId.toInt()]
+            theme = ThemeEntity[tournamentRequestDto.themeId.toInt()]
         }
 
     fun getTournaments() = TournamentEntity.all().sortedBy { it.id.value }
