@@ -10,6 +10,7 @@ import com.bashkevich.tennisscorekeeperbackend.plugins.configureScheduler
 import com.bashkevich.tennisscorekeeperbackend.plugins.configureSerialization
 import com.bashkevich.tennisscorekeeperbackend.plugins.configureSockets
 import com.bashkevich.tennisscorekeeperbackend.plugins.configureStatusPages
+import com.bashkevich.tennisscorekeeperbackend.plugins.configureSwagger
 import com.bashkevich.tennisscorekeeperbackend.plugins.configureValidation
 import io.ktor.server.application.*
 import io.ktor.server.netty.EngineMain
@@ -29,5 +30,6 @@ fun Application.module() {
     configureRouting()
     configureScheduler()
     configureStatusPages()
+    configureSwagger()
     configureValidation()
 }

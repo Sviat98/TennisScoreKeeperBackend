@@ -31,6 +31,7 @@ dependencies {
     implementation(libs.ktor.server.auth.jwt)
     implementation(libs.ktor.server.request.validation)
     implementation(libs.ktor.server.status.pages)
+    implementation(libs.ktor.server.swagger)
 
     implementation(libs.bcrypt)
 
@@ -60,6 +61,12 @@ dependencies {
 }
 
 ktor {
+    openApi {
+        enabled = true
+        codeInferenceEnabled = true
+        onlyCommented = false
+    }
+
     fatJar {
         archiveFileName.set("tennisscorekeeperbackend.jar")
     }
