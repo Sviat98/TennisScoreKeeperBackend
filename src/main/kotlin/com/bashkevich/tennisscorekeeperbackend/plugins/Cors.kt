@@ -10,8 +10,8 @@ fun Application.configureCors(){
     install(CORS){
         allowHost("tennisscorekeeper.onrender.com")
         allowHost("tennisscorekeeper.tech")
-        allowHost("localhost:8080")
-        allowHost("localhost:8081")
+        allowHost("0.0.0.0:8080")
+        allowHost("0.0.0.0:8081")
         allowHeader(HttpHeaders.Authorization)
         allowHeader(HttpHeaders.ContentType)
         allowHeader(HttpHeaders.AccessControlAllowOrigin)
