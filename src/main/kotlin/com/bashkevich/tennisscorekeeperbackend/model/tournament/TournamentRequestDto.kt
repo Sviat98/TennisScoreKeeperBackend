@@ -9,6 +9,8 @@ data class TournamentRequestDto(
     val name: String,
     @SerialName("type")
     val type: TournamentType,
+    @SerialName("sets_to_win")
+    val setsToWin: Int,
     @SerialName("regular_set_id")
     val regularSetId: String,
     @SerialName("deciding_set_id")
