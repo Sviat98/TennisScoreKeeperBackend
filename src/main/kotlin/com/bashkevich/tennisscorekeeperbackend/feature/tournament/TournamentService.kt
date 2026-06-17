@@ -2,12 +2,15 @@ package com.bashkevich.tennisscorekeeperbackend.feature.tournament
 
 import com.bashkevich.tennisscorekeeperbackend.feature.match.doubles.DoublesMatchRepository
 import com.bashkevich.tennisscorekeeperbackend.feature.match.singles.SinglesMatchRepository
+import com.bashkevich.tennisscorekeeperbackend.feature.participant.doubles.DoublesParticipantRepository
+import com.bashkevich.tennisscorekeeperbackend.feature.participant.singles.SinglesParticipantRepository
+import com.bashkevich.tennisscorekeeperbackend.model.match.MatchStatus
 import com.bashkevich.tennisscorekeeperbackend.model.tournament.TournamentDto
+import com.bashkevich.tennisscorekeeperbackend.model.tournament.TournamentEntity
 import com.bashkevich.tennisscorekeeperbackend.model.tournament.TournamentRequestDto
 import com.bashkevich.tennisscorekeeperbackend.model.tournament.TournamentStatus
 import com.bashkevich.tennisscorekeeperbackend.model.tournament.TournamentStatusBody
 import com.bashkevich.tennisscorekeeperbackend.model.tournament.TournamentType
-import com.bashkevich.tennisscorekeeperbackend.model.tournament.toDto
 import com.bashkevich.tennisscorekeeperbackend.plugins.dbQuery
 import com.bashkevich.tennisscorekeeperbackend.plugins.validateRequestConditions
 import io.ktor.server.plugins.BadRequestException
@@ -17,6 +20,8 @@ class TournamentService(
     private val tournamentRepository: TournamentRepository,
     private val singlesMatchRepository: SinglesMatchRepository,
     private val doublesMatchRepository: DoublesMatchRepository,
+    private val singlesParticipantRepository: SinglesParticipantRepository,
+    private val doublesParticipantRepository: DoublesParticipantRepository,
 ) {
     suspend fun getTournaments(): List<TournamentDto> {
         return dbQuery {
@@ -34,10 +39,8 @@ class TournamentService(
         return dbQuery {
             if (tournamentId == 0) throw BadRequestException("Wrong format of tournament id")
 
-            val tournament = tournamentRepository.getTournamentById(tournamentId)
+            tournamentRepository.getTournamentById(tournamentId)?.toDto()
                 ?: throw NotFoundException("No tournament found by that id")
-
-            tournament.toDto()
         }
     }
 
@@ -73,6 +76,34 @@ class TournamentService(
 
             tournamentRepository.updateStatus(tournamentId, newStatus)
         }
+    }
+
+    private fun TournamentEntity.toDto(): TournamentDto {
+        val (participants, matches, uncompletedMatches) = when (type) {
+            TournamentType.SINGLES -> {
+                val m = singlesMatchRepository.getMatches(id.value)
+                val p = singlesParticipantRepository.getParticipantsByTournament(id.value)
+                Triple(p, m, m.count { it.status != MatchStatus.COMPLETED })
+            }
+            TournamentType.DOUBLES -> {
+                val m = doublesMatchRepository.getMatches(id.value)
+                val p = doublesParticipantRepository.getParticipantsByTournament(id.value)
+                Triple(p, m, m.count { it.status != MatchStatus.COMPLETED })
+            }
+        }
+        return TournamentDto(
+            id = id.value.toString(),
+            name = name,
+            type = type,
+            status = status,
+            setsToWin = setsToWin,
+            regularSetId = regularSetTemplate.id.value.toString(),
+            decidingSetId = decidingSetTemplate.id.value.toString(),
+            themeId = theme.id.value.toString(),
+            totalParticipants = participants.size,
+            totalMatches = matches.size,
+            uncompletedMatches = uncompletedMatches,
+        )
     }
 
 }

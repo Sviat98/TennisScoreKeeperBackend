@@ -21,15 +21,10 @@ data class TournamentDto(
     val decidingSetId: String,
     @SerialName("theme_id")
     val themeId: String,
-)
-
-fun TournamentEntity.toDto() = TournamentDto(
-    id = this.id.value.toString(),
-    name = this.name,
-    type = this.type,
-    status = this.status,
-    setsToWin = this.setsToWin,
-    regularSetId = this.regularSetTemplate.id.value.toString(),
-    decidingSetId = this.decidingSetTemplate.id.value.toString(),
-    themeId = this.theme.id.value.toString(),
+    @SerialName("total_participants")
+    val totalParticipants: Int,
+    @SerialName("total_matches")
+    val totalMatches: Int,
+    @SerialName("uncompleted_matches")
+    val uncompletedMatches: Int,
 )
