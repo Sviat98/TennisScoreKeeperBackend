@@ -2,9 +2,8 @@ package com.bashkevich.tennisscorekeeperbackend.model.participant
 
 import com.bashkevich.tennisscorekeeperbackend.model.participant.doubles.DoublesParticipantEntity
 import com.bashkevich.tennisscorekeeperbackend.model.participant.singles.SinglesParticipantEntity
-import com.bashkevich.tennisscorekeeperbackend.model.player.PlayerInMatchDto
-import com.bashkevich.tennisscorekeeperbackend.model.player.toPlayerInDoublesMatchDto
-import com.bashkevich.tennisscorekeeperbackend.model.player.toPlayerInSinglesMatchDto
+import com.bashkevich.tennisscorekeeperbackend.model.player.PlayerInParticipantDto
+import com.bashkevich.tennisscorekeeperbackend.model.player.toPlayerInParticipantDto
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
@@ -55,7 +54,7 @@ data class ParticipantInSinglesMatchDto(
     @SerialName("is_retired")
     override val isRetired: Boolean,
     @SerialName("player")
-    val player: PlayerInMatchDto,
+    val player: PlayerInParticipantDto,
 ) : ParticipantInMatchDto()
 
 
@@ -78,10 +77,12 @@ data class ParticipantInDoublesMatchDto(
     override val isWinner: Boolean,
     @SerialName("is_retired")
     override val isRetired: Boolean,
+    @SerialName("serving_player_id")
+    val servingPlayerId: String?,
     @SerialName("first_player")
-    val firstPlayer: PlayerInMatchDto,
+    val firstPlayer: PlayerInParticipantDto,
     @SerialName("second_player")
-    val secondPlayer: PlayerInMatchDto,
+    val secondPlayer: PlayerInParticipantDto,
 ) : ParticipantInMatchDto()
 
 fun SinglesParticipantEntity.toParticipantInMatchDto(
@@ -101,7 +102,7 @@ fun SinglesParticipantEntity.toParticipantInMatchDto(
         isServing = this.id.value == servingParticipantId,
         isWinner = this.id.value == winningParticipantId,
         isRetired = this.id.value == retiredParticipantId,
-        player = this.player.toPlayerInSinglesMatchDto(),
+        player = this.player.toPlayerInParticipantDto(),
     )
 
 fun DoublesParticipantEntity.toParticipantInMatchDto(
@@ -115,14 +116,11 @@ fun DoublesParticipantEntity.toParticipantInMatchDto(
     nextServingPlayerId: Int?,
 ): ParticipantInMatchDto {
 
-    val firstPlayerInBaseDto = this.firstPlayer.toPlayerInDoublesMatchDto(
-        nowServingPlayerId = nowServingPlayerId,
-        nextServingPlayerId = nextServingPlayerId
-    )
-    val secondPlayerInBaseDto = this.secondPlayer.toPlayerInDoublesMatchDto(
-        nowServingPlayerId = nowServingPlayerId,
-        nextServingPlayerId = nextServingPlayerId
-    )
+    val isServing = this.id.value == servingParticipantId
+    val servingPlayerId = if (isServing) nowServingPlayerId?.toString() else nextServingPlayerId?.toString()
+
+    val firstPlayerInBaseDto = this.firstPlayer.toPlayerInParticipantDto()
+    val secondPlayerInBaseDto = this.secondPlayer.toPlayerInParticipantDto()
 
     val saveOrderAtDisplay = this.saveOrderAtDisplay
     return ParticipantInDoublesMatchDto(
@@ -131,9 +129,10 @@ fun DoublesParticipantEntity.toParticipantInMatchDto(
         displayName = displayName,
         primaryColor = primaryColor,
         secondaryColor = secondaryColor,
-        isServing = this.id.value == servingParticipantId,
+        isServing = isServing,
         isWinner = this.id.value == winningParticipantId,
         isRetired = this.id.value == retiredParticipantId,
+        servingPlayerId = servingPlayerId,
         firstPlayer = if (saveOrderAtDisplay) firstPlayerInBaseDto else secondPlayerInBaseDto,
         secondPlayer = if (saveOrderAtDisplay) secondPlayerInBaseDto else firstPlayerInBaseDto,
     )

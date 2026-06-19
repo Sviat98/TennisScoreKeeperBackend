@@ -26,59 +26,6 @@ data class PlayerBodyDto(
     val dateBirth: LocalDate,
 )
 
-@Serializable
-sealed class PlayerInMatchDto {
-    @SerialName("id")
-    abstract val id: String
-
-    @SerialName("surname")
-    abstract val surname: String
-
-    @SerialName("name")
-    abstract val name: String
-}
-
-@Serializable
-@SerialName("singles_player")
-data class PlayerInSinglesMatchDto(
-    @SerialName("id")
-    override val id: String,
-    @SerialName("surname")
-    override val surname: String,
-    @SerialName("name")
-    override val name: String,
-) : PlayerInMatchDto()
-
-@Serializable
-@SerialName("doubles_player")
-data class PlayerInDoublesMatchDto(
-    @SerialName("id")
-    override val id: String,
-    @SerialName("surname")
-    override val surname: String,
-    @SerialName("name")
-    override val name: String,
-    @SerialName("is_serving_now")
-    val isServingNow: Boolean,
-    @SerialName("is_serving_next")
-    val isServingNext: Boolean,
-) : PlayerInMatchDto()
-
-
-fun PlayerEntity.toPlayerInSinglesMatchDto(): PlayerInMatchDto = PlayerInSinglesMatchDto(
-    id = this.id.value.toString(),
-    surname = this.surname,
-    name = this.name
-)
-
-fun PlayerEntity.toPlayerInDoublesMatchDto(nowServingPlayerId: Int?, nextServingPlayerId: Int?): PlayerInMatchDto = PlayerInDoublesMatchDto(
-    id = this.id.value.toString(),
-    surname = this.surname,
-    name = this.name,
-    isServingNow = this.id.value == nowServingPlayerId,
-    isServingNext = this.id.value == nextServingPlayerId
-)
-
 fun PlayerEntity.toDto() = PlayerDto(
     id = this.id.value.toString(),
     surname = this.surname,
