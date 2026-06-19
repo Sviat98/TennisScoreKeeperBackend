@@ -84,7 +84,7 @@ class ParticipantServiceRouter(
 
                 else -> {} // Игнорируем другие типы частей (например, BinaryItem)
             }
-            part.dispose() // Важно освободить ресурсы части
+            part.release() // Важно освободить ресурсы части
         }
 
         return excelBytes
