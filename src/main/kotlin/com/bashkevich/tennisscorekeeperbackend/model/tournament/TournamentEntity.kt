@@ -14,7 +14,7 @@ class TournamentEntity (id: EntityID<Int>) : IntEntity(id) {
     var type by TournamentTable.type
     var status by TournamentTable.status
     var setsToWin by TournamentTable.setsToWin
-    var regularSetTemplate by SetTemplateEntity referencedOn TournamentTable.regularSetTemplate
+    var regularSetTemplate by SetTemplateEntity optionalReferencedOn TournamentTable.regularSetTemplate
     var decidingSetTemplate by SetTemplateEntity referencedOn TournamentTable.decidingSetTemplate
     var theme by ThemeEntity referencedOn TournamentTable.theme
 }

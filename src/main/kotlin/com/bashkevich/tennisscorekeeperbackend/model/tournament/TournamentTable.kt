@@ -10,7 +10,7 @@ object TournamentTable : IntIdTable("tournament") {
     val type = enumerationByName<TournamentType>("type",50)
     val status = enumerationByName<TournamentStatus>("status",50)
     val setsToWin = integer("sets_to_win")
-    val regularSetTemplate = reference("regular_set_id", SetTemplateTable)
+    val regularSetTemplate = reference("regular_set_id", SetTemplateTable).nullable()
     val decidingSetTemplate = reference("deciding_set_id", SetTemplateTable)
     val theme = reference("theme_id", ThemeTable)
 }

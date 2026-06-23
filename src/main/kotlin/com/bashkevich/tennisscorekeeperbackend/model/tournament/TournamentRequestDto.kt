@@ -12,7 +12,7 @@ data class TournamentRequestDto(
     @SerialName("sets_to_win")
     val setsToWin: Int,
     @SerialName("regular_set_id")
-    val regularSetId: String,
+    val regularSetId: String? = null,
     @SerialName("deciding_set_id")
     val decidingSetId: String,
     @SerialName("theme_id")

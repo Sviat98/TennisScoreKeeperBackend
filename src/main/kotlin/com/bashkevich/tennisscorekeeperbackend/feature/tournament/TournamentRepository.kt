@@ -21,7 +21,7 @@ class TournamentRepository {
             type = tournamentRequestDto.type
             status = TournamentStatus.NOT_STARTED
             setsToWin = tournamentRequestDto.setsToWin
-            regularSetTemplate = SetTemplateEntity[tournamentRequestDto.regularSetId.toInt()]
+            regularSetTemplate = tournamentRequestDto.regularSetId?.let { SetTemplateEntity[it.toInt()] }
             decidingSetTemplate = SetTemplateEntity[tournamentRequestDto.decidingSetId.toInt()]
             theme = ThemeEntity[tournamentRequestDto.themeId.toInt()]
         }

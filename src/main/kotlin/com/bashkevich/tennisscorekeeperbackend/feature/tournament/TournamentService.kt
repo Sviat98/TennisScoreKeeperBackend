@@ -31,6 +31,12 @@ class TournamentService(
 
     suspend fun addTournament(tournamentRequestDto: TournamentRequestDto): TournamentDto {
         return dbQuery {
+            validateRequestConditions {
+                when {
+                    tournamentRequestDto.setsToWin > 1 && tournamentRequestDto.regularSetId == null -> "Regular set id is required when sets to win is more than 1"
+                    else -> ""
+                }
+            }
             tournamentRepository.addTournament(tournamentRequestDto).toDto()
         }
     }
@@ -97,7 +103,7 @@ class TournamentService(
             type = type,
             status = status,
             setsToWin = setsToWin,
-            regularSetId = regularSetTemplate.id.value.toString(),
+            regularSetId = regularSetTemplate?.id?.value?.toString(),
             decidingSetId = decidingSetTemplate.id.value.toString(),
             themeId = theme.id.value.toString(),
             totalParticipants = participants.size,
