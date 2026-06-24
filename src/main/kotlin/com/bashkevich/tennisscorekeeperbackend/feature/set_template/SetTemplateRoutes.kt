@@ -44,5 +44,34 @@ fun Route.setTemplateRoutes() {
                 }
             }
         }
+
+        route("/{id}") {
+            /**
+             * Tag: Set Template
+             * Get set template by ID.
+             */
+            get {
+                val id = call.pathParameters["id"]?.toIntOrNull() ?: 0
+
+                val setTemplate = setTemplateService.getSetTemplateById(id)
+
+                call.respond(setTemplate)
+            }.describe {
+                responses {
+                    HttpStatusCode.OK {
+                        description = "Successfully retrieved set template"
+                        schema = jsonSchema<SetTemplateDto>()
+                    }
+                    HttpStatusCode.BadRequest {
+                        description = "Invalid set template ID"
+                        ContentType.Text.Plain()
+                    }
+                    HttpStatusCode.NotFound {
+                        description = "Set template not found"
+                        ContentType.Text.Plain()
+                    }
+                }
+            }
+        }
     }
 }
