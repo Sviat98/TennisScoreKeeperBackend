@@ -77,7 +77,7 @@ class DoublesMatchService(
     private suspend fun buildShortMatch(matchEntity: DoublesMatchEntity): ShortMatchDto {
         val matchId = matchEntity.id.value
         return when (matchEntity.status) {
-            MatchStatus.PAUSED -> {
+            MatchStatus.PAUSED, MatchStatus.IN_PROGRESS -> {
                 val lastPointInTable = doublesMatchLogRepository.getLastPoint(matchId = matchId)
 
                 val lastPointNumber = (lastPointInTable?.pointNumber ?: 0) + matchEntity.pointShift

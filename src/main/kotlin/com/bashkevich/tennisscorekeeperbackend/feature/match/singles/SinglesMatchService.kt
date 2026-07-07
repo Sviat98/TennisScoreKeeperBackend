@@ -76,7 +76,7 @@ class SinglesMatchService(
     private suspend fun buildShortMatch(matchEntity: SinglesMatchEntity): ShortMatchDto {
         val matchId = matchEntity.id.value
         return when (matchEntity.status) {
-            MatchStatus.PAUSED -> {
+            MatchStatus.PAUSED, MatchStatus.IN_PROGRESS -> {
                 val lastPointInTable = singlesMatchLogRepository.getLastPoint(matchId = matchId)
 
                 val lastPointNumber = (lastPointInTable?.pointNumber ?: 0) + matchEntity.pointShift
