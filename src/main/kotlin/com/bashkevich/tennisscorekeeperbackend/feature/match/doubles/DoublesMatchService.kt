@@ -88,32 +88,36 @@ class DoublesMatchService(
                 val previousSets =
                     doublesMatchLogRepository.getPreviousSets(matchId, lastPointNumber).map { it.toTennisSetDto() }
 
-                val setNumber = previousSets.size + 1
+                if (matchEntity.winnerParticipant?.id?.value == null) {
+                    val setNumber = previousSets.size + 1
 
-                val setsToWin = matchEntity.setsToWin
+                    val setsToWin = matchEntity.setsToWin
 
-                val currentSetTemplate = findSetTemplate(matchEntity, setNumber, setsToWin)
+                    val currentSetTemplate = findSetTemplate(matchEntity, setNumber, setsToWin)
 
-                val currentSetMode = calculateCurrentSetMode(currentSetTemplate)
+                    val currentSetMode = calculateCurrentSetMode(currentSetTemplate)
 
-                val lastGame = doublesMatchLogRepository.getCurrentSet(matchId, setNumber, lastPointNumber)
+                    val lastGame = doublesMatchLogRepository.getCurrentSet(matchId, setNumber, lastPointNumber)
 
-                val currentSet = calculateCurrentSetScore(
-                    lastPoint = lastPoint, lastGame = lastGame,
-                    currentSetMode = currentSetMode
-                )
+                    val currentSet = calculateCurrentSetScore(
+                        lastPoint = lastPoint, lastGame = lastGame,
+                        currentSetMode = currentSetMode
+                    )
 
-                val currentGame = when {
-                    currentSetMode == SpecialSetMode.SUPER_TIEBREAK -> null
-                    lastPoint?.scoreType in listOf(
-                        ScoreType.GAME, ScoreType.SET, ScoreType.RETIREMENT_FIRST, ScoreType.RETIREMENT_SECOND,
-                        ScoreType.FINAL_SET_FIRST, ScoreType.FINAL_SET_SECOND
-                    ) -> null
+                    val currentGame = when {
+                        currentSetMode == SpecialSetMode.SUPER_TIEBREAK -> null
+                        lastPoint?.scoreType in listOf(
+                            ScoreType.GAME, ScoreType.SET, ScoreType.RETIREMENT_FIRST, ScoreType.RETIREMENT_SECOND,
+                            ScoreType.FINAL_SET_FIRST, ScoreType.FINAL_SET_SECOND
+                        ) -> null
 
-                    else -> lastPoint?.toTennisGameDto()
+                        else -> lastPoint?.toTennisGameDto()
+                    }
+
+                    matchEntity.toShortMatchDto(previousSets = previousSets, currentSet = currentSet, currentGame = currentGame)
+                } else {
+                    matchEntity.toShortMatchDto(previousSets = previousSets)
                 }
-
-                matchEntity.toShortMatchDto(previousSets = previousSets, currentSet = currentSet, currentGame = currentGame)
             }
 
             MatchStatus.COMPLETED -> {
@@ -126,7 +130,7 @@ class DoublesMatchService(
                 matchEntity.toShortMatchDto(previousSets = previousSets)
             }
 
-            else -> {
+            MatchStatus.NOT_STARTED -> {
                 matchEntity.toShortMatchDto()
             }
         }
