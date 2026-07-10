@@ -336,6 +336,7 @@ class DoublesMatchService(
 
         val matchDto = MatchDto(
             id = matchId.toString(),
+            tournamentId = matchEntity.tournament.id.value.toString(),
             pointShift = matchEntity.pointShift,
             videoLink = matchEntity.videoLink,
             themeId = matchEntity.theme.id.value.toString(),

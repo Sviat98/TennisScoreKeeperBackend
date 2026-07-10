@@ -11,6 +11,8 @@ import kotlinx.serialization.Serializable
 data class ShortMatchDto(
     @SerialName("id")
     val id: String,
+    @SerialName("tournament_id")
+    val tournamentId: String,
     @SerialName("first_participant")
     val firstParticipant: ParticipantInShortMatchDto,
     @SerialName("second_participant")
@@ -45,6 +47,7 @@ fun DoublesMatchEntity.toShortMatchDto(
     currentGame: TennisGameDto? = null,
 ) = ShortMatchDto(
     id = this.id.toString(),
+    tournamentId = this.tournament.id.value.toString(),
     firstParticipant = this.firstParticipant.toShortMatchParticipantDto(
         winningParticipantId = this.winnerParticipant?.id?.value,
         retiredParticipantId = this.retiredParticipant?.id?.value
@@ -66,6 +69,7 @@ fun SinglesMatchEntity.toShortMatchDto(
     currentGame: TennisGameDto? = null,
 ) = ShortMatchDto(
     id = this.id.toString(),
+    tournamentId = this.tournament.id.value.toString(),
     firstParticipant = this.firstParticipant.toShortMatchParticipantDto(
         winningParticipantId = this.winnerParticipant?.id?.value,
         retiredParticipantId = this.retiredParticipant?.id?.value
