@@ -2,8 +2,8 @@ package com.bashkevich.tennisscorekeeperbackend.model.participant
 
 import com.bashkevich.tennisscorekeeperbackend.model.participant.doubles.DoublesParticipantEntity
 import com.bashkevich.tennisscorekeeperbackend.model.participant.singles.SinglesParticipantEntity
-import com.bashkevich.tennisscorekeeperbackend.model.player.PlayerInParticipantDto
-import com.bashkevich.tennisscorekeeperbackend.model.player.toPlayerInParticipantDto
+import com.bashkevich.tennisscorekeeperbackend.model.player.PlayerDto
+import com.bashkevich.tennisscorekeeperbackend.model.player.toDto
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
@@ -24,7 +24,7 @@ data class SinglesParticipantDto(
     @SerialName("seed")
     override val seed: Int?,
     @SerialName("player")
-    val player: PlayerInParticipantDto,
+    val player: PlayerDto,
 ) : ParticipantDto()
 
 @Serializable
@@ -35,19 +35,19 @@ data class DoublesParticipantDto(
     @SerialName("seed")
     override val seed: Int?,
     @SerialName("first_player")
-    val firstPlayer: PlayerInParticipantDto,
+    val firstPlayer: PlayerDto,
     @SerialName("second_player")
-    val secondPlayer: PlayerInParticipantDto,
+    val secondPlayer: PlayerDto,
 ) : ParticipantDto()
 
 fun SinglesParticipantEntity.toDto(): ParticipantDto =
-    SinglesParticipantDto(id = this.id.toString(), seed = this.seed, player = this.player.toPlayerInParticipantDto())
+    SinglesParticipantDto(id = this.id.toString(), seed = this.seed, player = this.player.toDto())
 
 fun DoublesParticipantEntity.toDto(): ParticipantDto {
     val saveOrderAtDisplay = this.saveOrderAtDisplay
 
-    val firstPlayerInBaseDto = this.firstPlayer.toPlayerInParticipantDto()
-    val secondPlayerInBaseDto = this.secondPlayer.toPlayerInParticipantDto()
+    val firstPlayerInBaseDto = this.firstPlayer.toDto()
+    val secondPlayerInBaseDto = this.secondPlayer.toDto()
 
     return DoublesParticipantDto(
         id = this.id.toString(),

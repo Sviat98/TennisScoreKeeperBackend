@@ -2,8 +2,8 @@ package com.bashkevich.tennisscorekeeperbackend.model.participant
 
 import com.bashkevich.tennisscorekeeperbackend.model.participant.doubles.DoublesParticipantEntity
 import com.bashkevich.tennisscorekeeperbackend.model.participant.singles.SinglesParticipantEntity
-import com.bashkevich.tennisscorekeeperbackend.model.player.PlayerInParticipantDto
-import com.bashkevich.tennisscorekeeperbackend.model.player.toPlayerInParticipantDto
+import com.bashkevich.tennisscorekeeperbackend.model.player.PlayerDto
+import com.bashkevich.tennisscorekeeperbackend.model.player.toDto
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
@@ -31,7 +31,7 @@ data class ParticipantInShortSinglesMatchDto(
     @SerialName("is_retired")
     override val isRetired: Boolean,
     @SerialName("player")
-    val player: PlayerInParticipantDto
+    val player: PlayerDto
 ) : ParticipantInShortMatchDto()
 
 @Serializable
@@ -46,9 +46,9 @@ data class ParticipantInShortDoublesMatchDto(
     @SerialName("is_retired")
     override val isRetired: Boolean,
     @SerialName("first_player")
-    val firstPlayer: PlayerInParticipantDto,
+    val firstPlayer: PlayerDto,
     @SerialName("second_player")
-    val secondPlayer: PlayerInParticipantDto,
+    val secondPlayer: PlayerDto,
 ) : ParticipantInShortMatchDto()
 
 fun SinglesParticipantEntity.toShortMatchParticipantDto(winningParticipantId: Int?, retiredParticipantId: Int?) = ParticipantInShortSinglesMatchDto(
@@ -56,7 +56,7 @@ fun SinglesParticipantEntity.toShortMatchParticipantDto(winningParticipantId: In
     seed = this.seed,
     isWinner = this.id.value == winningParticipantId,
     isRetired = this.id.value == retiredParticipantId,
-    player = this.player.toPlayerInParticipantDto(),
+    player = this.player.toDto(),
 )
 
 fun DoublesParticipantEntity.toShortMatchParticipantDto(winningParticipantId: Int?, retiredParticipantId: Int?) = ParticipantInShortDoublesMatchDto(
@@ -64,6 +64,6 @@ fun DoublesParticipantEntity.toShortMatchParticipantDto(winningParticipantId: In
     seed = this.seed,
     isWinner = this.id.value == winningParticipantId,
     isRetired = this.id.value == retiredParticipantId,
-    firstPlayer = this.firstPlayer.toPlayerInParticipantDto(),
-    secondPlayer = this.secondPlayer.toPlayerInParticipantDto()
+    firstPlayer = this.firstPlayer.toDto(),
+    secondPlayer = this.secondPlayer.toDto()
 )

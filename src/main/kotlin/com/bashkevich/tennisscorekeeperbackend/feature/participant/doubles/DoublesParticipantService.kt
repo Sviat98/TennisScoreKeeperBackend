@@ -6,7 +6,7 @@ import com.bashkevich.tennisscorekeeperbackend.model.participant.ParticipantDto
 import com.bashkevich.tennisscorekeeperbackend.model.participant.doubles.DoublesParticipantExcel
 import com.bashkevich.tennisscorekeeperbackend.model.participant.toDto
 import com.bashkevich.tennisscorekeeperbackend.model.player.PlayerExcel
-import com.bashkevich.tennisscorekeeperbackend.model.player.toPlayerInParticipantDto
+import com.bashkevich.tennisscorekeeperbackend.model.player.toDto
 import io.ktor.server.plugins.BadRequestException
 import kotlinx.datetime.LocalDateTime
 import org.jetbrains.kotlinx.dataframe.DataFrame
@@ -84,8 +84,8 @@ class DoublesParticipantService(
                 DoublesParticipantDto(
                     id = participantId.toString(),
                     seed = seed,
-                    firstPlayer = firstPlayerInitial.toPlayerInParticipantDto(),
-                    secondPlayer = secondPlayerInitial.toPlayerInParticipantDto()
+                    firstPlayer = firstPlayerInitial.toDto(),
+                    secondPlayer = secondPlayerInitial.toDto()
                 )
             registeredParticipantIds.add(participantId)
             registeredParticipants.add(registeredParticipant)

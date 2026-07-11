@@ -6,7 +6,7 @@ import com.bashkevich.tennisscorekeeperbackend.model.participant.SinglesParticip
 import com.bashkevich.tennisscorekeeperbackend.model.participant.singles.SinglesParticipantExcel
 import com.bashkevich.tennisscorekeeperbackend.model.participant.toDto
 import com.bashkevich.tennisscorekeeperbackend.model.player.PlayerExcel
-import com.bashkevich.tennisscorekeeperbackend.model.player.toPlayerInParticipantDto
+import com.bashkevich.tennisscorekeeperbackend.model.player.toDto
 import io.ktor.server.plugins.BadRequestException
 import kotlinx.datetime.LocalDateTime
 import org.jetbrains.kotlinx.dataframe.DataFrame
@@ -55,7 +55,7 @@ class SinglesParticipantService(
 
             registeredParticipantIds.add(participantId)
 
-            val registeredParticipant = SinglesParticipantDto(participantId.toString(),seed, player.toPlayerInParticipantDto())
+            val registeredParticipant = SinglesParticipantDto(participantId.toString(),seed, player.toDto())
 
             registeredParticipants.add(registeredParticipant)
         }
