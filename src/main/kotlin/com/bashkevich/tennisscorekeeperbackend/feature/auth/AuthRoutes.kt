@@ -2,6 +2,7 @@ package com.bashkevich.tennisscorekeeperbackend.feature.auth
 
 import com.bashkevich.tennisscorekeeperbackend.model.auth.LoginInfo
 import com.bashkevich.tennisscorekeeperbackend.model.auth.LoginResponse
+import com.bashkevich.tennisscorekeeperbackend.model.auth.RefreshTokensResponse
 import com.bashkevich.tennisscorekeeperbackend.model.message.ResponseMessageDto
 import com.bashkevich.tennisscorekeeperbackend.plugins.respondWithMessageBody
 import io.ktor.http.ContentType
@@ -38,7 +39,7 @@ fun Route.authRoutes() {
         }
         responses {
             HttpStatusCode.OK {
-                description = "Login successful, returns JWT tokens and player ID"
+                description = "Login successful, returns player data and JWT tokens"
                 schema = jsonSchema<LoginResponse>()
             }
             HttpStatusCode.BadRequest {
@@ -93,7 +94,7 @@ fun Route.authRoutes() {
         responses {
             HttpStatusCode.OK {
                 description = "Token refreshed successfully, returns new JWT tokens"
-                schema = jsonSchema<LoginResponse>()
+                schema = jsonSchema<RefreshTokensResponse>()
             }
             HttpStatusCode.BadRequest {
                 description = "Refresh token not provided"

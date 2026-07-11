@@ -1,13 +1,12 @@
 package com.bashkevich.tennisscorekeeperbackend.model.auth
 
-import com.bashkevich.tennisscorekeeperbackend.model.player.PlayerDto
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
 @Serializable
-data class LoginResponse(
-    @SerialName("player")
-    val player: PlayerDto,
+data class RefreshTokensResponse(
+    @SerialName("player_id")
+    val playerId: String,
     @SerialName("access_token")
     val accessToken: String,
     @SerialName("refresh_token")

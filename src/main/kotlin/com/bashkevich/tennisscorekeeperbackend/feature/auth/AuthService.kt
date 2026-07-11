@@ -6,6 +6,8 @@ import com.auth0.jwt.algorithms.Algorithm
 import com.auth0.jwt.exceptions.TokenExpiredException
 import com.bashkevich.tennisscorekeeperbackend.model.auth.JwtConfig
 import com.bashkevich.tennisscorekeeperbackend.model.auth.LoginResponse
+import com.bashkevich.tennisscorekeeperbackend.model.auth.RefreshTokensResponse
+import com.bashkevich.tennisscorekeeperbackend.model.player.toDto
 import com.bashkevich.tennisscorekeeperbackend.model.auth.TokenType
 import com.bashkevich.tennisscorekeeperbackend.plugins.UnauthorizedException
 import com.bashkevich.tennisscorekeeperbackend.plugins.dbQuery
@@ -29,6 +31,7 @@ import kotlin.uuid.ExperimentalUuidApi
 @OptIn(ExperimentalUuidApi::class)
 class AuthService(
     private val authRepository: AuthRepository,
+    private val playerRepository: com.bashkevich.tennisscorekeeperbackend.feature.player.PlayerRepository,
 ) {
     suspend fun login(login: String, password: String): LoginResponse {
         return dbQuery {
@@ -50,7 +53,9 @@ class AuthService(
                     expDateProjected = refreshTokenExpiresAt
                 )
 
-                LoginResponse(playerId = playerId.toString(), accessToken = accessToken, refreshToken = refreshToken)
+                val player = playerRepository.getPlayerById(playerId) ?: throw NotFoundException("Player not found")
+
+                LoginResponse(player = player.toDto(), accessToken = accessToken, refreshToken = refreshToken)
             } else
                 throw NotFoundException("Wrong login or password!")
         }
@@ -74,7 +79,7 @@ class AuthService(
         }
     }
 
-    suspend fun refreshAccessToken(refreshToken: String?): LoginResponse {
+    suspend fun refreshAccessToken(refreshToken: String?): RefreshTokensResponse {
         return dbQuery {
             if (refreshToken == null) throw BadRequestException("Refresh token is not provided")
 
@@ -88,7 +93,7 @@ class AuthService(
 
             val accessToken = signToken(playerId = playerId, deviceId = deviceId, expiresAt = accessTokenExpDate)
 
-            LoginResponse(playerId = playerId.toString(), accessToken = accessToken, refreshToken = refreshToken)
+            RefreshTokensResponse(playerId = playerId.toString(), accessToken = accessToken, refreshToken = refreshToken)
         }
     }
 
