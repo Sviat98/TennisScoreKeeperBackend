@@ -1,11 +1,9 @@
 package com.bashkevich.tennisscorekeeperbackend.feature.theme
 
 import com.bashkevich.tennisscorekeeperbackend.model.auth.JWT_AUTH
-import com.bashkevich.tennisscorekeeperbackend.model.message.ResponseMessageDto
 import com.bashkevich.tennisscorekeeperbackend.model.theme.ThemeBody
 import com.bashkevich.tennisscorekeeperbackend.model.theme.ThemeDto
 import com.bashkevich.tennisscorekeeperbackend.plugins.receiveBodyCatching
-import com.bashkevich.tennisscorekeeperbackend.plugins.respondWithMessageBody
 import io.ktor.http.ContentType
 import io.ktor.http.HttpStatusCode
 import io.ktor.openapi.jsonSchema
@@ -114,13 +112,13 @@ fun Route.themeRoutes() {
 
                     val themeBody = call.receiveBodyCatching<ThemeBody>()
 
-                    themeService.updateTheme(
+                    val updatedTheme = themeService.updateTheme(
                         id = id,
                         name = themeBody.name,
                         content = themeBody.content
                     )
 
-                    call.respondWithMessageBody(message = "Successfully updated theme")
+                    call.respond(HttpStatusCode.OK, updatedTheme)
                 }.describe {
                     requestBody {
                         description = "Updated theme data"
@@ -129,7 +127,7 @@ fun Route.themeRoutes() {
                     responses {
                         HttpStatusCode.OK {
                             description = "Theme updated successfully"
-                            schema = jsonSchema<ResponseMessageDto>()
+                            schema = jsonSchema<ThemeDto>()
                         }
                         HttpStatusCode.BadRequest {
                             description = "Invalid request body or theme ID"
