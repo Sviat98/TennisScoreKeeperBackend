@@ -4,6 +4,7 @@ import com.bashkevich.tennisscorekeeperbackend.model.auth.JWT_AUTH
 import com.bashkevich.tennisscorekeeperbackend.model.theme.ThemeBody
 import com.bashkevich.tennisscorekeeperbackend.model.theme.ThemeDto
 import com.bashkevich.tennisscorekeeperbackend.plugins.receiveBodyCatching
+import com.bashkevich.tennisscorekeeperbackend.plugins.receiveMultipartCatching
 import io.ktor.http.ContentType
 import io.ktor.http.HttpStatusCode
 import io.ktor.openapi.jsonSchema
@@ -73,6 +74,18 @@ fun Route.themeRoutes() {
                         ContentType.Text.Plain()
                     }
                 }
+            }
+            /**
+             * Tag: Theme
+             * Generate a theme from a scoreboard image via AI (Koog, OpenAI GPT-4o).
+             * Returns the extracted ThemeContent JSON (no DB write at the debugging stage).
+             */
+            post("/ai") {
+                val multipart = call.receiveMultipartCatching()
+
+                val theme = themeService.generateThemeFromImage(multipart)
+
+                call.respond(theme)
             }
         }
         route("/{id}") {

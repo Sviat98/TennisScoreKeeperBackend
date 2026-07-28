@@ -41,6 +41,9 @@ fun Application.configureStatusPages(){
 
             call.respondWithMessageBody(statusCode = HttpStatusCode.NotFound, "Entity $entityClass with id = $entityId not found")
         }
+        exception<WrongEntityException> { call, cause ->
+            call.respondWithMessageBody(statusCode = HttpStatusCode.UnprocessableEntity, message = cause.message ?: "")
+        }
         exception<Throwable> { call, cause ->
             call.respondWithMessageBody(statusCode = HttpStatusCode.InternalServerError, message = cause.message ?: "")
         }
@@ -49,6 +52,13 @@ fun Application.configureStatusPages(){
 class UnauthorizedException(message: String = "Token is not valid or has expired!") : Exception(message)
 
 class InvalidBodyException(message: String = "Invalid body format in request!") : Exception(message)
+
+/**
+ * Переданная сущность неверна или не соответствует ожидаемому типу
+ * (например, на /themes/ai прислали изображение, не являющееся теннисным табло).
+ * Переиспользуемое: применимо к любому эндпоинту с подобной семантикой ошибки.
+ */
+class WrongEntityException(message: String = "Provided entity is wrong or unexpected!") : Exception(message)
 
 suspend inline fun <reified T : Any> ApplicationCall.receiveBodyCatching(): T {
     return try {
