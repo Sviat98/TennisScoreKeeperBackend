@@ -7,6 +7,7 @@ logback-version = "1.5.32"
 postgres-version = "42.7.11"
 dataframe-version = "1.0.0-Beta5"
 bcrypt-version = "0.10.2"
+koog-version = "1.1.1"
 #kotlinx-io-version = "0.7.0"
 
 [libraries]
@@ -43,6 +44,8 @@ logback-classic = { module = "ch.qos.logback:logback-classic", version.ref = "lo
 
 dataframe-core = { module = "org.jetbrains.kotlinx:dataframe", version.ref = "dataframe-version"}
 dataframe-excel = { module = "org.jetbrains.kotlinx:dataframe-excel", version.ref = "dataframe-version"}
+
+koog-agents = { module = "ai.koog:koog-agents", version.ref = "koog-version" }
 
 ktor-server-config-yaml = { module = "io.ktor:ktor-server-config-yaml-jvm", version.ref = "ktor-version" }
 ktor-server-test-host = { module = "io.ktor:ktor-server-test-host-jvm", version.ref = "ktor-version" }
