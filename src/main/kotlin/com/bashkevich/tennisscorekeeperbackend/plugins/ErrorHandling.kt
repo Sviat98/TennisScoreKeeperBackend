@@ -44,6 +44,12 @@ fun Application.configureStatusPages(){
         exception<WrongEntityException> { call, cause ->
             call.respondWithMessageBody(statusCode = HttpStatusCode.UnprocessableEntity, message = cause.message ?: "")
         }
+        exception<LLMException> { call, cause ->
+            call.respondWithMessageBody(
+                statusCode = HttpStatusCode.InternalServerError,
+                message = cause.cause?.message ?: cause.message ?: "LLM service error"
+            )
+        }
         exception<Throwable> { call, cause ->
             call.respondWithMessageBody(statusCode = HttpStatusCode.InternalServerError, message = cause.message ?: "")
         }
@@ -59,6 +65,13 @@ class InvalidBodyException(message: String = "Invalid body format in request!") 
  * Переиспользуемое: применимо к любому эндпоинту с подобной семантикой ошибки.
  */
 class WrongEntityException(message: String = "Provided entity is wrong or unexpected!") : Exception(message)
+
+/**
+ * Внутренний сбой при работе LLM-сервиса (сетевая ошибка, нечитаемый ответ,
+ * ошибка на стороне провайдера, нарушение инвариантов ответа).
+ * Мапится на HTTP 500.
+ */
+class LLMException(message: String = "LLM service error", cause: Throwable? = null) : Exception(message, cause)
 
 suspend inline fun <reified T : Any> ApplicationCall.receiveBodyCatching(): T {
     return try {
