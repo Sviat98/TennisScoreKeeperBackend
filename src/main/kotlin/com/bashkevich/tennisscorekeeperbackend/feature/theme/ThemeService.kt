@@ -9,7 +9,6 @@ import ai.koog.prompt.executor.model.executeStructured
 import ai.koog.prompt.message.AttachmentContent
 import ai.koog.prompt.message.AttachmentSource
 import com.bashkevich.tennisscorekeeperbackend.model.theme.AiThemeExtractionResult
-import com.bashkevich.tennisscorekeeperbackend.model.theme.MatchDescriptionResult
 import com.bashkevich.tennisscorekeeperbackend.model.theme.ThemeContent
 import com.bashkevich.tennisscorekeeperbackend.model.theme.ThemeDto
 import com.bashkevich.tennisscorekeeperbackend.model.theme.toDto
@@ -115,14 +114,16 @@ class ThemeService(
     /**
      * Описывает текстом содержимое табло по загруженному изображению через AI (Koog, OpenAI GPT-4o).
      *
-     * Возвращает обычную строку: игроки, кто подаёт, текущий счёт (завершённые сеты, текущий сет,
+     * promptExecutor возвращает обычную строку (plain-text выполнение через [PromptExecutor.execute],
+     * без structured-обёртки): игроки, кто подаёт, текущий счёт (завершённые сеты, текущий сет,
      * текущий гейм), расположение лиц игроков и ключевые цвета табло (название + #RRGGBB).
-     * Описание — на русском.
+     * Описание — на русском. HTTP-слой оборачивает строку в JSON (ResponseMessageDto).
      *
      * Выполняется БЕЗ dbQuery — это чистый LLM-вызов.
      *
      * Поведение:
-     * - изображение не является табло → строка «На изображении не теннисное табло.»;
+     * - изображение не является табло → строка «На изображении не теннисное табло.»
+     *   (модель сама возвращает эту фразу по инструкции в промпте);
      * - нет картинки / не image-тип → [BadRequestException] (HTTP 400);
      * - технический сбой AI → RuntimeException (HTTP 500).
      */
@@ -133,7 +134,7 @@ class ThemeService(
             system(DESCRIBE_MATCH_PROMPT)
             user {
                 +"Опиши изображение теннисного табло на русском языке."
-                +"Если это не теннисное табло — верни on_failure с короткой причиной."
+                +"Если это не теннисное табло — ответь ровно фразой: На изображении не теннисное табло."
                 image(
                     AttachmentSource.Image(
                         content = AttachmentContent.Binary.Bytes(image.bytes),
@@ -145,19 +146,13 @@ class ThemeService(
             }
         }
 
-        val result = promptExecutor.executeStructured<MatchDescriptionResult>(
-            prompt = descriptionPrompt,
-            model = OpenAIModels.Chat.GPT4o,
-        )
-
-        val structured = result.getOrElse { error ->
+        val response = try {
+            promptExecutor.execute(descriptionPrompt, OpenAIModels.Chat.GPT4o)
+        } catch (error: Exception) {
             throw RuntimeException("AI failed to analyze the image: ${error.message}", error)
         }
 
-        return when (val data = structured.data) {
-            is MatchDescriptionResult.OnSuccess -> data.description
-            is MatchDescriptionResult.OnFailure -> "На изображении не теннисное табло."
-        }
+        return response.textContent().trim().ifBlank { "На изображении не теннисное табло." }
     }
 
     private suspend fun readImageFromMultipart(fileData: MultiPartData): ImageInput {
@@ -264,11 +259,15 @@ private val DESCRIBE_MATCH_PROMPT = """
     You are an expert at analyzing tennis scoreboards. You receive a single image.
     Decide whether it is a tennis scoreboard.
 
-    If the image is NOT a tennis scoreboard (e.g. a photo of a person, animal, scenery,
-    a different sport, a logo, a screenshot of text, etc.), return "on_failure" with a short "reason".
+    Respond with PLAIN TEXT ONLY, in Russian, without any markdown, code blocks, or extra commentary.
 
-    If the image IS a tennis scoreboard, return "on_success" with a "description": a clear, concise
-    plain-text description IN RUSSIAN (no markdown, no extra commentary) that covers:
+    If the image is NOT a tennis scoreboard (e.g. a photo of a person, animal, scenery,
+    a different sport, a logo, a screenshot of text, etc.), respond with exactly this sentence
+    and nothing else:
+    На изображении не теннисное табло.
+
+    If the image IS a tennis scoreboard, write a clear, concise plain-text description IN RUSSIAN
+    that covers:
 
     - Игроки: имена, если они видны на табло; иначе укажи позицию каждого (верхний/нижний
       или левый/правый).
@@ -283,5 +282,5 @@ private val DESCRIBE_MATCH_PROMPT = """
       Минимум эти цвета: фон табло, основной текст, индикатор подачи, подсветка текущего сета,
       подсветка текущего гейма. Значения #RRGGBB бери точно с изображения.
 
-    Верни ТОЛЬКО структурированный результат — без пояснений и markdown.
+    Return ONLY the resulting text — no explanations, no markdown.
 """.trimIndent()
