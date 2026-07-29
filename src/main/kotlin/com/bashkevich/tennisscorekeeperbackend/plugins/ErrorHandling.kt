@@ -45,7 +45,7 @@ fun Application.configureStatusPages(){
             call.respondWithMessageBody(statusCode = HttpStatusCode.UnprocessableEntity, message = cause.message ?: "")
         }
         exception<Throwable> { call, cause ->
-            call.respondWithMessageBody(statusCode = HttpStatusCode.InternalServerError, message = cause.message ?: "")
+            call.respondWithMessageBody(statusCode = HttpStatusCode.InternalServerError, message = "$cause" ?: "")
         }
     }
 }
