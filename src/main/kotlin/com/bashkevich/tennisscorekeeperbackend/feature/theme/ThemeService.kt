@@ -12,6 +12,7 @@ import com.bashkevich.tennisscorekeeperbackend.model.theme.AiThemeExtractionResu
 import com.bashkevich.tennisscorekeeperbackend.model.theme.ThemeContent
 import com.bashkevich.tennisscorekeeperbackend.model.theme.ThemeDto
 import com.bashkevich.tennisscorekeeperbackend.model.theme.toDto
+import com.bashkevich.tennisscorekeeperbackend.plugins.LLMException
 import com.bashkevich.tennisscorekeeperbackend.plugins.WrongEntityException
 import com.bashkevich.tennisscorekeeperbackend.plugins.dbQuery
 import io.ktor.http.ContentType
@@ -74,7 +75,7 @@ class ThemeService(
      * Поведение:
      * - изображение не является табло → [WrongEntityException] (HTTP 422);
      * - нет картинки / не image-тип → [BadRequestException] (HTTP 400);
-     * - технический сбой AI → RuntimeException (HTTP 500).
+     * - технический сбой AI → [LLMException] (HTTP 500).
      */
     suspend fun generateThemeFromImage(fileData: MultiPartData): ThemeContent {
         val image = readImageFromMultipart(fileData)
@@ -83,8 +84,8 @@ class ThemeService(
             system(SYSTEM_PROMPT)
             user {
                 +"Analyze the attached image."
-                +"If it is a tennis scoreboard, extract its color scheme and return on_success with the theme."
-                +"If it is NOT a tennis scoreboard, return on_failure with a short reason."
+                +"If it is a tennis scoreboard, extract its color scheme: set is_scoreboard=true and put it in theme."
+                +"If it is NOT a tennis scoreboard: set is_scoreboard=false and provide a short reason."
                 image(
                     AttachmentSource.Image(
                         content = AttachmentContent.Binary.Bytes(image.bytes),
@@ -102,12 +103,14 @@ class ThemeService(
         )
 
         val structured = result.getOrElse { error ->
-            throw RuntimeException("AI failed to analyze the image: ${error.message}", error)
+            throw LLMException("AI failed to analyze the image", error)
         }
 
-        return when (val data = structured.data) {
-            is AiThemeExtractionResult.OnSuccess -> data.theme
-            is AiThemeExtractionResult.OnFailure -> throw WrongEntityException(data.reason)
+        return when {
+            structured.data.isScoreboard -> structured.data.theme
+                ?: throw LLMException("AI flagged the image as a scoreboard but returned no theme")
+
+            else -> throw WrongEntityException(structured.data.reason ?: "Image is not a tennis scoreboard")
         }
     }
 
@@ -191,21 +194,23 @@ private val SYSTEM_PROMPT = """
     You are an expert at analyzing tennis scoreboards and extracting their exact color scheme.
     You receive a single image. Decide whether it is a tennis scoreboard.
 
-    If the image IS a tennis scoreboard, return "on_success" with a "theme" object containing
-    these nine colors, each as {"color": "<#RRGGBB hex>", "alpha": <0.0-1.0, default 1.0>}:
-
-    - main_background_color: the overall background of the scoreboard.
-    - main_text_color: the default text color (player names, main scores).
-    - serve_color: the color/indicator marking which player is serving.
-    - previous_set_win_text_color: the text color of set counts the player has WON (previous sets).
-    - previous_set_lose_text_color: the text color of set counts the player has LOST (previous sets).
-    - current_set_background_color: the background highlighting the CURRENT set column.
-    - current_set_text_color: the text color inside the current set highlight.
-    - current_game_background_color: the background highlighting the CURRENT game score.
-    - current_game_text_color: the text color inside the current game highlight.
+    If the image IS a tennis scoreboard:
+        "is_scoreboard": true,
+        "theme": an object with these nine colors, each {"color": "<#RRGGBB hex>", "alpha": <0.0-1.0, default 1.0>}:
+          - main_background_color: the overall background of the scoreboard.
+          - main_text_color: the default text color (player names, main scores).
+          - serve_color: the color/indicator marking which player is serving.
+          - previous_set_win_text_color: the text color of set counts the player has WON (previous sets).
+          - previous_set_lose_text_color: the text color of set counts the player has LOST (previous sets).
+          - current_set_background_color: the background highlighting the CURRENT set column.
+          - current_set_text_color: the text color inside the current set highlight.
+          - current_game_background_color: the background highlighting the CURRENT game score.
+          - current_game_text_color: the text color inside the current game highlight.
 
     If the image is NOT a tennis scoreboard (e.g. a photo of a person, animal, scenery,
-    a different sport, a logo, a screenshot of text, etc.), return "on_failure" with a short "reason".
+      a different sport, a logo, a screenshot of text, etc.):
+        "is_scoreboard": false,
+        "reason": a short explanation of why it is not a scoreboard.
 
     Use accurate hex colors sampled from the image. Prefer alpha = 1.0 unless a color is clearly semi-transparent.
     Return ONLY the structured result — no explanations, no markdown.

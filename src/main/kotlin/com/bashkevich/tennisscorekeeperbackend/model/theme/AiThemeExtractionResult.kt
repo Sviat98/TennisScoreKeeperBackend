@@ -4,26 +4,21 @@ import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
 /**
- * Результат извлечения темы табло из изображения.
+ * Результат анализа изображения на наличие теннисного табло.
  *
- * Разделён на два варианта (on_success / on_failure), чтобы AI мог явно сообщить,
- * что картинка не является теннисным табло и не подлежит обработке.
+ * Намеренно плоская структура (а не sealed-иерархия on_success/on_failure):
+ * корневой тип должен быть обычным классом. При полиморфном (sealed) корне
+ * OpenAI-генератор JSON-схемы в Koog (OpenAIStandardJsonSchemaGenerator) безусловно
+ * ждёт на корне "$ref", которого для sealed-корня нет (там oneOf), и падает с
+ * `NoSuchElementException: Key $ref is missing in the map`. Поле [isScoreboard]
+ * даёт модели легальный способ отказаться от обработки в рамках structured output.
  *
  * Семантика полей описана в system-промпте ThemeService.SYSTEM_PROMPT,
- * поэтому сама модель ThemeContent остаётся без Koog-зависимостей.
+ * поэтому сама модель остаётся без Koog-зависимостей.
  */
 @Serializable
-sealed class AiThemeExtractionResult {
-
-    @Serializable
-    @SerialName("on_success")
-    data class OnSuccess(
-        val theme: ThemeContent,
-    ) : AiThemeExtractionResult()
-
-    @Serializable
-    @SerialName("on_failure")
-    data class OnFailure(
-        val reason: String,
-    ) : AiThemeExtractionResult()
-}
+data class AiThemeExtractionResult(
+    @SerialName("is_scoreboard") val isScoreboard: Boolean,
+    @SerialName("reason") val reason: String? = null,
+    @SerialName("theme") val theme: ThemeContent? = null,
+)
