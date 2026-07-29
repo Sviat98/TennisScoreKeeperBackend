@@ -51,7 +51,7 @@ fun Application.configureStatusPages(){
             )
         }
         exception<Throwable> { call, cause ->
-            call.respondWithMessageBody(statusCode = HttpStatusCode.InternalServerError, message = cause.message ?: "")
+            call.respondWithMessageBody(statusCode = HttpStatusCode.InternalServerError, message = "$cause" ?: "")
         }
     }
 }

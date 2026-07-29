@@ -1,6 +1,7 @@
 package com.bashkevich.tennisscorekeeperbackend.feature.theme
 
 import com.bashkevich.tennisscorekeeperbackend.model.auth.JWT_AUTH
+import com.bashkevich.tennisscorekeeperbackend.model.message.ResponseMessageDto
 import com.bashkevich.tennisscorekeeperbackend.model.theme.ThemeBody
 import com.bashkevich.tennisscorekeeperbackend.model.theme.ThemeDto
 import com.bashkevich.tennisscorekeeperbackend.plugins.receiveBodyCatching
@@ -86,6 +87,20 @@ fun Route.themeRoutes() {
                 val theme = themeService.generateThemeFromImage(multipart)
 
                 call.respond(theme)
+            }
+            /**
+             * Tag: Theme
+             * Описывает содержимое табло по загруженному изображению через AI (Koog, OpenAI GPT-4o):
+             * игроки, кто подаёт, текущий счёт (сеты, текущий сет, гейм), расположение лиц и
+             * ключевые цвета (название + #RRGGBB). Возвращает строку-описание на русском в ResponseMessageDto.
+             * Если изображение не является табло — message = «На изображении не теннисное табло.».
+             */
+            post("/ai/describeMatch") {
+                val multipart = call.receiveMultipartCatching()
+
+                val description = themeService.describeMatchFromImage(multipart)
+
+                call.respond(ResponseMessageDto(description))
             }
         }
         route("/{id}") {
