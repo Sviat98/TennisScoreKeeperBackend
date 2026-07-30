@@ -95,7 +95,7 @@ class ThemeService(
                     )
                 )
             }
-        }
+        }.withUpdatedParams { temperature = 0.0 }
 
         val result = promptExecutor.executeStructured<AiThemeExtractionResult>(
             prompt = extractionPrompt,
@@ -147,7 +147,7 @@ class ThemeService(
                     )
                 )
             }
-        }
+        }.withUpdatedParams { temperature = 0.0 }
 
         val response = try {
             promptExecutor.execute(descriptionPrompt, OpenAIModels.Chat.GPT4o)
@@ -236,28 +236,52 @@ class ThemeService(
 
 private val SYSTEM_PROMPT = """
     You are an expert at analyzing tennis scoreboards and extracting their exact color scheme.
-    You receive a single image. Decide whether it is a tennis scoreboard.
+    You receive exactly one image. Determine whether the image contains a tennis scoreboard.
 
-    If the image IS a tennis scoreboard:
+    IMPORTANT - color extraction rules:
+    - Extract colors directly from the visible pixels.
+    - Do NOT estimate, normalize, beautify or adjust colors.
+    - Do NOT return typical or expected tennis scoreboard colors. Return the colors actually visible in this image.
+    - For each requested element, identify the correct UI element first, then determine its dominant visible color.
+    - If anti-aliasing, gradients or compression artifacts are present, choose the dominant visible color.
+    - Ignore shadows, borders, reflections and decorative effects whenever possible.
+    - Ignore text when determining background colors.
+    - Ignore background when determining text colors.
+    - Always return exactly one dominant color for every requested field.
+    - Prefer alpha = 1.0 unless a color is clearly semi-transparent.
+
+    Missing elements (fallback) - every field is required:
+    - If a UI element is NOT visible on the image, do not leave its field empty. Derive its color from the
+      colors you DID detect, so the result stays consistent and readable:
+        * Missing text-type color (serve_color, previous_set_win_text_color, previous_set_lose_text_color,
+          current_set_text_color, current_game_text_color) -> reuse main_text_color.
+        * Missing fill/background color (current_set_background_color, current_game_background_color)
+          -> reuse main_background_color.
+    - Rationale: an absent highlight cell should look like the rest of the board (base colors);
+      an absent text element should match the main text.
+    - Examples: no visible serve indicator -> serve_color = main_text_color;
+      no current game shown -> current_game_background_color = main_background_color and
+      current_game_text_color = main_text_color.
+
+    If the image IS a tennis scoreboard, return:
         "is_scoreboard": true,
         "theme": an object with these nine colors, each {"color": "<#RRGGBB hex>", "alpha": <0.0-1.0, default 1.0>}:
-          - main_background_color: the overall background of the scoreboard.
-          - main_text_color: the default text color (player names, main scores).
-          - serve_color: the color/indicator marking which player is serving.
-          - previous_set_win_text_color: the text color of set counts the player has WON (previous sets).
-          - previous_set_lose_text_color: the text color of set counts the player has LOST (previous sets).
-          - current_set_background_color: the background highlighting the CURRENT set column.
-          - current_set_text_color: the text color inside the current set highlight.
-          - current_game_background_color: the background highlighting the CURRENT game score.
-          - current_game_text_color: the text color inside the current game highlight.
+          - main_background_color: dominant background color of the scoreboard itself.
+          - main_text_color: dominant color of regular player names and score text.
+          - serve_color: color of the serve indicator (fallback = main_text_color if absent).
+          - previous_set_win_text_color: text color of completed sets won (fallback = main_text_color if absent).
+          - previous_set_lose_text_color: text color of completed sets lost (fallback = main_text_color if absent).
+          - current_set_background_color: dominant fill color of the highlighted current-set cell (fallback = main_background_color if absent).
+          - current_set_text_color: text color inside the highlighted current-set cell (fallback = main_text_color if absent).
+          - current_game_background_color: dominant fill color of the highlighted current-game cell (fallback = main_background_color if absent).
+          - current_game_text_color: text color inside the highlighted current-game cell (fallback = main_text_color if absent).
 
     If the image is NOT a tennis scoreboard (e.g. a photo of a person, animal, scenery,
-      a different sport, a logo, a screenshot of text, etc.):
+      a different sport, a logo, a screenshot of text, etc.), return:
         "is_scoreboard": false,
         "reason": a short explanation of why it is not a scoreboard.
 
-    Use accurate hex colors sampled from the image. Prefer alpha = 1.0 unless a color is clearly semi-transparent.
-    Return ONLY the structured result — no explanations, no markdown.
+    Return ONLY the structured result - no explanations, no markdown.
 """.trimIndent()
 
 private val DESCRIBE_MATCH_PROMPT = """
