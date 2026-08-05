@@ -90,6 +90,19 @@ fun Route.themeRoutes() {
             }
             /**
              * Tag: Theme
+             * Прежняя (до детерминированного конвейера) реализация: один LLM-вызов, GPT-4o сам
+             * называет 9 цветов табло. Фолбэк для случаев, когда новый /themes/ai (с наложенной
+             * сеткой) ошибочно отбраковывает валидное табло. Возвращает ThemeContent JSON.
+             */
+            post("/ai/old") {
+                val multipart = call.receiveMultipartCatching()
+
+                val theme = themeService.generateThemeFromImageLegacy(multipart)
+
+                call.respond(theme)
+            }
+            /**
+             * Tag: Theme
              * Описывает содержимое табло по загруженному изображению через AI (Koog, OpenAI GPT-4o):
              * игроки, кто подаёт, текущий счёт (сеты, текущий сет, гейм), расположение лиц и
              * ключевые цвета (название + #RRGGBB). Возвращает строку-описание на русском в ResponseMessageDto.
