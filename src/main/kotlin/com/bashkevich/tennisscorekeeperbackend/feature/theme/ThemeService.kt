@@ -8,7 +8,7 @@ import ai.koog.prompt.executor.model.PromptExecutor
 import ai.koog.prompt.executor.model.executeStructured
 import ai.koog.prompt.message.AttachmentContent
 import ai.koog.prompt.message.AttachmentSource
-import com.bashkevich.tennisscorekeeperbackend.model.theme.AiThemeExtractionResult
+import com.bashkevich.tennisscorekeeperbackend.model.theme.AiLayoutResult
 import com.bashkevich.tennisscorekeeperbackend.model.theme.ThemeContent
 import com.bashkevich.tennisscorekeeperbackend.model.theme.ThemeDto
 import com.bashkevich.tennisscorekeeperbackend.model.theme.toDto
@@ -69,36 +69,49 @@ class ThemeService(
     /**
      * Генерирует тему табло из загруженного изображения через AI (Koog, OpenAI GPT-4o).
      *
+     * Двухфазный конвейер (см. план): LLM только **локализует** элементы табло, размечая
+     * ячейки сетки ролями, а детерминированный движок измеряет точный `#RRGGBB` по реальным
+     * пикселям. Поэтому «чёрный вместо тёмно-синего» исчезает по построению — модель вообще
+     * не называет цвета.
+     *
      * Выполняется БЕЗ dbQuery — это чистый LLM-вызов, не должен удерживать DB-соединение.
      * На этапе отладки тема только возвращается, в БД не сохраняется.
      *
      * Поведение:
      * - изображение не является табло → [WrongEntityException] (HTTP 422);
      * - нет картинки / не image-тип → [BadRequestException] (HTTP 400);
-     * - технический сбой AI → [LLMException] (HTTP 500).
+     * - технический сбой AI / неразборчивая разметка → [LLMException] (HTTP 500).
      */
     suspend fun generateThemeFromImage(fileData: MultiPartData): ThemeContent {
         val image = readImageFromMultipart(fileData)
 
-        val extractionPrompt = prompt("scoreboard_theme_extraction") {
-            system(SYSTEM_PROMPT)
+        // Фаза 1 — локализация. Рисуем поверх картинки фиксированную пронумерованную сетку
+        // и просим GPT-4o размечать ячейки ролями (grid-техника — надёжный grounding-паттерн
+        // для vision-модели, не требующий точных координат bounding box'ов).
+        val overlay = ScoreboardColorExtractor.drawGridOverlay(
+            image.bytes, AiLayoutResult.GRID_ROWS, AiLayoutResult.GRID_COLS
+        )
+
+        val layoutPrompt = prompt("scoreboard_layout") {
+            system(LAYOUT_PROMPT)
             user {
-                +"Analyze the attached image."
-                +"If it is a tennis scoreboard, extract its color scheme: set is_scoreboard=true and put it in theme."
-                +"If it is NOT a tennis scoreboard: set is_scoreboard=false and provide a short reason."
+                +"Analyze the attached image. It has an overlaid ${AiLayoutResult.GRID_ROWS}x${AiLayoutResult.GRID_COLS} numbered grid."
+                +"Rows are numbered top-to-bottom, columns left-to-right."
+                +"If it is a tennis scoreboard, set is_scoreboard=true and return the grid of cell roles."
+                +"If it is NOT a tennis scoreboard, set is_scoreboard=false and provide a short reason."
                 image(
                     AttachmentSource.Image(
-                        content = AttachmentContent.Binary.Bytes(image.bytes),
-                        format = image.format,
-                        mimeType = image.mimeType,
-                        fileName = image.fileName,
+                        content = AttachmentContent.Binary.Bytes(overlay),
+                        format = "png",
+                        mimeType = "image/png",
+                        fileName = "scoreboard-grid.png",
                     )
                 )
             }
         }.withUpdatedParams { temperature = 0.0 }
 
-        val result = promptExecutor.executeStructured<AiThemeExtractionResult>(
-            prompt = extractionPrompt,
+        val result = promptExecutor.executeStructured<AiLayoutResult>(
+            prompt = layoutPrompt,
             model = OpenAIModels.Chat.GPT4o,
         )
 
@@ -106,11 +119,35 @@ class ThemeService(
             throw LLMException("AI failed to analyze the image", error)
         }
 
-        return when {
-            structured.data.isScoreboard -> structured.data.theme
-                ?: throw LLMException("AI flagged the image as a scoreboard but returned no theme")
+        if (!structured.data.isScoreboard) {
+            throw WrongEntityException(structured.data.reason ?: "Image is not a tennis scoreboard")
+        }
 
-            else -> throw WrongEntityException(structured.data.reason ?: "Image is not a tennis scoreboard")
+        validateGrid(structured.data.grid)
+
+        // Фаза 2 — измерение. Точный цвет по реальным пикселям ИСХОДНОЙ картинки (без сетки).
+        return try {
+            ScoreboardColorExtractor.extract(image.bytes, structured.data.grid)
+        } catch (e: IllegalStateException) {
+            throw LLMException("AI layout could not be resolved into colors: ${e.message}", e)
+        }
+    }
+
+    /**
+     * Проверяет, что вернувшаяся от LLM матрица ролей имеет ожидаемую размерность
+     * [AiLayoutResult.GRID_ROWS]×[AiLayoutResult.GRID_COLS]. Иначе модель не поняла grid
+     * и измерять цвета небезопасно — это технический сбой, а не «не табло».
+     */
+    private fun validateGrid(grid: List<List<String>>) {
+        val expectedRows = AiLayoutResult.GRID_ROWS
+        val expectedCols = AiLayoutResult.GRID_COLS
+        if (grid.size != expectedRows) {
+            throw LLMException("AI returned grid with ${grid.size} rows, expected $expectedRows")
+        }
+        grid.forEachIndexed { rowIndex, row ->
+            if (row.size != expectedCols) {
+                throw LLMException("AI returned row $rowIndex with ${row.size} cols, expected $expectedCols")
+            }
         }
     }
 
@@ -234,54 +271,56 @@ class ThemeService(
     }
 }
 
-private val SYSTEM_PROMPT = """
-    You are an expert at analyzing tennis scoreboards and extracting their exact color scheme.
-    You receive exactly one image. Determine whether the image contains a tennis scoreboard.
+private val LAYOUT_PROMPT = """
+    You are an expert at analyzing tennis scoreboards. You receive exactly one image with a numbered
+    grid overlaid on it. Your ONLY job is to decide whether the image is a tennis scoreboard and, if so,
+    label each grid cell with the UI role it shows. You must NEVER name, estimate or guess colors —
+    a deterministic engine measures colors from the real pixels afterwards.
 
-    IMPORTANT - color extraction rules:
-    - Extract colors directly from the visible pixels.
-    - Do NOT estimate, normalize, beautify or adjust colors.
-    - Do NOT return typical or expected tennis scoreboard colors. Return the colors actually visible in this image.
-    - For each requested element, identify the correct UI element first, then determine its dominant visible color.
-    - If anti-aliasing, gradients or compression artifacts are present, choose the dominant visible color.
-    - Ignore shadows, borders, reflections and decorative effects whenever possible.
-    - Ignore text when determining background colors.
-    - Ignore background when determining text colors.
-    - Always return exactly one dominant color for every requested field.
-    - Prefer alpha = 1.0 unless a color is clearly semi-transparent.
+    The image is divided into a fixed grid of 8 rows x 20 columns. Cell [row][col] is addressed with
+    row 0 at the top and column 0 at the left. Return "grid" as a list of 8 lists, each containing
+    exactly 20 strings (one role per cell). Every cell gets exactly one role.
 
-    Missing elements (fallback) - every field is required:
-    - If a UI element is NOT visible on the image, do not leave its field empty. Derive its color from the
-      colors you DID detect, so the result stays consistent and readable:
-        * Missing text-type color (serve_color, previous_set_win_text_color, previous_set_lose_text_color,
-          current_set_text_color, current_game_text_color) -> reuse main_text_color.
-        * Missing fill/background color (current_set_background_color, current_game_background_color)
-          -> reuse main_background_color.
-    - Rationale: an absent highlight cell should look like the rest of the board (base colors);
-      an absent text element should match the main text.
-    - Examples: no visible serve indicator -> serve_color = main_text_color;
-      no current game shown -> current_game_background_color = main_background_color and
-      current_game_text_color = main_text_color.
+    Available roles (use these exact lowercase strings):
+      - "background": plain empty background of the scoreboard panel (the base fill behind everything).
+      - "name_text": a player's name or regular score label (the normal text of the board).
+      - "prev_set_win_text": text of a completed-set score that this player WON (often brighter/normal).
+      - "prev_set_lose_text": text of a completed-set score that this player LOST (often dimmed/grey).
+      - "current_set_bg": the highlighted fill/background of the cell showing the CURRENT set score.
+      - "current_set_text": the text inside that current-set cell.
+      - "current_game_bg": the highlighted fill/background of the cell showing the CURRENT game/points score.
+      - "current_game_text": the text inside that current-game cell.
+      - "serve": the serve indicator next to one player's name — a small ball/dot, asterisk or dash
+        marking WHO is serving. It usually sits immediately left or right of the serving player's name.
+      - "ignore": anything that is not part of the scoreboard (player photos/faces, logos, TV channel
+        graphics, the area around the board, people, scenery).
+
+    How to label:
+      - A tennis scoreboard typically has two player rows (one above the other) and columns: name,
+        completed-set scores, current-set score, current-game/points score. One or both of the
+        current-set / current-game cells may be highlighted with a distinct fill.
+      - Each cell gets exactly ONE role. If a cell straddles two elements, pick the one occupying the
+        larger share of that cell.
+      - Mark the serve indicator cell with "serve" (not "name_text"). If you cannot see any serve
+        indicator, do not emit "serve" anywhere — leave those cells as their underlying role.
+      - Mark cells that show regular names/scores (not inside a highlighted current-set/current-game
+        cell) as "name_text", and won/lost completed sets as "prev_set_win_text" / "prev_set_lose_text"
+        where the win/lose distinction is visually clear; otherwise use "name_text".
+      - Cells fully outside the board (faces, logos, surrounding area) must be "ignore".
 
     If the image IS a tennis scoreboard, return:
         "is_scoreboard": true,
-        "theme": an object with these nine colors, each {"color": "<#RRGGBB hex>", "alpha": <0.0-1.0, default 1.0>}:
-          - main_background_color: dominant background color of the scoreboard itself.
-          - main_text_color: dominant color of regular player names and score text.
-          - serve_color: color of the serve indicator (fallback = main_text_color if absent).
-          - previous_set_win_text_color: text color of completed sets won (fallback = main_text_color if absent).
-          - previous_set_lose_text_color: text color of completed sets lost (fallback = main_text_color if absent).
-          - current_set_background_color: dominant fill color of the highlighted current-set cell (fallback = main_background_color if absent).
-          - current_set_text_color: text color inside the highlighted current-set cell (fallback = main_text_color if absent).
-          - current_game_background_color: dominant fill color of the highlighted current-game cell (fallback = main_background_color if absent).
-          - current_game_text_color: text color inside the highlighted current-game cell (fallback = main_text_color if absent).
+        "grid": <8x20 matrix of role strings as described above>,
+        "reason": null
 
-    If the image is NOT a tennis scoreboard (e.g. a photo of a person, animal, scenery,
-      a different sport, a logo, a screenshot of text, etc.), return:
+    If the image is NOT a tennis scoreboard (e.g. a photo of a person, animal, scenery, a different sport,
+    a logo, a screenshot of text, etc.), return:
         "is_scoreboard": false,
-        "reason": a short explanation of why it is not a scoreboard.
+        "grid": <8x20 matrix; you may fill it entirely with "ignore">,
+        "reason": <a short explanation>
 
-    Return ONLY the structured result - no explanations, no markdown.
+    The grid MUST always be present and be exactly 8 rows x 20 columns, regardless of is_scoreboard.
+    Return ONLY the structured result — no explanations, no markdown.
 """.trimIndent()
 
 private val DESCRIBE_MATCH_PROMPT = """

@@ -11,7 +11,12 @@ application {
     mainClass.set("com.bashkevich.tennisscorekeeperbackend.ApplicationKt")
 
     val isDevelopment: Boolean = project.ext.has("development")
-    applicationDefaultJvmArgs = listOf("-Dio.ktor.development=$isDevelopment")
+    applicationDefaultJvmArgs = listOf(
+        "-Dio.ktor.development=$isDevelopment",
+        // AWT нужен ScoreboardColorExtractor (BufferedImage/ImageIO/Graphics2D) для decode/overlay.
+        // Headless-режим обязателен на сервере без дисплея (Linux/Docker) и в CI-тестах.
+        "-Djava.awt.headless=true",
+    )
 }
 
 repositories {
