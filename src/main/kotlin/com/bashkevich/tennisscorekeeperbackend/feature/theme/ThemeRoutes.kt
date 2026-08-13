@@ -78,8 +78,9 @@ fun Route.themeRoutes() {
             }
             /**
              * Tag: Theme
-             * Generate a theme from a scoreboard image via AI (Koog, OpenAI GPT-4o).
-             * Returns the extracted ThemeContent JSON (no DB write at the debugging stage).
+             * Generate a theme from a scoreboard image via AI (Koog, OpenAI GPT-5.4).
+             * Палитра цветов (Color Thief) + частоты подаются на вход LLM, которая классифицирует
+             * цвета по слотам темы. Возвращает ThemeContent JSON (no DB write at the debugging stage).
              */
             post("/ai") {
                 val multipart = call.receiveMultipartCatching()
@@ -90,9 +91,8 @@ fun Route.themeRoutes() {
             }
             /**
              * Tag: Theme
-             * Прежняя (до детерминированного конвейера) реализация: один LLM-вызов, GPT-4o сам
-             * называет 9 цветов табло. Фолбэк для случаев, когда новый /themes/ai (с наложенной
-             * сеткой) ошибочно отбраковывает валидное табло. Возвращает ThemeContent JSON.
+             * Прежняя (до палитры) реализация: один LLM-вызов, GPT-5.4 сам называет все цвета табло.
+             * Фолбэк для случаев, когда палитра схлопывает близкие оттенки. Возвращает ThemeContent JSON.
              */
             post("/ai/old") {
                 val multipart = call.receiveMultipartCatching()
