@@ -8,6 +8,9 @@ postgres-version = "42.7.11"
 dataframe-version = "1.0.0-Beta5"
 bcrypt-version = "0.10.2"
 koog-version = "1.1.1"
+# MMCQ-квантование палитры для /themes/ai (extractor). Оригинальный namespace de.androidpit —
+# Java 8 bytecode; република io.github.sundenjaeger (1.1.2-2) — Java 25 bytecode, тут не юзабельна.
+color-thief-version = "1.1.2"
 #kotlinx-io-version = "0.7.0"
 
 [libraries]
@@ -46,6 +49,8 @@ dataframe-core = { module = "org.jetbrains.kotlinx:dataframe", version.ref = "da
 dataframe-excel = { module = "org.jetbrains.kotlinx:dataframe-excel", version.ref = "dataframe-version"}
 
 koog-agents = { module = "ai.koog:koog-agents", version.ref = "koog-version" }
+
+color-thief = { module = "de.androidpit:color-thief", version.ref = "color-thief-version" }
 
 ktor-server-config-yaml = { module = "io.ktor:ktor-server-config-yaml-jvm", version.ref = "ktor-version" }
 ktor-server-test-host = { module = "io.ktor:ktor-server-test-host-jvm", version.ref = "ktor-version" }

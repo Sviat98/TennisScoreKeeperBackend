@@ -17,6 +17,8 @@ data class ThemeContent(
     val mainTextColor: ThemeColor,
     @SerialName("serve_color")
     val serveColor: ThemeColor,
+    @SerialName("previous_set_background_color")
+    val previousSetBackgroundColor: ThemeColor,
     @SerialName("previous_set_win_text_color")
     val previousSetWinTextColor: ThemeColor,
     @SerialName("previous_set_lose_text_color")

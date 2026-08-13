@@ -13,7 +13,7 @@ application {
     val isDevelopment: Boolean = project.ext.has("development")
     applicationDefaultJvmArgs = listOf(
         "-Dio.ktor.development=$isDevelopment",
-        // AWT нужен ScoreboardColorExtractor (BufferedImage/ImageIO/Graphics2D) для decode/overlay.
+        // AWT нужен PaletteExtractor (BufferedImage/ImageIO) для decode изображения и Color Thief.
         // Headless-режим обязателен на сервере без дисплея (Linux/Docker) и в CI-тестах.
         "-Djava.awt.headless=true",
     )
@@ -61,6 +61,7 @@ dependencies {
     implementation(libs.dataframe.excel)
 
     implementation(libs.koog.agents)
+    implementation(libs.color.thief)
 
     implementation(libs.ktor.server.config.yaml)
     testImplementation(libs.ktor.server.test.host)

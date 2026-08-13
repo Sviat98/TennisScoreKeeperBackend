@@ -8,8 +8,9 @@ import ai.koog.prompt.executor.model.PromptExecutor
 import ai.koog.prompt.executor.model.executeStructured
 import ai.koog.prompt.message.AttachmentContent
 import ai.koog.prompt.message.AttachmentSource
-import com.bashkevich.tennisscorekeeperbackend.model.theme.AiLayoutResult
 import com.bashkevich.tennisscorekeeperbackend.model.theme.AiThemeExtractionResult
+import com.bashkevich.tennisscorekeeperbackend.model.theme.PaletteClassification
+import com.bashkevich.tennisscorekeeperbackend.model.theme.ThemeColor
 import com.bashkevich.tennisscorekeeperbackend.model.theme.ThemeContent
 import com.bashkevich.tennisscorekeeperbackend.model.theme.ThemeDto
 import com.bashkevich.tennisscorekeeperbackend.model.theme.toDto
@@ -68,92 +69,92 @@ class ThemeService(
     }
 
     /**
-     * Генерирует тему табло из загруженного изображения через AI (Koog, OpenAI GPT-4o).
+     * Генерирует тему табло из загруженного изображения через AI (Koog, OpenAI GPT-5.4).
      *
-     * Двухфазный конвейер (см. план): LLM только **локализует** элементы табло, размечая
-     * ячейки сетки ролями, а детерминированный движок измеряет точный `#RRGGBB` по реальным
-     * пикселям. Поэтому «чёрный вместо тёмно-синего» исчезает по построению — модель вообще
-     * не называет цвета.
+     * Двухфазный конвейер «палитра → классификация» (см. план и референс ScoreboardThemeRecognizer):
+     *   1. [PaletteExtractor.extract] детерминированно считает палитру цветов изображения + частоту
+     *      каждого (Color Thief MMCQ + частотный проход по пикселям).
+     *   2. LLM получает картинку И таблицу «hex → %», и классифицирует, какой цвет к какому слоту
+     *      темы относится (текущий гейм, текущий сет, предыдущий сет и т.д.) — [PaletteClassification].
+     * После ответа каждый hex привязывается к ближайшему цвету палитры ([snapToPalette]), чтобы
+     * опечатка модели не породила цвет вне палитры.
      *
      * Выполняется БЕЗ dbQuery — это чистый LLM-вызов, не должен удерживать DB-соединение.
      * На этапе отладки тема только возвращается, в БД не сохраняется.
      *
      * Поведение:
      * - изображение не является табло → [WrongEntityException] (HTTP 422);
-     * - нет картинки / не image-тип → [BadRequestException] (HTTP 400);
-     * - технический сбой AI / неразборчивая разметка → [LLMException] (HTTP 500).
+     * - нет картинки / не image-тип / не извлеклась палитра → [BadRequestException] / [LLMException];
+     * - технический сбой AI → [LLMException] (HTTP 500).
      */
     suspend fun generateThemeFromImage(fileData: MultiPartData): ThemeContent {
         val image = readImageFromMultipart(fileData)
 
-        // Фаза 1 — локализация. В один LLM-вызов передаём ДВЕ картинки одной сцены:
-        //   Image 1 (RAW)  — чистое изображение: по нему модель решает is_scoreboard;
-        //   Image 2 (GRID) — то же изображение с наложенной сеткой: по нему модель размечает роли.
-        // Разделение нужно, потому что сетка с числами поверх компактного табло визуально
-        // превращает его в «таблицу с цифрами», и гейт на такой картинке сбивается.
-        val overlay = ScoreboardColorExtractor.drawGridOverlay(
-            image.bytes, AiLayoutResult.GRID_ROWS, AiLayoutResult.GRID_COLS
-        )
+        // Фаза 1 — палитра с частотами. Color Thief (MMCQ) + проход по пикселям.
+        val palette = PaletteExtractor.extract(image.bytes)
+        if (palette.isEmpty()) {
+            throw LLMException("Could not extract color palette from the image")
+        }
 
-        val layoutPrompt = prompt("scoreboard_layout") {
-            system(LAYOUT_PROMPT)
+        // Картинка для LLM — единый PNG (модель видит ровно то, из чего считалась палитра).
+        val analyzedPng = PaletteExtractor.encodeToPng(image.bytes)
+
+        val paletteText = buildString {
+            append("| Hex | Frequency |\n")
+            append("|---|---|\n")
+            palette.forEach { c ->
+                append("| `")
+                append(c.centroid.toHex())
+                append("` | ")
+                append("%.1f%%".format(c.share * 100))
+                append(" |\n")
+            }
+        }
+
+        // Фаза 2 — классификация. И картинка, и таблица палитры; temperature у GPT-5.4 фиксированная,
+        // override не нужен.
+        val classificationPrompt = prompt("scoreboard_palette_roles") {
+            system(PALETTE_ROLES_PROMPT)
             user {
-                +"You receive TWO images of the same scene."
-                +"Image 1 (RAW): the clean photo, NO grid. Decide is_scoreboard from THIS image only."
-                +"Image 2 (GRID): the same photo with a RED ${AiLayoutResult.GRID_ROWS}x${AiLayoutResult.GRID_COLS} numbered grid drawn over it."
-                +"That grid has red cell borders and small white numbered labels. Fill the grid roles from THIS image only."
-                +"If Image 1 is a tennis scoreboard, set is_scoreboard=true and return the grid from Image 2."
-                +"If Image 1 is NOT a tennis scoreboard, set is_scoreboard=false and provide a short reason."
-                // Сначала чистое (Image 1), затем с сеткой (Image 2) — порядок соответствует описанию.
+                +"The attached image is the scoreboard. Its color palette as a"
+                +"markdown table (hex + frequency %):"
+                +paletteText
+                +"Pick a hex for EVERY slot from the table above — never return null."
                 image(
                     AttachmentSource.Image(
-                        content = AttachmentContent.Binary.Bytes(image.bytes),
-                        format = image.format,
-                        mimeType = image.mimeType,
-                        fileName = image.fileName,
-                    )
-                )
-                image(
-                    AttachmentSource.Image(
-                        content = AttachmentContent.Binary.Bytes(overlay),
+                        content = AttachmentContent.Binary.Bytes(analyzedPng),
                         format = "png",
                         mimeType = "image/png",
-                        fileName = "scoreboard-grid.png",
+                        fileName = "scoreboard-palette.png",
                     )
                 )
             }
-        }.withUpdatedParams { temperature = 0.0 }
+        }
 
-        val result = promptExecutor.executeStructured<AiLayoutResult>(
-            prompt = layoutPrompt,
-            model = OpenAIModels.Chat.GPT4o,
+        val result = promptExecutor.executeStructured<PaletteClassification>(
+            prompt = classificationPrompt,
+            model = OpenAIModels.Chat.GPT5_4,
         )
 
         val structured = result.getOrElse { error ->
-            throw LLMException("AI failed to analyze the image", error)
+            throw LLMException("AI failed to classify the palette", error)
         }
 
         if (!structured.data.isScoreboard) {
             throw WrongEntityException(structured.data.reason ?: "Image is not a tennis scoreboard")
         }
 
-        validateGrid(structured.data.grid)
-
-        // Фаза 2 — измерение. Точный цвет по реальным пикселям ИСХОДНОЙ картинки (без сетки).
-        return try {
-            ScoreboardColorExtractor.extract(image.bytes, structured.data.grid)
-        } catch (e: IllegalStateException) {
-            throw LLMException("AI layout could not be resolved into colors: ${e.message}", e)
-        }
+        val snapped = snapToPalette(structured.data, palette)
+        return toThemeContent(snapped)
     }
 
     /**
-     * Прежняя (до детерминированного конвейера) реализация /themes/ai: один LLM-вызов, в котором
-     * GPT-4o сам решает, табло ли это, и сам называет все 9 цветов (через [AiThemeExtractionResult]).
-     * Оставлена как fallback-эндпоинт `/themes/ai/old`: новый конвейер иногда отбраковывает валидные
-     * табло (наложенная сетка мешает классификации), а эта версия на чистом изображении работает.
+     * Прежняя (до палитры) реализация /themes/ai: один LLM-вызов, в котором GPT-5.4 сам решает,
+     * табло ли это, и сам называет все цвета (через [AiThemeExtractionResult]). Оставлена как
+     * fallback-эндпоинт `/themes/ai/old`: палитра иногда схлопывает близкие оттенки, а эта версия
+     * работает с чистым изображением и выбирает цвета напрямую.
      *
-     * Поведение идентично старому [generateThemeFromImage]:
+     * Поведение:
      * - не табло → [WrongEntityException] (HTTP 422);
      * - нет картинки / не image-тип → [BadRequestException] (HTTP 400);
      * - технический сбой AI → [LLMException] (HTTP 500).
@@ -176,11 +177,11 @@ class ThemeService(
                     )
                 )
             }
-        }.withUpdatedParams { temperature = 0.0 }
+        }
 
         val result = promptExecutor.executeStructured<AiThemeExtractionResult>(
             prompt = extractionPrompt,
-            model = OpenAIModels.Chat.GPT4o,
+            model = OpenAIModels.Chat.GPT5_4,
         )
 
         val structured = result.getOrElse { error ->
@@ -192,24 +193,6 @@ class ThemeService(
                 ?: throw LLMException("AI flagged the image as a scoreboard but returned no theme")
 
             else -> throw WrongEntityException(structured.data.reason ?: "Image is not a tennis scoreboard")
-        }
-    }
-
-    /**
-     * Проверяет, что вернувшаяся от LLM матрица ролей имеет ожидаемую размерность
-     * [AiLayoutResult.GRID_ROWS]×[AiLayoutResult.GRID_COLS]. Иначе модель не поняла grid
-     * и измерять цвета небезопасно — это технический сбой, а не «не табло».
-     */
-    private fun validateGrid(grid: List<List<String>>) {
-        val expectedRows = AiLayoutResult.GRID_ROWS
-        val expectedCols = AiLayoutResult.GRID_COLS
-        if (grid.size != expectedRows) {
-            throw LLMException("AI returned grid with ${grid.size} rows, expected $expectedRows")
-        }
-        grid.forEachIndexed { rowIndex, row ->
-            if (row.size != expectedCols) {
-                throw LLMException("AI returned row $rowIndex with ${row.size} cols, expected $expectedCols")
-            }
         }
     }
 
@@ -333,6 +316,105 @@ class ThemeService(
     }
 }
 
+/**
+ * Привязывает каждый hex из ответа LLM к ближайшему цвету палитры, чтобы классификация ссылалась
+ * только на реальные цвета палитры (защита от «близкого, но не точного» hex от модели). Непарсимый
+ * hex (в принципе невозможен по промпту, но защитно) сваливается на самый частый цвет палитры.
+ */
+private fun snapToPalette(raw: PaletteClassification, palette: List<ClusterInfo>): PaletteClassification {
+    val fallbackHex = palette.first().centroid.toHex()
+    fun snap(hex: String): String {
+        val c = parseHexColor(hex) ?: return fallbackHex
+        return palette.minByOrNull { it.centroid.distanceTo(c) }?.centroid?.toHex() ?: fallbackHex
+    }
+    return PaletteClassification(
+        isScoreboard = raw.isScoreboard,
+        reason = raw.reason,
+        mainBackgroundColor = snap(raw.mainBackgroundColor),
+        mainTextColor = snap(raw.mainTextColor),
+        serveColor = snap(raw.serveColor),
+        previousSetWinTextColor = snap(raw.previousSetWinTextColor),
+        previousSetLoseTextColor = snap(raw.previousSetLoseTextColor),
+        previousSetBackgroundColor = snap(raw.previousSetBackgroundColor),
+        currentSetBackgroundColor = snap(raw.currentSetBackgroundColor),
+        currentSetTextColor = snap(raw.currentSetTextColor),
+        currentGameBackgroundColor = snap(raw.currentGameBackgroundColor),
+        currentGameTextColor = snap(raw.currentGameTextColor),
+    )
+}
+
+/** Сборка [ThemeContent] из классификации (все hex уже snapped, alpha = 1.0). */
+private fun toThemeContent(c: PaletteClassification): ThemeContent = ThemeContent(
+    mainBackgroundColor = ThemeColor(c.mainBackgroundColor),
+    mainTextColor = ThemeColor(c.mainTextColor),
+    serveColor = ThemeColor(c.serveColor),
+    previousSetWinTextColor = ThemeColor(c.previousSetWinTextColor),
+    previousSetLoseTextColor = ThemeColor(c.previousSetLoseTextColor),
+    previousSetBackgroundColor = ThemeColor(c.previousSetBackgroundColor),
+    currentSetBackgroundColor = ThemeColor(c.currentSetBackgroundColor),
+    currentSetTextColor = ThemeColor(c.currentSetTextColor),
+    currentGameBackgroundColor = ThemeColor(c.currentGameBackgroundColor),
+    currentGameTextColor = ThemeColor(c.currentGameTextColor),
+)
+
+private val PALETTE_ROLES_PROMPT = """
+    # Tennis scoreboard — palette → theme slots
+
+    You receive ONE scoreboard **image** plus its **color palette** as a markdown
+    table of `hex` → `frequency %`. Frequency is only a hint: backgrounds dominate it, text and
+    accents are rarer — do *not* rank by frequency alone.
+
+    First decide whether the image is a tennis scoreboard (look at the image, not the palette).
+
+    ## Task
+    If it IS a scoreboard, for each slot below choose the **single hex** from the palette that best
+    matches what fills that slot **on the image**. Several slots may share the same hex.
+
+    ## Slots
+
+    | Slot | What it is |
+    |---|---|
+    | `main_background_color` | dominant fill behind the player names — the board's base color |
+    | `main_text_color` | player SURNAME text color |
+    | `serve_color` | serve indicator (small ball/dot), often an accent |
+    | `previous_set_background_color` | the fill behind a COMPLETED (previous) set's score cell — usually the same as the board's base color, but some boards do highlight previous sets with their own fill |
+    | `previous_set_win_text_color` | a COMPLETED set's digit for the player who won it |
+    | `previous_set_lose_text_color` | the same completed set's digit for the loser — usually the dimmer/grayer version of the win text |
+    | `current_set_background_color` | fill of the highlighted cell showing the CURRENT set score |
+    | `current_set_text_color` | the digit on that current-set cell |
+    | `current_game_background_color` | fill of the highlighted cell showing the CURRENT game/points |
+    | `current_game_text_color` | the digit on that current-game cell |
+
+    ## Common patterns (typical, NOT strict rules — trust the image first)
+    - **`current_set` and `current_game` cells usually have *different* colors** — both their
+      backgrounds and their text. Only copy one cell's colors to the other if the image really shows
+      them identical.
+    - **`serve_color` and `previous_set_win_text_color` usually *coincide*** — both are typically
+      the board's bright accent (e.g. yellow). Pick the same hex for both when that matches the image.
+    - **`previous_set_background_color` usually *equals* `main_background_color`** — previous sets
+      are not highlighted on most boards. Pick the same hex for both when the image shows no special
+      fill behind previous sets; only pick a different hex if the image clearly highlights them.
+    - Text slots may still all share one hex (e.g. all white); the patterns above are only about
+      cell distinctness and accent/background sharing.
+
+    ## Rules
+    - Return a hex for **every** slot — never empty. If a slot is unclear or not clearly visible,
+      still pick the single best-guess hex from the palette. A missing / dash answer is never acceptable.
+    - Return ONLY hexes that appear **verbatim** in the provided palette.
+    - Return ONLY the structured result.
+
+    If the image IS a tennis scoreboard, return:
+        "is_scoreboard": true,
+        the ten slots above, each a hex string from the palette,
+        "reason": null
+
+    If the image is NOT a tennis scoreboard (e.g. a photo of a person, animal, scenery, a different
+    sport, a logo, a screenshot of text, etc.), return:
+        "is_scoreboard": false,
+        "reason": <a short explanation>
+        (still fill every slot with any hex from the palette — they are ignored in this case)
+""".trimIndent()
+
 private val LEGACY_SYSTEM_PROMPT = """
     You are an expert at analyzing tennis scoreboards and extracting their exact color scheme.
     You receive exactly one image. Determine whether the image contains a tennis scoreboard.
@@ -354,8 +436,8 @@ private val LEGACY_SYSTEM_PROMPT = """
       colors you DID detect, so the result stays consistent and readable:
         * Missing text-type color (serve_color, previous_set_win_text_color, previous_set_lose_text_color,
           current_set_text_color, current_game_text_color) -> reuse main_text_color.
-        * Missing fill/background color (current_set_background_color, current_game_background_color)
-          -> reuse main_background_color.
+        * Missing fill/background color (previous_set_background_color, current_set_background_color,
+          current_game_background_color) -> reuse main_background_color.
     - Rationale: an absent highlight cell should look like the rest of the board (base colors);
       an absent text element should match the main text.
     - Examples: no visible serve indicator -> serve_color = main_text_color;
@@ -364,10 +446,11 @@ private val LEGACY_SYSTEM_PROMPT = """
 
     If the image IS a tennis scoreboard, return:
         "is_scoreboard": true,
-        "theme": an object with these nine colors, each {"color": "<#RRGGBB hex>", "alpha": <0.0-1.0, default 1.0>}:
+        "theme": an object with these ten colors, each {"color": "<#RRGGBB hex>", "alpha": <0.0-1.0, default 1.0>}:
           - main_background_color: dominant background color of the scoreboard itself.
           - main_text_color: dominant color of regular player names and score text.
           - serve_color: color of the serve indicator (fallback = main_text_color if absent).
+          - previous_set_background_color: fill behind a completed set's score cell (fallback = main_background_color if absent; usually equals main_background_color unless previous sets are highlighted).
           - previous_set_win_text_color: text color of completed sets won (fallback = main_text_color if absent).
           - previous_set_lose_text_color: text color of completed sets lost (fallback = main_text_color if absent).
           - current_set_background_color: dominant fill color of the highlighted current-set cell (fallback = main_background_color if absent).
@@ -381,65 +464,6 @@ private val LEGACY_SYSTEM_PROMPT = """
         "reason": a short explanation of why it is not a scoreboard.
 
     Return ONLY the structured result - no explanations, no markdown.
-""".trimIndent()
-
-private val LAYOUT_PROMPT = """
-    You are an expert at analyzing tennis scoreboards. You receive TWO images of the same scene:
-      - Image 1 (RAW): the clean photo with NO grid.
-      - Image 2 (GRID): the same photo with a numbered grid of 8 rows x 20 columns drawn over it
-        (red cell borders + a small white numbered label in each cell).
-
-    Your job has two steps:
-      1. Decide whether this is a tennis scoreboard by looking at Image 1 (the RAW photo) ONLY.
-         The grid drawn over Image 2 must NOT affect the is_scoreboard decision.
-      2. If it is a scoreboard, label each cell of the grid in Image 2 with the UI role it shows.
-    You must NEVER name, estimate or guess colors — a deterministic engine measures colors from the
-    real pixels afterwards.
-
-    Grid addressing (Image 2): it is 8 rows x 20 columns, with row 0 at the top and column 0 at the
-    left. Return "grid" as a list of 8 lists, each containing exactly 20 strings (one role per cell).
-    Every cell gets exactly one role.
-
-    Available roles (use these exact lowercase strings):
-      - "background": plain empty background of the scoreboard panel (the base fill behind everything).
-      - "name_text": a player's name or regular score label (the normal text of the board).
-      - "prev_set_win_text": text of a completed-set score that this player WON (often brighter/normal).
-      - "prev_set_lose_text": text of a completed-set score that this player LOST (often dimmed/grey).
-      - "current_set_bg": the highlighted fill/background of the cell showing the CURRENT set score.
-      - "current_set_text": the text inside that current-set cell.
-      - "current_game_bg": the highlighted fill/background of the cell showing the CURRENT game/points score.
-      - "current_game_text": the text inside that current-game cell.
-      - "serve": the serve indicator next to one player's name — a small ball/dot, asterisk or dash
-        marking WHO is serving. It usually sits immediately left or right of the serving player's name.
-      - "ignore": anything that is not part of the scoreboard (player photos/faces, logos, TV channel
-        graphics, the area around the board, people, scenery).
-
-    How to label:
-      - A tennis scoreboard typically has two player rows (one above the other) and columns: name,
-        completed-set scores, current-set score, current-game/points score. One or both of the
-        current-set / current-game cells may be highlighted with a distinct fill.
-      - Each cell gets exactly ONE role. If a cell straddles two elements, pick the one occupying the
-        larger share of that cell.
-      - Mark the serve indicator cell with "serve" (not "name_text"). If you cannot see any serve
-        indicator, do not emit "serve" anywhere — leave those cells as their underlying role.
-      - Mark cells that show regular names/scores (not inside a highlighted current-set/current-game
-        cell) as "name_text", and won/lost completed sets as "prev_set_win_text" / "prev_set_lose_text"
-        where the win/lose distinction is visually clear; otherwise use "name_text".
-      - Cells fully outside the board (faces, logos, surrounding area) must be "ignore".
-
-    If Image 1 IS a tennis scoreboard, return:
-        "is_scoreboard": true,
-        "grid": <8x20 matrix of role strings, derived from Image 2>,
-        "reason": null
-
-    If Image 1 is NOT a tennis scoreboard (e.g. a photo of a person, animal, scenery, a different sport,
-    a logo, a screenshot of text, etc.), return:
-        "is_scoreboard": false,
-        "reason": <a short explanation>
-        ("grid" is optional in this case)
-
-    When is_scoreboard is true, the grid MUST be present and be exactly 8 rows x 20 columns.
-    Return ONLY the structured result — no explanations, no markdown.
 """.trimIndent()
 
 private val DESCRIBE_MATCH_PROMPT = """
@@ -470,6 +494,7 @@ private val DESCRIBE_MATCH_PROMPT = """
         * основной цвет фона
         * основной цвет текста
         * цвет индикатора подачи (какой игрок подаёт)
+        * цвет фона предыдущего сета (обычно совпадает с основным фоном, если прошедшие сеты не подсвечены)
         * цвет текста у выигравшего прошедший сет
         * цвет текста у проигравшего прошедший сет
         * цвет фона текущего сета
