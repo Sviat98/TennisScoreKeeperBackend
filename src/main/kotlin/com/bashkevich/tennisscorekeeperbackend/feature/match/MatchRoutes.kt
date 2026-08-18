@@ -33,10 +33,13 @@ import io.ktor.utils.io.ExperimentalKtorApi
 import io.ktor.websocket.CloseReason
 import io.ktor.websocket.Frame
 import io.ktor.websocket.close
+import io.ktor.websocket.readText
 import kotlinx.coroutines.flow.collectLatest
-import kotlinx.coroutines.flow.onStart
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
+import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.JsonObject
+import kotlinx.serialization.json.jsonPrimitive
 import org.koin.ktor.ext.inject
 
 @OptIn(ExperimentalKtorApi::class)
@@ -153,22 +156,29 @@ fun Route.matchRoutes() {
 
                 println("replay cache: ${matchFlow.replayCache}")
 
+                if (matchFlow.replayCache.isEmpty()) {
+                    MatchObserver.notifyChange(matchServiceRouter.getMatchById(id))
+                }
+
                 val job = launch {
-                    matchFlow.onStart {
-                        if (matchFlow.replayCache.isEmpty()) {
-                            val initialMatch = matchServiceRouter.getMatchById(id)
-                            emit(initialMatch)
-                        }
-                    }.collectLatest { matchDto ->
+                    matchFlow.collectLatest { matchDto ->
                         sendSerialized(matchDto) // Send JSON response
                     }
                 }
 
                 try {
                     for (frame in incoming) {
-                        if (frame is Frame.Close) {
-                            close(CloseReason(CloseReason.Codes.NORMAL, "Client closed connection"))
-                            break
+                        when (frame) {
+                            is Frame.Close -> {
+                                close(CloseReason(CloseReason.Codes.NORMAL, "Client closed connection"))
+                                break
+                            }
+                            is Frame.Text -> if (isHeartbeatRequest(frame.readText())) {
+                                val matchDto = matchFlow.replayCache.lastOrNull()
+                                    ?: matchServiceRouter.getMatchById(id)
+                                sendSerialized(matchDto)
+                            }
+                            else -> {}
                         }
                     }
                 } finally {
@@ -463,3 +473,10 @@ fun Route.matchRoutes() {
         }
     }
 }
+
+private const val HEARTBEAT_MESSAGE_TYPE = "heartbeat"
+
+private fun isHeartbeatRequest(text: String): Boolean = runCatching {
+    val element = Json.parseToJsonElement(text)
+    element is JsonObject && element["type"]?.jsonPrimitive?.content == HEARTBEAT_MESSAGE_TYPE
+}.getOrDefault(false)
