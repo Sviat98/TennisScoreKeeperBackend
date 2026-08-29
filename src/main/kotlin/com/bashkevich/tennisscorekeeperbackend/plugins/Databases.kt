@@ -72,19 +72,19 @@ fun configureDatabase() {
             SinglesParticipantTable, SinglesMatchTable, SinglesMatchLogTable,
             DoublesParticipantTable, DoublesMatchTable, DoublesMatchLogTable
         )
-//
+
 //        PlayerTable.insert {
-//            it[id] = 123
-//            it[surname] = "Test"
-//            it[name] = "Admin"
+//            it[id] = 0
+//            it[surname] = "User"
+//            it[name] = "Sample"
 //            it[dateBirth] = LocalDate(1970,1,1)
 //        }
 //
-//       val passwordHash = BCrypt.withDefaults().hash(12, "Test_123".toByteArray(StandardCharsets.UTF_8))
+//       val passwordHash = BCrypt.withDefaults().hash(12, "Sample_123456".toByteArray(StandardCharsets.UTF_8))
 //
 //        PlayerAuthTable.insert {
-//            it[playerId] = 123
-//            it[login] = "test@gmail.com"
+//            it[playerId] = 0
+//            it[login] = "login@gmail.com"
 //            it[password] = passwordHash
 //            it[isAdmin] = true
 //        }
