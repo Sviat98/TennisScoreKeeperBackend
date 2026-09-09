@@ -458,13 +458,17 @@ class DoublesMatchService(
         if (isTiebreakMode) {
             val tiebreakPointsToWin = currentSetTemplate.tiebreakPointsToWin
 
-            isFirstParticipantWonGame =
-                if (secondParticipantPoints < tiebreakPointsToWin - 1) firstParticipantPoints == tiebreakPointsToWin else
-                    firstParticipantPoints - secondParticipantPoints == 2
+            isFirstParticipantWonGame = when {
+                currentSetTemplate.tiebreakDecidingPoint -> firstParticipantPoints == tiebreakPointsToWin
+                secondParticipantPoints < tiebreakPointsToWin - 1 -> firstParticipantPoints == tiebreakPointsToWin
+                else -> firstParticipantPoints - secondParticipantPoints == 2
+            }
 
-            isSecondParticipantWonGame =
-                if (firstParticipantPoints < tiebreakPointsToWin - 1) secondParticipantPoints == tiebreakPointsToWin
-                else secondParticipantPoints - firstParticipantPoints == 2
+            isSecondParticipantWonGame = when {
+                currentSetTemplate.tiebreakDecidingPoint -> secondParticipantPoints == tiebreakPointsToWin
+                firstParticipantPoints < tiebreakPointsToWin - 1 -> secondParticipantPoints == tiebreakPointsToWin
+                else -> secondParticipantPoints - firstParticipantPoints == 2
+            }
             scoreType = ScoreType.TIEBREAK_POINT
 
             currentServe = when {

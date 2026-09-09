@@ -17,6 +17,8 @@ data class SetTemplateDto(
     val tiebreakMode: TiebreakMode,
     @SerialName("tiebreak_points_to_win")
     val tiebreakPointsToWin: Int,
+    @SerialName("has_tiebreak_deciding_point")
+    val hasTiebreakDecidingPoint: Boolean,
     @SerialName("is_regular")
     val isRegular: Boolean,
     @SerialName("is_deciding")
@@ -30,6 +32,7 @@ fun SetTemplateEntity.toDto() = SetTemplateDto(
     hasDecidingPoint = this.decidingPoint,
     tiebreakMode = this.tiebreakMode,
     tiebreakPointsToWin = this.tiebreakPointsToWin,
+    hasTiebreakDecidingPoint = this.tiebreakDecidingPoint,
     isRegular = this.isRegularSet,
     isDeciding = this.isDecidingSet
 )

@@ -9,6 +9,7 @@ object SetTemplateTable: IntIdTable("set_template") {
     val decidingPoint = bool("deciding_point")
     val tiebreakMode = enumerationByName("tiebreak_mode", 50, TiebreakMode::class)
     val tiebreakPointsToWin = integer("tiebreak_points_to_win")
+    val tiebreakDecidingPoint = bool("tiebreak_deciding_point")
     val isRegularSet = bool("is_regular")
     val isDecidingSet = bool("is_deciding")
 }
