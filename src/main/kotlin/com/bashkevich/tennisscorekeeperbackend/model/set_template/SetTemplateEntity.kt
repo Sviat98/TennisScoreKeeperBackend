@@ -13,6 +13,7 @@ class SetTemplateEntity(id: EntityID<Int>) : IntEntity(id) {
     var decidingPoint by SetTemplateTable.decidingPoint
     var tiebreakMode by SetTemplateTable.tiebreakMode
     var tiebreakPointsToWin by SetTemplateTable.tiebreakPointsToWin
+    var tiebreakDecidingPoint by SetTemplateTable.tiebreakDecidingPoint
     var isRegularSet by SetTemplateTable.isRegularSet
     var isDecidingSet by SetTemplateTable.isDecidingSet
 }

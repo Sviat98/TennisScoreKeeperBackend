@@ -9,7 +9,9 @@ import com.bashkevich.tennisscorekeeperbackend.model.participant.doubles.Doubles
 import com.bashkevich.tennisscorekeeperbackend.model.participant.singles.SinglesParticipantTable
 import com.bashkevich.tennisscorekeeperbackend.model.auth.PlayerAuthTable
 import com.bashkevich.tennisscorekeeperbackend.model.auth.RefreshTokenTable
+import com.bashkevich.tennisscorekeeperbackend.model.set_template.SetTemplateEntity
 import com.bashkevich.tennisscorekeeperbackend.model.set_template.SetTemplateTable
+import com.bashkevich.tennisscorekeeperbackend.model.set_template.TiebreakMode
 import com.bashkevich.tennisscorekeeperbackend.model.theme.ThemeTable
 import com.bashkevich.tennisscorekeeperbackend.model.player.PlayerTable
 import com.bashkevich.tennisscorekeeperbackend.model.tournament.TournamentTable
@@ -94,6 +96,7 @@ fun configureDatabase() {
 //            decidingPoint = false
 //            tiebreakMode = TiebreakMode.LATE
 //            tiebreakPointsToWin = 7
+//            tiebreakDecidingPoint = false
 //            isRegularSet = true
 //            isDecidingSet = true
 //        }
@@ -103,6 +106,7 @@ fun configureDatabase() {
 //            decidingPoint = true
 //            tiebreakMode = TiebreakMode.LATE
 //            tiebreakPointsToWin = 7
+//            tiebreakDecidingPoint = false
 //            isRegularSet = true
 //            isDecidingSet = true
 //        }
@@ -113,6 +117,7 @@ fun configureDatabase() {
 //            decidingPoint = false
 //            tiebreakMode = TiebreakMode.EARLY
 //            tiebreakPointsToWin = 10
+//            tiebreakDecidingPoint = false
 //            isRegularSet = true
 //            isDecidingSet = true
 //        }
@@ -123,6 +128,7 @@ fun configureDatabase() {
 //            decidingPoint = false
 //            tiebreakMode = TiebreakMode.EARLY
 //            tiebreakPointsToWin = 7
+//            tiebreakDecidingPoint = false
 //            isRegularSet = true
 //            isDecidingSet = true
 //        }
@@ -132,6 +138,17 @@ fun configureDatabase() {
 //            decidingPoint = true
 //            tiebreakMode = TiebreakMode.EARLY
 //            tiebreakPointsToWin = 7
+//            tiebreakDecidingPoint = false
+//            isRegularSet = true
+//            isDecidingSet = true
+//        }
+//        SetTemplateEntity.new {
+//            name = "One Point Slam"
+//            gamesToWin = 1
+//            decidingPoint = false
+//            tiebreakMode = TiebreakMode.EARLY
+//            tiebreakPointsToWin = 1
+//            tiebreakDecidingPoint = true
 //            isRegularSet = true
 //            isDecidingSet = true
 //        }
