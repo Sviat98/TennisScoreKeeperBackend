@@ -11,6 +11,7 @@ import com.bashkevich.tennisscorekeeperbackend.model.match.body.MatchStatusBody
 import com.bashkevich.tennisscorekeeperbackend.model.match.body.RetiredParticipantBody
 import com.bashkevich.tennisscorekeeperbackend.model.match.body.ServeBody
 import com.bashkevich.tennisscorekeeperbackend.model.match.body.ServeInPairBody
+import com.bashkevich.tennisscorekeeperbackend.model.match.body.UpdateMatchBody
 import com.bashkevich.tennisscorekeeperbackend.model.match.body.VideoLinkBody
 import com.bashkevich.tennisscorekeeperbackend.model.message.ResponseMessageDto
 import com.bashkevich.tennisscorekeeperbackend.plugins.receiveBodyCatching
@@ -26,6 +27,7 @@ import io.ktor.server.routing.get
 import io.ktor.server.routing.openapi.describe
 import io.ktor.server.routing.patch
 import io.ktor.server.routing.post
+import io.ktor.server.routing.put
 import io.ktor.server.routing.route
 import io.ktor.server.websocket.sendSerialized
 import io.ktor.server.websocket.webSocket
@@ -190,6 +192,42 @@ fun Route.matchRoutes() {
                 }
             }
             authenticate(JWT_AUTH) {
+                /**
+                 * Tag: Match
+                 * Update editable match fields (participants display names, theme).
+                 */
+                put {
+                    val matchId = call.pathParameters["id"]?.toIntOrNull() ?: 0
+
+                    val updateMatchBody = call.receiveBodyCatching<UpdateMatchBody>()
+
+                    matchServiceRouter.updateMatch(matchId, updateMatchBody)
+
+                    call.respondWithMessageBody(message = "Successfully updated the match")
+                }.describe {
+                    requestBody {
+                        description = "Updated match data: participants display names and theme id"
+                        schema = jsonSchema<UpdateMatchBody>()
+                    }
+                    responses {
+                        HttpStatusCode.OK {
+                            description = "Match updated successfully"
+                            schema = jsonSchema<ResponseMessageDto>()
+                        }
+                        HttpStatusCode.BadRequest {
+                            description = "Invalid request body, match ID, or theme id"
+                            ContentType.Text.Plain()
+                        }
+                        HttpStatusCode.Unauthorized {
+                            description = "Missing or invalid JWT token"
+                            ContentType.Text.Plain()
+                        }
+                        HttpStatusCode.NotFound {
+                            description = "Match not found"
+                            ContentType.Text.Plain()
+                        }
+                    }
+                }
                 /**
                  * Tag: Match
                  * Set which participant serves first.

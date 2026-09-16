@@ -16,6 +16,7 @@ import com.bashkevich.tennisscorekeeperbackend.model.match.SpecialSetMode
 import com.bashkevich.tennisscorekeeperbackend.model.match.TennisGameDto
 import com.bashkevich.tennisscorekeeperbackend.model.match.TennisSetDto
 import com.bashkevich.tennisscorekeeperbackend.model.match.body.RetiredParticipantBody
+import com.bashkevich.tennisscorekeeperbackend.model.match.body.UpdateMatchBody
 import com.bashkevich.tennisscorekeeperbackend.model.match.singles.SinglesMatchEntity
 import com.bashkevich.tennisscorekeeperbackend.model.match.toShortMatchDto
 import com.bashkevich.tennisscorekeeperbackend.model.match.toTennisGameDto
@@ -805,6 +806,25 @@ class SinglesMatchService(
         val lastPointNumber = (lastPointInTable?.pointNumber ?: 0) + pointShift
 
         singlesMatchRepository.updateVideoLink(matchId,videoLink)
+
+        val matchDto = buildMatchById(matchId = matchId, lastPointNumber = lastPointNumber)
+
+        MatchObserver.notifyChange(matchDto)
+    }
+
+    suspend fun updateMatch(matchId: Int, updateMatchBody: UpdateMatchBody) {
+        if (matchId == 0) throw BadRequestException("Incorrect id")
+
+        val matchEntity =
+            singlesMatchRepository.getMatchById(matchId) ?: throw NotFoundException("No match found!")
+
+        val lastPointInTable = singlesMatchLogRepository.getLastPoint(matchId)
+
+        val pointShift = matchEntity.pointShift
+
+        val lastPointNumber = (lastPointInTable?.pointNumber ?: 0) + pointShift
+
+        singlesMatchRepository.updateMatchInfo(matchId, updateMatchBody)
 
         val matchDto = buildMatchById(matchId = matchId, lastPointNumber = lastPointNumber)
 

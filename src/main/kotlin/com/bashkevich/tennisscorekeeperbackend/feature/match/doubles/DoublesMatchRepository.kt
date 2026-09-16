@@ -2,6 +2,7 @@ package com.bashkevich.tennisscorekeeperbackend.feature.match.doubles
 
 import com.bashkevich.tennisscorekeeperbackend.model.match.MatchBody
 import com.bashkevich.tennisscorekeeperbackend.model.match.MatchStatus
+import com.bashkevich.tennisscorekeeperbackend.model.match.body.UpdateMatchBody
 import com.bashkevich.tennisscorekeeperbackend.model.match.doubles.DoublesMatchEntity
 import com.bashkevich.tennisscorekeeperbackend.model.match.doubles.DoublesMatchTable
 import com.bashkevich.tennisscorekeeperbackend.model.match.singles.SinglesMatchTable
@@ -58,6 +59,13 @@ class DoublesMatchRepository {
     suspend fun updateVideoLink(matchId: Int, videoId: String) =
         DoublesMatchTable.update({ DoublesMatchTable.id eq matchId }) {
             it[videoLink] = videoId
+        }
+
+    suspend fun updateMatchInfo(matchId: Int, updateMatchBody: UpdateMatchBody) =
+        DoublesMatchTable.update({ DoublesMatchTable.id eq matchId }) {
+            it[firstParticipantDisplayName] = updateMatchBody.firstParticipantDisplayName
+            it[secondParticipantDisplayName] = updateMatchBody.secondParticipantDisplayName
+            it[theme] = updateMatchBody.themeId.toInt()
         }
 
     suspend fun updateWinner(matchId: Int, winnerParticipantId: Int?) =

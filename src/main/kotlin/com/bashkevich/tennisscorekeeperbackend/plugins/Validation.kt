@@ -6,6 +6,7 @@ import com.bashkevich.tennisscorekeeperbackend.model.match.body.RetiredParticipa
 import com.bashkevich.tennisscorekeeperbackend.model.match.body.ScoreType
 import com.bashkevich.tennisscorekeeperbackend.model.match.body.ServeBody
 import com.bashkevich.tennisscorekeeperbackend.model.match.body.ServeInPairBody
+import com.bashkevich.tennisscorekeeperbackend.model.match.body.UpdateMatchBody
 import io.ktor.server.application.Application
 import io.ktor.server.application.install
 import io.ktor.server.plugins.BadRequestException
@@ -72,6 +73,17 @@ fun Application.configureValidation() {
 
             when {
                 retiredParticipantId == 0 -> ValidationResult.Invalid("Retired participant id is wrong!")
+                else -> ValidationResult.Valid
+            }
+        }
+        validate<UpdateMatchBody> { body ->
+
+            val themeId = body.themeId.toIntOrNull() ?: 0
+
+            when {
+                body.firstParticipantDisplayName.isBlank() -> ValidationResult.Invalid("First participant display name is empty!")
+                body.secondParticipantDisplayName.isBlank() -> ValidationResult.Invalid("Second participant display name is empty!")
+                themeId == 0 -> ValidationResult.Invalid("Theme id is wrong!")
                 else -> ValidationResult.Valid
             }
         }
