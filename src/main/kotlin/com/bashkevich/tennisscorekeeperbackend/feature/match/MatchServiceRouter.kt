@@ -2,6 +2,7 @@ package com.bashkevich.tennisscorekeeperbackend.feature.match
 
 import com.bashkevich.tennisscorekeeperbackend.feature.match.doubles.DoublesMatchService
 import com.bashkevich.tennisscorekeeperbackend.feature.match.singles.SinglesMatchService
+import com.bashkevich.tennisscorekeeperbackend.feature.theme.ThemeRepository
 import com.bashkevich.tennisscorekeeperbackend.feature.tournament.TournamentRepository
 import com.bashkevich.tennisscorekeeperbackend.model.match.body.ChangeScoreBody
 import com.bashkevich.tennisscorekeeperbackend.model.match.MatchBody
@@ -11,14 +12,17 @@ import com.bashkevich.tennisscorekeeperbackend.model.match.body.ServeBody
 import com.bashkevich.tennisscorekeeperbackend.model.match.body.ServeInPairBody
 import com.bashkevich.tennisscorekeeperbackend.model.match.ShortMatchDto
 import com.bashkevich.tennisscorekeeperbackend.model.match.body.RetiredParticipantBody
+import com.bashkevich.tennisscorekeeperbackend.model.match.body.UpdateMatchBody
 import com.bashkevich.tennisscorekeeperbackend.model.tournament.TournamentStatus
 import com.bashkevich.tennisscorekeeperbackend.model.tournament.TournamentType
 import com.bashkevich.tennisscorekeeperbackend.plugins.dbQuery
+import com.bashkevich.tennisscorekeeperbackend.plugins.validateRequestConditions
 import io.ktor.server.plugins.BadRequestException
 import io.ktor.server.plugins.NotFoundException
 
 class MatchServiceRouter(
     private val tournamentRepository: TournamentRepository,
+    private val themeRepository: ThemeRepository,
     private val singlesMatchService: SinglesMatchService,
     private val doublesMatchService: DoublesMatchService,
 ) {
@@ -69,6 +73,29 @@ class MatchServiceRouter(
                 else -> throw IllegalStateException("Unknown tournament type: ${tournament.type}")
             }
             matchDto
+        }
+    }
+
+    suspend fun updateMatch(matchId: Int, updateMatchBody: UpdateMatchBody) {
+        dbQuery {
+            if (matchId == 0) throw BadRequestException("Wrong format of match id")
+            val tournament = tournamentRepository.getTournamentByMatchId(matchId)
+                ?: throw NotFoundException("No tournament found by that id")
+
+            val theme = themeRepository.getById(updateMatchBody.themeId.toInt())
+
+            validateRequestConditions {
+                when {
+                    theme == null -> "Theme does not exist"
+                    else -> ""
+                }
+            }
+
+            when (tournament.type){
+                TournamentType.SINGLES -> singlesMatchService.updateMatch(matchId, updateMatchBody)
+                TournamentType.DOUBLES -> doublesMatchService.updateMatch(matchId, updateMatchBody)
+                else -> throw IllegalStateException("Unknown tournament type: ${tournament.type}")
+            }
         }
     }
 
