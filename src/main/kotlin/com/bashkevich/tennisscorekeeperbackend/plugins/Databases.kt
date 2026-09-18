@@ -7,8 +7,9 @@ import com.bashkevich.tennisscorekeeperbackend.model.match.singles.SinglesMatchT
 import com.bashkevich.tennisscorekeeperbackend.model.match_log.doubles.DoublesMatchLogTable
 import com.bashkevich.tennisscorekeeperbackend.model.participant.doubles.DoublesParticipantTable
 import com.bashkevich.tennisscorekeeperbackend.model.participant.singles.SinglesParticipantTable
-import com.bashkevich.tennisscorekeeperbackend.model.auth.PlayerAuthTable
+import com.bashkevich.tennisscorekeeperbackend.model.auth.UserAuthTable
 import com.bashkevich.tennisscorekeeperbackend.model.auth.RefreshTokenTable
+import com.bashkevich.tennisscorekeeperbackend.model.auth.UserTable
 import com.bashkevich.tennisscorekeeperbackend.model.set_template.SetTemplateEntity
 import com.bashkevich.tennisscorekeeperbackend.model.set_template.SetTemplateTable
 import com.bashkevich.tennisscorekeeperbackend.model.set_template.TiebreakMode
@@ -70,12 +71,12 @@ fun configureDatabase() {
         SchemaUtils.createSequence(matchSequence, participantSequence)
 
         SchemaUtils.create(
-            CounterTable, PlayerTable, PlayerAuthTable, RefreshTokenTable, SetTemplateTable, ThemeTable, TournamentTable,
+            CounterTable, PlayerTable, UserTable, UserAuthTable, RefreshTokenTable, SetTemplateTable, ThemeTable, TournamentTable,
             SinglesParticipantTable, SinglesMatchTable, SinglesMatchLogTable,
             DoublesParticipantTable, DoublesMatchTable, DoublesMatchLogTable
         )
 
-//        PlayerTable.insert {
+//        UserTable.insert {
 //            it[id] = 0
 //            it[surname] = "User"
 //            it[name] = "Sample"
@@ -84,8 +85,8 @@ fun configureDatabase() {
 //
 //       val passwordHash = BCrypt.withDefaults().hash(12, "Sample_123456".toByteArray(StandardCharsets.UTF_8))
 //
-//        PlayerAuthTable.insert {
-//            it[playerId] = 0
+//        UserAuthTable.insert {
+//            it[userId] = 0
 //            it[login] = "login@gmail.com"
 //            it[password] = passwordHash
 //            it[isAdmin] = true

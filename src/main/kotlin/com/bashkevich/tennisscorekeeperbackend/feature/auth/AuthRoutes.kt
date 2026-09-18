@@ -39,7 +39,7 @@ fun Route.authRoutes() {
         }
         responses {
             HttpStatusCode.OK {
-                description = "Login successful, returns player data and JWT tokens"
+                description = "Login successful, returns user data and JWT tokens"
                 schema = jsonSchema<LoginResponse>()
             }
             HttpStatusCode.BadRequest {
