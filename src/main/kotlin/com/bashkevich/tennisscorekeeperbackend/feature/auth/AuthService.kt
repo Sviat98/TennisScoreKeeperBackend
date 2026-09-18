@@ -7,8 +7,8 @@ import com.auth0.jwt.exceptions.TokenExpiredException
 import com.bashkevich.tennisscorekeeperbackend.model.auth.JwtConfig
 import com.bashkevich.tennisscorekeeperbackend.model.auth.LoginResponse
 import com.bashkevich.tennisscorekeeperbackend.model.auth.RefreshTokensResponse
-import com.bashkevich.tennisscorekeeperbackend.model.player.toDto
 import com.bashkevich.tennisscorekeeperbackend.model.auth.TokenType
+import com.bashkevich.tennisscorekeeperbackend.model.auth.toDto
 import com.bashkevich.tennisscorekeeperbackend.plugins.UnauthorizedException
 import com.bashkevich.tennisscorekeeperbackend.plugins.dbQuery
 import io.ktor.server.plugins.BadRequestException
@@ -31,31 +31,30 @@ import kotlin.uuid.ExperimentalUuidApi
 @OptIn(ExperimentalUuidApi::class)
 class AuthService(
     private val authRepository: AuthRepository,
-    private val playerRepository: com.bashkevich.tennisscorekeeperbackend.feature.player.PlayerRepository,
 ) {
     suspend fun login(login: String, password: String): LoginResponse {
         return dbQuery {
             val authInfo = authRepository.getAuthInfoByLogin(login) ?: throw NotFoundException("No user found")
 
             if (isUserVerified(authInfo.hashedPassword, password)) {
-                val playerId = authInfo.id
+                val userId = authInfo.userId
                 val deviceId = Uuid.random()
                 val accessTokenExpiresAt = calculateExpirationDate(TokenType.ACCESS)
                 val refreshTokenExpiresAt = calculateExpirationDate(TokenType.REFRESH)
 
-                val accessToken = signToken(playerId, deviceId, accessTokenExpiresAt)
-                val refreshToken = signToken(playerId, deviceId, refreshTokenExpiresAt)
+                val accessToken = signToken(userId, deviceId, accessTokenExpiresAt)
+                val refreshToken = signToken(userId, deviceId, refreshTokenExpiresAt)
 
                 authRepository.insertRefreshToken(
-                    playerId = playerId,
+                    userId = userId,
                     deviceId = deviceId,
                     token = refreshToken,
                     expDateProjected = refreshTokenExpiresAt
                 )
 
-                val player = playerRepository.getPlayerById(playerId) ?: throw NotFoundException("Player not found")
+                val user = authRepository.getUserById(userId) ?: throw NotFoundException("User not found")
 
-                LoginResponse(player = player.toDto(), accessToken = accessToken, refreshToken = refreshToken)
+                LoginResponse(user = user.toDto(), accessToken = accessToken, refreshToken = refreshToken)
             } else
                 throw NotFoundException("Wrong login or password!")
         }
@@ -88,12 +87,12 @@ class AuthService(
             val accessTokenExpDate = calculateExpirationDate(TokenType.ACCESS)
 
             val decodedToken = JWT.decode(refreshToken)
-            val playerId = decodedToken.getClaim("playerId").toString().toInt()
+            val userId = decodedToken.getClaim("userId").toString().toInt()
             val deviceId = Uuid.parse(decodedToken.getClaim("deviceId").asString())
 
-            val accessToken = signToken(playerId = playerId, deviceId = deviceId, expiresAt = accessTokenExpDate)
+            val accessToken = signToken(userId = userId, deviceId = deviceId, expiresAt = accessTokenExpDate)
 
-            RefreshTokensResponse(playerId = playerId.toString(), accessToken = accessToken, refreshToken = refreshToken)
+            RefreshTokensResponse(userId = userId.toString(), accessToken = accessToken, refreshToken = refreshToken)
         }
     }
 
@@ -104,7 +103,7 @@ class AuthService(
         ).verified
     }
 
-    private fun signToken(playerId: Int, deviceId: Uuid, expiresAt: LocalDateTime): String {
+    private fun signToken(userId: Int, deviceId: Uuid, expiresAt: LocalDateTime): String {
         val jwtConfig = JwtConfig.instance
 
         val timeZone = ZoneId.of("Europe/Minsk")
@@ -112,7 +111,7 @@ class AuthService(
         return JWT.create()
             .withIssuer(jwtConfig.issuer)
             .withExpiresAt(expiresAt.toJavaLocalDateTime().atZone(timeZone).toInstant())
-            .withClaim("playerId", playerId)
+            .withClaim("userId", userId)
             .withClaim("deviceId", deviceId.toString())
             .withAudience(jwtConfig.audience)
             .sign(Algorithm.HMAC256(jwtConfig.secret))
