@@ -1,7 +1,7 @@
 package com.bashkevich.tennisscorekeeperbackend.model.auth
 
-data class PlayerAuthEntity(
-    val id: Int,
+data class UserAuthEntity(
+    val userId: Int,
     val login: String,
     val hashedPassword: ByteArray,
     val isAdmin: Boolean
@@ -10,9 +10,9 @@ data class PlayerAuthEntity(
         if (this === other) return true
         if (javaClass != other?.javaClass) return false
 
-        other as PlayerAuthEntity
+        other as UserAuthEntity
 
-        if (id != other.id) return false
+        if (userId != other.userId) return false
         if (isAdmin != other.isAdmin) return false
         if (login != other.login) return false
         if (!hashedPassword.contentEquals(other.hashedPassword)) return false
@@ -21,7 +21,7 @@ data class PlayerAuthEntity(
     }
 
     override fun hashCode(): Int {
-        var result = id
+        var result = userId
         result = 31 * result + isAdmin.hashCode()
         result = 31 * result + login.hashCode()
         result = 31 * result + hashedPassword.contentHashCode()
