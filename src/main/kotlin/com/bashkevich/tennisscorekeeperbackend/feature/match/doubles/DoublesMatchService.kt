@@ -221,11 +221,15 @@ class DoublesMatchService(
 
         }
 
-        if (isFirstPair) {
-            doublesMatchRepository.updateServeInFirstPair(matchId, firstServePlayerId)
-        } else {
-            doublesMatchRepository.updateServeInSecondPair(matchId, firstServePlayerId)
-        }
+        val firstServeParticipantId = if (isFirstPair) firstParticipant.id.value else secondParticipant.id.value
+
+        // пока первая подача в паре задается только для первого сета
+        doublesMatchRepository.upsertFirstServePlayer(
+            matchId = matchId,
+            participantId = firstServeParticipantId,
+            setNumber = 1,
+            playerId = firstServePlayerId
+        )
 
         val matchDto = buildMatchById(matchId, 0)
 
@@ -242,7 +246,9 @@ class DoublesMatchService(
 
         val lastPoint = doublesMatchLogRepository.getLastPoint(matchId, lastPointNumber)
 
-        val playerServingOrder = buildPlayerServeOrder(matchEntity)
+        val firstServePlayers = doublesMatchRepository.getFirstServePlayers(matchId)
+
+        val playerServingOrder = buildPlayerServeOrder(matchEntity, firstServePlayers)
 
         val firstPlayerToServe = playerServingOrder[0]
 
@@ -371,7 +377,10 @@ class DoublesMatchService(
 
         val participantServingOrder = listOf(firstParticipantToServe, secondParticipantToServe)
 
-        val playerServingOrder = buildPlayerServeOrder(matchEntity).filterNotNull()
+        val playerServingOrder = buildPlayerServeOrder(
+            matchEntity,
+            doublesMatchRepository.getFirstServePlayers(matchId)
+        ).filterNotNull()
 
         val firstPlayerToServe = playerServingOrder[0]
 
@@ -624,12 +633,12 @@ class DoublesMatchService(
         MatchObserver.notifyChange(matchDto)
     }
 
-    private fun buildPlayerServeOrder(matchEntity: DoublesMatchEntity): List<Int?> {
+    private fun buildPlayerServeOrder(matchEntity: DoublesMatchEntity, firstServePlayers: Map<Int, Int>): List<Int?> {
         val firstParticipantId = matchEntity.firstParticipant.id.value
         val firstParticipantToServe = matchEntity.firstServingParticipant?.id?.value
 
-        val firstServingPlayerInFirstParticipant = matchEntity.firstServingPlayerInFirstParticipant?.id?.value
-        val firstServingPlayerInSecondParticipant = matchEntity.firstServingPlayerInSecondParticipant?.id?.value
+        val firstServingPlayerInFirstParticipant = firstServePlayers[firstParticipantId]
+        val firstServingPlayerInSecondParticipant = firstServePlayers[matchEntity.secondParticipant.id.value]
 
         val firstParticipantFirstPlayerId = matchEntity.firstParticipant.firstPlayer.id.value
 
@@ -910,8 +919,9 @@ class DoublesMatchService(
             val winnerParticipantId = matchEntity.winnerParticipant
 
             val firstServeParticipant = matchEntity.firstServingParticipant
-            val firstServeInFirstPair = matchEntity.firstServingPlayerInFirstParticipant
-            val firstServeInSecondPair = matchEntity.firstServingPlayerInSecondParticipant
+            val firstServePlayers = doublesMatchRepository.getFirstServePlayers(matchId)
+            val firstServeInFirstPair = firstServePlayers[matchEntity.firstParticipant.id.value]
+            val firstServeInSecondPair = firstServePlayers[matchEntity.secondParticipant.id.value]
 
             when {
                 currentStatus == newStatus -> ""

@@ -4,11 +4,14 @@ import com.bashkevich.tennisscorekeeperbackend.model.match.MatchBody
 import com.bashkevich.tennisscorekeeperbackend.model.match.MatchStatus
 import com.bashkevich.tennisscorekeeperbackend.model.match.body.UpdateMatchBody
 import com.bashkevich.tennisscorekeeperbackend.model.match.doubles.DoublesMatchEntity
+import com.bashkevich.tennisscorekeeperbackend.model.match.doubles.DoublesMatchFirstServePlayerTable
 import com.bashkevich.tennisscorekeeperbackend.model.match.doubles.DoublesMatchTable
 import com.bashkevich.tennisscorekeeperbackend.model.match.singles.SinglesMatchTable
 import org.jetbrains.exposed.v1.core.and
 import org.jetbrains.exposed.v1.core.eq
 import org.jetbrains.exposed.v1.core.neq
+import org.jetbrains.exposed.v1.jdbc.deleteWhere
+import org.jetbrains.exposed.v1.jdbc.insert
 import org.jetbrains.exposed.v1.jdbc.insertAndGetId
 import org.jetbrains.exposed.v1.jdbc.selectAll
 import org.jetbrains.exposed.v1.jdbc.update
@@ -41,15 +44,30 @@ class DoublesMatchRepository {
             it[firstServingParticipant] = firstServeParticipantId
         }
 
-    suspend fun updateServeInFirstPair(matchId: Int, firstServePlayerId: Int) =
-        DoublesMatchTable.update({ DoublesMatchTable.id eq matchId }) {
-            it[firstServingPlayerInFirstPair] = firstServePlayerId
+    suspend fun upsertFirstServePlayer(matchId: Int, participantId: Int, setNumber: Int, playerId: Int) {
+        DoublesMatchFirstServePlayerTable.deleteWhere {
+            (DoublesMatchFirstServePlayerTable.match eq matchId) and
+                    (DoublesMatchFirstServePlayerTable.participant eq participantId) and
+                    (DoublesMatchFirstServePlayerTable.set eq setNumber)
         }
 
-    suspend fun updateServeInSecondPair(matchId: Int, firstServePlayerId: Int) =
-        DoublesMatchTable.update({ DoublesMatchTable.id eq matchId }) {
-            it[firstServingPlayerInSecondPair] = firstServePlayerId
+        DoublesMatchFirstServePlayerTable.insert {
+            it[match] = matchId
+            it[participant] = participantId
+            it[set] = setNumber
+            it[player] = playerId
         }
+    }
+
+    fun getFirstServePlayers(matchId: Int, setNumber: Int = 1): Map<Int, Int> =
+        DoublesMatchFirstServePlayerTable.selectAll()
+            .where {
+                (DoublesMatchFirstServePlayerTable.match eq matchId) and
+                        (DoublesMatchFirstServePlayerTable.set eq setNumber)
+            }
+            .associate { row ->
+                row[DoublesMatchFirstServePlayerTable.participant].value to row[DoublesMatchFirstServePlayerTable.player].value
+            }
 
     suspend fun updatePointShift(matchId: Int, newPointShift: Int) =
         DoublesMatchTable.update({ DoublesMatchTable.id eq matchId }) {
