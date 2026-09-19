@@ -1,6 +1,7 @@
 package com.bashkevich.tennisscorekeeperbackend.plugins
 
 import com.bashkevich.tennisscorekeeperbackend.model.counter.CounterTable
+import com.bashkevich.tennisscorekeeperbackend.model.match.doubles.DoublesMatchFirstServePlayerTable
 import com.bashkevich.tennisscorekeeperbackend.model.match.doubles.DoublesMatchTable
 import com.bashkevich.tennisscorekeeperbackend.model.match_log.singles.SinglesMatchLogTable
 import com.bashkevich.tennisscorekeeperbackend.model.match.singles.SinglesMatchTable
@@ -73,7 +74,7 @@ fun configureDatabase() {
         SchemaUtils.create(
             CounterTable, PlayerTable, UserTable, UserAuthTable, RefreshTokenTable, SetTemplateTable, ThemeTable, TournamentTable,
             SinglesParticipantTable, SinglesMatchTable, SinglesMatchLogTable,
-            DoublesParticipantTable, DoublesMatchTable, DoublesMatchLogTable
+            DoublesParticipantTable, DoublesMatchTable, DoublesMatchFirstServePlayerTable, DoublesMatchLogTable
         )
 
 //        UserTable.insert {
