@@ -1,7 +1,6 @@
 package com.bashkevich.tennisscorekeeperbackend.model.match.doubles
 
 import com.bashkevich.tennisscorekeeperbackend.model.participant.doubles.DoublesParticipantEntity
-import com.bashkevich.tennisscorekeeperbackend.model.player.PlayerEntity
 import com.bashkevich.tennisscorekeeperbackend.model.set_template.SetTemplateEntity
 import com.bashkevich.tennisscorekeeperbackend.model.theme.ThemeEntity
 import com.bashkevich.tennisscorekeeperbackend.model.tournament.TournamentEntity
@@ -24,8 +23,6 @@ class DoublesMatchEntity(id: EntityID<Int>) : IntEntity(id) {
     val secondParticipantSecondaryColor by DoublesMatchTable.secondParticipantSecondaryColor
     var status by DoublesMatchTable.status
     val firstServingParticipant by DoublesParticipantEntity optionalReferencedOn DoublesMatchTable.firstServingParticipant
-    val firstServingPlayerInFirstParticipant by PlayerEntity optionalReferencedOn DoublesMatchTable.firstServingPlayerInFirstPair
-    val firstServingPlayerInSecondParticipant by PlayerEntity optionalReferencedOn DoublesMatchTable.firstServingPlayerInSecondPair
     var setsToWin by DoublesMatchTable.setsToWin
     val regularSetTemplate by SetTemplateEntity optionalReferencedOn  DoublesMatchTable.regularSetTemplate
     val decidingSetTemplate by SetTemplateEntity referencedOn DoublesMatchTable.decidingSetTemplate

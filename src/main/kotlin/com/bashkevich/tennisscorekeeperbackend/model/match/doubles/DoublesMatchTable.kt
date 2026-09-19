@@ -2,7 +2,6 @@ package com.bashkevich.tennisscorekeeperbackend.model.match.doubles
 
 import com.bashkevich.tennisscorekeeperbackend.model.match.MatchStatus
 import com.bashkevich.tennisscorekeeperbackend.model.participant.doubles.DoublesParticipantTable
-import com.bashkevich.tennisscorekeeperbackend.model.player.PlayerTable
 import com.bashkevich.tennisscorekeeperbackend.model.set_template.SetTemplateTable
 import com.bashkevich.tennisscorekeeperbackend.model.theme.ThemeTable
 import com.bashkevich.tennisscorekeeperbackend.model.tournament.TournamentTable
@@ -28,8 +27,6 @@ object DoublesMatchTable : IdTable<Int>("doubles_match") {
     val secondParticipantSecondaryColor = varchar("second_participant_secondary_color", 6).nullable()
     val status = enumerationByName("status", 50, MatchStatus::class).default(MatchStatus.NOT_STARTED)
     val firstServingParticipant = reference("first_serving_participant_id", DoublesParticipantTable).nullable()
-    val firstServingPlayerInFirstPair = reference("first_serve_in_first_pair_player_id", PlayerTable).nullable()
-    val firstServingPlayerInSecondPair = reference("first_serve_in_second_pair_player_id", PlayerTable).nullable()
     val setsToWin = integer("sets_to_win")
     val regularSetTemplate = reference("regular_set_id", SetTemplateTable).nullable()
     val decidingSetTemplate = reference("deciding_set_id", SetTemplateTable)
