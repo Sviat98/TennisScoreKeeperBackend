@@ -370,7 +370,13 @@ class SinglesMatchService(
             else -> false
         }
 
-        if (isTiebreakMode) {
+        // явный GAME в обычном тай-брейке засчитываем как выигранный гейм (сет завершится 7:6);
+        // в супер-тай-брейке кнопка гейма блокируется клиентом — там GAME остается очком
+        val isExplicitGameInTiebreak = isTiebreakMode
+                && changeScoreBody.scoreType == ScoreType.GAME
+                && currentSetMode != SpecialSetMode.SUPER_TIEBREAK
+
+        if (isTiebreakMode && !isExplicitGameInTiebreak) {
             val tiebreakPointsToWin = currentSetTemplate.tiebreakPointsToWin
 
             isFirstParticipantWonGame = when {
