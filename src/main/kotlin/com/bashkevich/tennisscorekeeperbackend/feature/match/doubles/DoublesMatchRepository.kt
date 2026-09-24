@@ -6,7 +6,6 @@ import com.bashkevich.tennisscorekeeperbackend.model.match.body.UpdateMatchBody
 import com.bashkevich.tennisscorekeeperbackend.model.match.doubles.DoublesMatchEntity
 import com.bashkevich.tennisscorekeeperbackend.model.match.doubles.DoublesMatchFirstServePlayerTable
 import com.bashkevich.tennisscorekeeperbackend.model.match.doubles.DoublesMatchTable
-import com.bashkevich.tennisscorekeeperbackend.model.match.singles.SinglesMatchTable
 import org.jetbrains.exposed.v1.core.and
 import org.jetbrains.exposed.v1.core.eq
 import org.jetbrains.exposed.v1.core.neq
@@ -94,7 +93,7 @@ class DoublesMatchRepository {
         }
 
     suspend fun setParticipantRetired(matchId: Int, retiredParticipantId: Int?) =
-        SinglesMatchTable.update({ DoublesMatchTable.id eq matchId }) {
+        DoublesMatchTable.update({ DoublesMatchTable.id eq matchId }) {
             it[retiredParticipant] = retiredParticipantId
         }
 
