@@ -194,7 +194,7 @@ fun Route.matchRoutes() {
             authenticate(JWT_AUTH) {
                 /**
                  * Tag: Match
-                 * Update editable match fields (participants display names, theme).
+                 * Update editable match fields (participants display names and colors, theme).
                  */
                 put {
                     val matchId = call.pathParameters["id"]?.toIntOrNull() ?: 0
@@ -206,7 +206,7 @@ fun Route.matchRoutes() {
                     call.respondWithMessageBody(message = "Successfully updated the match")
                 }.describe {
                     requestBody {
-                        description = "Updated match data: participants display names and theme id"
+                        description = "Updated match data: participants (display names, colors) and theme id"
                         schema = jsonSchema<UpdateMatchBody>()
                     }
                     responses {
@@ -215,7 +215,7 @@ fun Route.matchRoutes() {
                             schema = jsonSchema<ResponseMessageDto>()
                         }
                         HttpStatusCode.BadRequest {
-                            description = "Invalid request body, match ID, or theme id"
+                            description = "Invalid request body, match ID, theme id, or match is completed"
                             ContentType.Text.Plain()
                         }
                         HttpStatusCode.Unauthorized {

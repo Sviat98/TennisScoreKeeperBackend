@@ -52,8 +52,12 @@ class SinglesMatchRepository {
 
     suspend fun updateMatchInfo(matchId: Int, updateMatchBody: UpdateMatchBody) =
         SinglesMatchTable.update({ SinglesMatchTable.id eq matchId }) {
-            it[firstParticipantDisplayName] = updateMatchBody.firstParticipantDisplayName
-            it[secondParticipantDisplayName] = updateMatchBody.secondParticipantDisplayName
+            it[firstParticipantDisplayName] = updateMatchBody.firstParticipant.displayName
+            it[firstParticipantPrimaryColor] = updateMatchBody.firstParticipant.primaryColor
+            it[firstParticipantSecondaryColor] = updateMatchBody.firstParticipant.secondaryColor
+            it[secondParticipantDisplayName] = updateMatchBody.secondParticipant.displayName
+            it[secondParticipantPrimaryColor] = updateMatchBody.secondParticipant.primaryColor
+            it[secondParticipantSecondaryColor] = updateMatchBody.secondParticipant.secondaryColor
             it[theme] = updateMatchBody.themeId.toInt()
         }
 

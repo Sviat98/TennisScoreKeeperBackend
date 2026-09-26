@@ -989,6 +989,22 @@ class DoublesMatchService(
         val matchEntity =
             doublesMatchRepository.getMatchById(matchId) ?: throw NotFoundException("No match found!")
 
+        // id участников уже проверены в RequestValidation, поэтому toInt() здесь безопасен
+        validateRequestConditions {
+            when {
+                matchEntity.status == MatchStatus.COMPLETED ->
+                    "Can't update match. The match is in status COMPLETED"
+
+                updateMatchBody.firstParticipant.id.toInt() != matchEntity.firstParticipant.id.value ->
+                    "First participant id is not in match"
+
+                updateMatchBody.secondParticipant.id.toInt() != matchEntity.secondParticipant.id.value ->
+                    "Second participant id is not in match"
+
+                else -> ""
+            }
+        }
+
         val lastPointInTable = doublesMatchLogRepository.getLastPoint(matchId)
 
         val pointShift = matchEntity.pointShift
