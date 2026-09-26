@@ -2,6 +2,7 @@ package com.bashkevich.tennisscorekeeperbackend.plugins
 
 import com.bashkevich.tennisscorekeeperbackend.model.match.body.ChangeScoreBody
 import com.bashkevich.tennisscorekeeperbackend.model.match.MatchBody
+import com.bashkevich.tennisscorekeeperbackend.model.match.ParticipantInMatchBody
 import com.bashkevich.tennisscorekeeperbackend.model.match.body.RetiredParticipantBody
 import com.bashkevich.tennisscorekeeperbackend.model.match.body.ScoreType
 import com.bashkevich.tennisscorekeeperbackend.model.match.body.ServeBody
@@ -17,9 +18,9 @@ fun Application.configureValidation() {
 
     install(RequestValidation) {
         validate<MatchBody> { body ->
-            val firstPlayerId = body.firstParticipant.id.toIntOrNull() ?: 0
+            val firstParticipantError = participantInMatchError("First player", body.firstParticipant)
 
-            val secondPlayerId = body.secondParticipant.id.toIntOrNull() ?: 0
+            val secondParticipantError = participantInMatchError("Second player", body.secondParticipant)
 
             val setsToWin = body.setsToWin
 
@@ -27,9 +28,9 @@ fun Application.configureValidation() {
             val decidingSetId = body.decidingSet.toIntOrNull() ?: 0
 
             when {
-                firstPlayerId == 0 -> ValidationResult.Invalid("First player id is wrong!")
-                secondPlayerId == 0 -> ValidationResult.Invalid("Second player id is wrong!")
-                firstPlayerId == secondPlayerId -> ValidationResult.Invalid("Players should be different!")
+                firstParticipantError != null -> ValidationResult.Invalid(firstParticipantError)
+                secondParticipantError != null -> ValidationResult.Invalid(secondParticipantError)
+                body.firstParticipant.id.toInt() == body.secondParticipant.id.toInt() -> ValidationResult.Invalid("Players should be different!")
                 regularSetId == 0 && setsToWin > 1 -> ValidationResult.Invalid("Regular set id is wrong or empty!")
                 regularSetId != 0 && setsToWin < 2 -> ValidationResult.Invalid("Regular set is redundant!")
                 decidingSetId == 0 -> ValidationResult.Invalid("Deciding set id is wrong!")
@@ -78,17 +79,37 @@ fun Application.configureValidation() {
         }
         validate<UpdateMatchBody> { body ->
 
+            val firstParticipantError = participantInMatchError("First participant", body.firstParticipant)
+
+            val secondParticipantError = participantInMatchError("Second participant", body.secondParticipant)
+
             val themeId = body.themeId.toIntOrNull() ?: 0
 
             when {
-                body.firstParticipantDisplayName.isBlank() -> ValidationResult.Invalid("First participant display name is empty!")
-                body.secondParticipantDisplayName.isBlank() -> ValidationResult.Invalid("Second participant display name is empty!")
+                firstParticipantError != null -> ValidationResult.Invalid(firstParticipantError)
+                secondParticipantError != null -> ValidationResult.Invalid(secondParticipantError)
+                body.firstParticipant.displayName.isBlank() -> ValidationResult.Invalid("First participant display name is empty!")
+                body.secondParticipant.displayName.isBlank() -> ValidationResult.Invalid("Second participant display name is empty!")
                 themeId == 0 -> ValidationResult.Invalid("Theme id is wrong!")
                 else -> ValidationResult.Valid
             }
         }
     }
 }
+
+// id и hex-формат цветов участника проверяются и при создании матча, и при его редактировании
+private fun participantInMatchError(label: String, participant: ParticipantInMatchBody): String? {
+    val id = participant.id.toIntOrNull() ?: 0
+
+    return when {
+        id == 0 -> "$label id is wrong!"
+        !participant.primaryColor.matches(HEX_COLOR_REGEX) -> "$label primary color is wrong!"
+        participant.secondaryColor?.matches(HEX_COLOR_REGEX) == false -> "$label secondary color is wrong!"
+        else -> null
+    }
+}
+
+private val HEX_COLOR_REGEX = Regex("^[0-9A-Fa-f]{6}$")
 
 // данная валидация нужна для проверки сущностей в базе
 suspend inline fun validateRequestConditions(
