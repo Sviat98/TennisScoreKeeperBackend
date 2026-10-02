@@ -6,6 +6,7 @@ import com.bashkevich.tennisscorekeeperbackend.model.match.body.UpdateMatchBody
 import com.bashkevich.tennisscorekeeperbackend.model.match.doubles.DoublesMatchEntity
 import com.bashkevich.tennisscorekeeperbackend.model.match.doubles.DoublesMatchFirstServePlayerTable
 import com.bashkevich.tennisscorekeeperbackend.model.match.doubles.DoublesMatchTable
+import com.bashkevich.tennisscorekeeperbackend.model.match.doubles.DoublesServeRecord
 import org.jetbrains.exposed.v1.core.and
 import org.jetbrains.exposed.v1.core.eq
 import org.jetbrains.exposed.v1.core.neq
@@ -42,14 +43,23 @@ class DoublesMatchRepository {
             it[firstServingParticipant] = firstServeParticipantId
         }
 
-    suspend fun upsertFirstServePlayer(matchId: Int, participantId: Int, setNumber: Int, playerId: Int) {
+    // serve_order передается явно всеми вызывающими: ручная смена пишет тот же порядок пары
+    // в сете (он не меняется), автозапись при завершении сета - свежие дефолты для нового сета
+    suspend fun upsertFirstServePlayer(
+        matchId: Int,
+        participantId: Int,
+        setNumber: Int,
+        playerId: Int,
+        serveOrder: Int,
+    ) {
         DoublesMatchFirstServePlayerTable.upsert(
             DoublesMatchFirstServePlayerTable.match,
             DoublesMatchFirstServePlayerTable.participant,
             DoublesMatchFirstServePlayerTable.set,
             onUpdate = {
                 listOf(
-                    DoublesMatchFirstServePlayerTable.player to playerId
+                    DoublesMatchFirstServePlayerTable.player to playerId,
+                    DoublesMatchFirstServePlayerTable.serveOrder to serveOrder,
                 )
             }
         ) {
@@ -57,6 +67,7 @@ class DoublesMatchRepository {
             it[participant] = participantId
             it[set] = setNumber
             it[player] = playerId
+            it[DoublesMatchFirstServePlayerTable.serveOrder] = serveOrder
         }
     }
 
@@ -68,6 +79,21 @@ class DoublesMatchRepository {
             }
             .associate { row ->
                 row[DoublesMatchFirstServePlayerTable.participant].value to row[DoublesMatchFirstServePlayerTable.player].value
+            }
+
+    // записи очереди подающих сета: первый подающий пары + какая пара подает первой в сете
+    fun getServeRecords(matchId: Int, setNumber: Int): List<DoublesServeRecord> =
+        DoublesMatchFirstServePlayerTable.selectAll()
+            .where {
+                (DoublesMatchFirstServePlayerTable.match eq matchId) and
+                        (DoublesMatchFirstServePlayerTable.set eq setNumber)
+            }
+            .map { row ->
+                DoublesServeRecord(
+                    participantId = row[DoublesMatchFirstServePlayerTable.participant].value,
+                    playerId = row[DoublesMatchFirstServePlayerTable.player].value,
+                    serveOrder = row[DoublesMatchFirstServePlayerTable.serveOrder],
+                )
             }
 
     suspend fun updatePointShift(matchId: Int, newPointShift: Int) =
