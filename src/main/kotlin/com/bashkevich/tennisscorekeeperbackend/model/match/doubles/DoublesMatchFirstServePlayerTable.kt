@@ -8,10 +8,10 @@ object DoublesMatchFirstServePlayerTable : CompositeIdTable("doubles_match_first
     val match = reference("match_id", DoublesMatchTable)
     val participant = reference("participant_id", DoublesParticipantTable)
     val set = integer("set_number").entityId()
-    val player = reference("player_id", PlayerTable)
 
     // какая пара подает первой в этом сете: 1 или 2; всегда заполняется при создании записи
     val serveOrder = integer("serve_order")
+    val player = reference("player_id", PlayerTable)
 
     init {
         addIdColumn(match)

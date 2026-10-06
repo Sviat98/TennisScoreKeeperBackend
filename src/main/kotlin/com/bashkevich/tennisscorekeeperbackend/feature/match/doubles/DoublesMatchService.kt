@@ -182,8 +182,8 @@ class DoublesMatchService(
                 matchId = matchId,
                 participantId = record.participantId,
                 setNumber = 1,
-                playerId = record.playerId,
                 serveOrder = if (record.participantId == firstServeParticipantId) 1 else 2,
+                playerId = record.playerId,
             )
         }
 
@@ -304,7 +304,7 @@ class DoublesMatchService(
                 }
             }
 
-            // если последняя эффективная строка проектирует подачу целевой пары - обновляем в ней
+            // если мы стоим на последнем моменте для сены подачи у целевой пары - обновляем в ней
             // подающего: SET-строка (первый подающий до начала сета), GAME-строка первого гейма
             // (второй подающий) или строка первого розыгрыша супер-тай-брейка (несет проекцию
             // подающего второго розыгрыша)
@@ -324,8 +324,8 @@ class DoublesMatchService(
             matchId = matchId,
             participantId = targetParticipantId,
             setNumber = setNumber,
-            playerId = firstServePlayerId,
             serveOrder = targetServeOrder,
+            playerId = firstServePlayerId,
         )
 
         val matchDto = buildMatchById(matchId, lastPointNumber)
@@ -742,19 +742,19 @@ class DoublesMatchService(
                     matchId = matchId,
                     participantId = firstServingParticipant.id.value,
                     setNumber = nextSetNumber,
-                    playerId = currentPlayerToServe,
-                    serveOrder = 1
+                    serveOrder = 1,
+                    playerId = currentPlayerToServe
                 )
 
                 doublesMatchRepository.upsertFirstServePlayer(
                     matchId = matchId,
                     participantId = secondServingParticipant.id.value,
                     setNumber = nextSetNumber,
+                    serveOrder = 2,
                     playerId = calculateNextServe(
                         serveOrder = playerServingOrder,
                         currentServe = currentPlayerToServe
-                    ),
-                    serveOrder = 2
+                    )
                 )
             }
         }
