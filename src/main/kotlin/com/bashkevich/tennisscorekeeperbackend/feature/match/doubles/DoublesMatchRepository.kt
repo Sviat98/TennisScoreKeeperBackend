@@ -49,8 +49,8 @@ class DoublesMatchRepository {
         matchId: Int,
         participantId: Int,
         setNumber: Int,
-        playerId: Int,
         serveOrder: Int,
+        playerId: Int,
     ) {
         DoublesMatchFirstServePlayerTable.upsert(
             DoublesMatchFirstServePlayerTable.match,
@@ -58,16 +58,16 @@ class DoublesMatchRepository {
             DoublesMatchFirstServePlayerTable.set,
             onUpdate = {
                 listOf(
-                    DoublesMatchFirstServePlayerTable.player to playerId,
                     DoublesMatchFirstServePlayerTable.serveOrder to serveOrder,
+                    DoublesMatchFirstServePlayerTable.player to playerId,
                 )
             }
         ) {
             it[match] = matchId
             it[participant] = participantId
             it[set] = setNumber
-            it[player] = playerId
             it[DoublesMatchFirstServePlayerTable.serveOrder] = serveOrder
+            it[player] = playerId
         }
     }
 
@@ -91,8 +91,8 @@ class DoublesMatchRepository {
             .map { row ->
                 DoublesServeRecord(
                     participantId = row[DoublesMatchFirstServePlayerTable.participant].value,
-                    playerId = row[DoublesMatchFirstServePlayerTable.player].value,
                     serveOrder = row[DoublesMatchFirstServePlayerTable.serveOrder],
+                    playerId = row[DoublesMatchFirstServePlayerTable.player].value,
                 )
             }
 
