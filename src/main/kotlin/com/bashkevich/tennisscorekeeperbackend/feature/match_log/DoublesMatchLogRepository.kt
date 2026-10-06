@@ -77,7 +77,8 @@ class DoublesMatchLogRepository {
             .map { it.toDoublesMatchLogEvent() }
     }
 
-    // первый эффективный розыгрыш (POINT/TIEBREAK_POINT) сета
+    // первая эффективная строка сета любого типа: розыгрыш или, в режиме внешнего ввода,
+    // GAME-строка переключенного гейма (геймы могут вводиться и без розыгрышей)
     suspend fun getFirstRallyInSet(
         matchId: Int,
         setNumber: Int,
@@ -87,7 +88,6 @@ class DoublesMatchLogRepository {
             .where {
                 (DoublesMatchLogTable.matchId eq matchId) and
                         (DoublesMatchLogTable.setNumber eq setNumber) and
-                        (DoublesMatchLogTable.scoreType inList listOf(ScoreType.POINT, ScoreType.TIEBREAK_POINT)) and
                         (DoublesMatchLogTable.pointNumber lessEq lastPointNumber)
             }
             .orderBy(DoublesMatchLogTable.pointNumber, SortOrder.ASC)
