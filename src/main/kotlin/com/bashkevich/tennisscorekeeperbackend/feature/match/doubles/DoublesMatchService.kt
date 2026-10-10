@@ -783,12 +783,15 @@ class DoublesMatchService(
 
         doublesMatchLogRepository.insertMatchLogEvent(doublesMatchLogEvent)
 
-        // фиксируем redo-лимит пары: redo доступен до лимита включительно, поэтому лимит -
-        // строка ПЕРЕД первой проекцией игрока пары. Первой проекцией бывают:
+        // фиксируем redo-лимит пары: redo доступен до лимита включительно. Первой
+        // проекцией игрока пары бывают:
         // - розыгрыш: несет подающего текущего гейма своей пары;
         // - в сете без розыгрышей (внешний ввод) - GAME-строка с 3-м или 4-м игроком
         //   ротации (вторые подающие пар). GAME первого гейма несет 2-го игрока (первую
-        //   подачу второй пары) и мутируется при смене подачи на границе - пропускаем
+        //   подачу второй пары) и мутируется при смене подачи на границе - пропускаем.
+        // В супер-тай-брейке граница второй пары переносится на первый розыгрыш
+        // (включительно): после него смену подачи второй пары еще можно сделать
+        // (строка мутируется), а следующая уже несет ее первого подающего
         val redoLimitParticipant = participantOfPlayer(matchEntity, currentServePlayerToInsert)
 
         if (redoLimitParticipant != null) {
@@ -805,9 +808,19 @@ class DoublesMatchService(
                     (lastPoint == null || lastPoint.scoreType in listOf(ScoreType.GAME, ScoreType.SET)) &&
                     serveRotationIndex >= 2
 
-            if (redoLimitRecord != null && redoLimitRecord.pointNumberRedoLimit == null &&
-                (isRally || isGameSwitchWithoutRallies)
-            ) {
+            // вставка второго розыгрыша сета с проекцией той же пары, что у первого
+            val isSecondPointOfSetOfSamePair = scoreType == ScoreType.TIEBREAK_POINT &&
+                    lastPoint?.scoreType == ScoreType.TIEBREAK_POINT &&
+                    redoLimitParticipant.id.value ==
+                        participantOfPlayer(matchEntity, lastPoint.currentServeInPair)?.id?.value &&
+                    doublesMatchLogRepository.getFirstRallyInSet(matchId, setNumber, lastPointNumber)
+                        ?.pointNumber == lastPoint.pointNumber
+
+            val shouldWriteRedoLimit = isSecondPointOfSetOfSamePair ||
+                (redoLimitRecord != null && redoLimitRecord.pointNumberRedoLimit == null &&
+                    (isRally || isGameSwitchWithoutRallies))
+
+            if (shouldWriteRedoLimit) {
                 doublesMatchRepository.setServeRecordLimit(
                     matchId = matchId,
                     participantId = redoLimitParticipant.id.value,
@@ -897,13 +910,14 @@ class DoublesMatchService(
     }
 
     // redo разрешен до point_number_redo_limit включительно - границы, стоящей перед
-    // первой проекцией игрока пары в сете. За границей redo возможен, только если подача
-    // в паре не менялась после того, как строки хвоста сыграли: сверяем запись очереди
-    // (сета следующей строки хвоста) со строкой первой подачи пары (limit + 1). Она
-    // немутируема (окна смены подачи заканчиваются до нее), а ее тип задает механику
-    // сверки: GAME-строка несет партнера первого подающего пары - смена это совпадение
-    // с очередью; розыгрыш (POINT/TIEBREAK_POINT, включая супер-тай-брейк) несет самого
-    // первого подающего - несовпадение
+    // первой проекцией игрока пары в сете (в супер-тай-брейке для второй пары - на самом
+    // первом розыгрыше). За границей redo возможен, только если подача в паре не менялась
+    // после того, как строки хвоста сыграли: сверяем запись очереди (сета следующей строки
+    // хвоста) со строкой первой подачи пары (limit + 1). Она немутируема (окна смены подачи
+    // заканчиваются до нее), а ее тип задает механику сверки: GAME-строка и TIEBREAK_POINT-
+    // якорь первой пары (serve_order 1) в супер-тай-брейке несут партнера первого подающего
+    // пары - смена это совпадение с очередью; POINT и TIEBREAK_POINT-якорь второй пары несут
+    // самого первого подающего - несовпадение
     private suspend fun isRedoBlockedByServeChange(
         matchEntity: DoublesMatchEntity,
         lastPointNumber: Int,
@@ -936,6 +950,18 @@ class DoublesMatchService(
                 // GAME-строка несет подающего следующего гейма - партнера первого подающего
                 // пары, поэтому смена очереди - это совпадение
                 firstServeRow.scoreType == ScoreType.GAME -> doublesServeRecord.playerId == firstServeRowServingPlayer
+
+                // в супер-тай-брейке строка несет подающего следующего розыгрыша: якорь
+                // первой пары (serve_order 1) стоит после двух розыгрышей второй пары и
+                // несет партнера первого подающего (блок при совпадении), якорь второй
+                // пары - на первом розыгрыше сета и несет ее первого подающего (блок
+                // при несовпадении)
+                firstServeRow.scoreType == ScoreType.TIEBREAK_POINT ->
+                    if (doublesServeRecord.serveOrder == 1) {
+                        doublesServeRecord.playerId == firstServeRowServingPlayer
+                    } else {
+                        doublesServeRecord.playerId != firstServeRowServingPlayer
+                    }
 
                 // розыгрыш несет первого подающего пары - смена это несовпадение
                 else -> doublesServeRecord.playerId != firstServeRowServingPlayer
