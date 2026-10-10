@@ -3,6 +3,7 @@ package com.bashkevich.tennisscorekeeperbackend.feature.match_log
 import com.bashkevich.tennisscorekeeperbackend.model.match.body.ScoreType
 import com.bashkevich.tennisscorekeeperbackend.model.match_log.doubles.DoublesMatchLogEvent
 import com.bashkevich.tennisscorekeeperbackend.model.match_log.doubles.DoublesMatchLogTable
+import org.jetbrains.exposed.v1.core.ResultRow
 import org.jetbrains.exposed.v1.core.SortOrder
 import org.jetbrains.exposed.v1.core.and
 import org.jetbrains.exposed.v1.core.eq
@@ -13,6 +14,7 @@ import org.jetbrains.exposed.v1.jdbc.andWhere
 import org.jetbrains.exposed.v1.jdbc.deleteWhere
 import org.jetbrains.exposed.v1.jdbc.insert
 import org.jetbrains.exposed.v1.jdbc.selectAll
+import org.jetbrains.exposed.v1.jdbc.update
 
 class DoublesMatchLogRepository {
     suspend fun insertMatchLogEvent(
@@ -43,18 +45,7 @@ class DoublesMatchLogRepository {
         return query.orderBy(
             DoublesMatchLogTable.pointNumber,
             SortOrder.DESC
-        ).limit(1).map {
-            DoublesMatchLogEvent(
-                matchId = it[DoublesMatchLogTable.matchId].value,
-                setNumber = it[DoublesMatchLogTable.setNumber],
-                pointNumber = it[DoublesMatchLogTable.pointNumber].value,
-                scoreType = it[DoublesMatchLogTable.scoreType],
-                currentServe = it[DoublesMatchLogTable.currentServe]?.value,
-                currentServeInPair = it[DoublesMatchLogTable.currentServePlayer]?.value,
-                firstParticipantPoints = it[DoublesMatchLogTable.firstPlayerPoints],
-                secondParticipantPoints = it[DoublesMatchLogTable.secondPlayerPoints]
-            )
-        }.singleOrNull()
+        ).limit(1).map { it.toDoublesMatchLogEvent() }.singleOrNull()
     }
 
     suspend fun getCurrentSet(
@@ -67,18 +58,7 @@ class DoublesMatchLogRepository {
             .orderBy(
                 DoublesMatchLogTable.pointNumber,
                 SortOrder.DESC
-            ).limit(1).map {
-                DoublesMatchLogEvent(
-                    matchId = it[DoublesMatchLogTable.matchId].value,
-                    setNumber = it[DoublesMatchLogTable.setNumber],
-                    pointNumber = it[DoublesMatchLogTable.pointNumber].value,
-                    scoreType = it[DoublesMatchLogTable.scoreType],
-                    currentServe = it[DoublesMatchLogTable.currentServe]?.value,
-                    currentServeInPair = it[DoublesMatchLogTable.currentServePlayer]?.value,
-                    firstParticipantPoints = it[DoublesMatchLogTable.firstPlayerPoints],
-                    secondParticipantPoints = it[DoublesMatchLogTable.secondPlayerPoints]
-                )
-            }.singleOrNull()
+            ).limit(1).map { it.toDoublesMatchLogEvent() }.singleOrNull()
     }
 
     suspend fun getPreviousSets(
@@ -94,21 +74,80 @@ class DoublesMatchLogRepository {
             .orderBy(
                 DoublesMatchLogTable.setNumber
             )
-            .map {
-                DoublesMatchLogEvent(
-                    matchId = it[DoublesMatchLogTable.matchId].value,
-                    setNumber = it[DoublesMatchLogTable.setNumber],
-                    pointNumber = it[DoublesMatchLogTable.pointNumber].value,
-                    scoreType = it[DoublesMatchLogTable.scoreType],
-                    currentServe = it[DoublesMatchLogTable.currentServe]?.value,
-                    currentServeInPair = it[DoublesMatchLogTable.currentServePlayer]?.value,
-                    firstParticipantPoints = it[DoublesMatchLogTable.firstPlayerPoints],
-                    secondParticipantPoints = it[DoublesMatchLogTable.secondPlayerPoints]
-                )
+            .map { it.toDoublesMatchLogEvent() }
+    }
+
+    // первая эффективная строка сета любого типа: розыгрыш или, в режиме внешнего ввода,
+    // GAME-строка переключенного гейма (геймы могут вводиться и без розыгрышей)
+    suspend fun getFirstRallyInSet(
+        matchId: Int,
+        setNumber: Int,
+        lastPointNumber: Int,
+    ): DoublesMatchLogEvent? =
+        DoublesMatchLogTable.selectAll()
+            .where {
+                (DoublesMatchLogTable.matchId eq matchId) and
+                        (DoublesMatchLogTable.setNumber eq setNumber) and
+                        (DoublesMatchLogTable.pointNumber lessEq lastPointNumber)
             }
+            .orderBy(DoublesMatchLogTable.pointNumber, SortOrder.ASC)
+            .limit(1)
+            .map { it.toDoublesMatchLogEvent() }
+            .singleOrNull()
+
+    // первый завершенный гейм (GAME) сета
+    suspend fun getFirstGameInSet(
+        matchId: Int,
+        setNumber: Int,
+        lastPointNumber: Int,
+    ): DoublesMatchLogEvent? =
+        DoublesMatchLogTable.selectAll()
+            .where {
+                (DoublesMatchLogTable.matchId eq matchId) and
+                        (DoublesMatchLogTable.setNumber eq setNumber) and
+                        (DoublesMatchLogTable.scoreType eq ScoreType.GAME) and
+                        (DoublesMatchLogTable.pointNumber lessEq lastPointNumber)
+            }
+            .orderBy(DoublesMatchLogTable.pointNumber, SortOrder.ASC)
+            .limit(1)
+            .map { it.toDoublesMatchLogEvent() }
+            .singleOrNull()
+
+    // конкретная строка лога (в частности, следующая строка redo-хвоста)
+    suspend fun getLogRow(
+        matchId: Int,
+        pointNumber: Int,
+    ): DoublesMatchLogEvent? =
+        DoublesMatchLogTable.selectAll()
+            .where {
+                (DoublesMatchLogTable.matchId eq matchId) and
+                        (DoublesMatchLogTable.pointNumber eq pointNumber)
+            }
+            .limit(1)
+            .map { it.toDoublesMatchLogEvent() }
+            .singleOrNull()
+
+    // мутация проекции подачи в строке лога (ручная смена подачи в паре на граничной позиции)
+    suspend fun updateServingPlayerInRow(matchId: Int, pointNumber: Int, playerId: Int) {
+        DoublesMatchLogTable.update({
+            (DoublesMatchLogTable.matchId eq matchId) and (DoublesMatchLogTable.pointNumber eq pointNumber)
+        }) {
+            it[currentServePlayer] = playerId
+        }
     }
 
     suspend fun removeEvents(matchId: Int, pointNumber: Int): Int {
         return DoublesMatchLogTable.deleteWhere { (DoublesMatchLogTable.matchId eq matchId) and (DoublesMatchLogTable.pointNumber greater pointNumber) }
     }
+
+    private fun ResultRow.toDoublesMatchLogEvent() = DoublesMatchLogEvent(
+        matchId = this[DoublesMatchLogTable.matchId].value,
+        setNumber = this[DoublesMatchLogTable.setNumber],
+        pointNumber = this[DoublesMatchLogTable.pointNumber].value,
+        scoreType = this[DoublesMatchLogTable.scoreType],
+        currentServe = this[DoublesMatchLogTable.currentServe]?.value,
+        currentServeInPair = this[DoublesMatchLogTable.currentServePlayer]?.value,
+        firstParticipantPoints = this[DoublesMatchLogTable.firstPlayerPoints],
+        secondParticipantPoints = this[DoublesMatchLogTable.secondPlayerPoints]
+    )
 }

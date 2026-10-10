@@ -266,7 +266,7 @@ fun Route.matchRoutes() {
                 }
                 /**
                  * Tag: Match
-                 * Set which player serves first in a pair (doubles only).
+                 * Set which player serves first in a pair for the given set (doubles only).
                  */
                 patch("/firstServeInPair") {
                     val matchId = call.pathParameters["id"]?.toIntOrNull() ?: 0
@@ -278,7 +278,11 @@ fun Route.matchRoutes() {
                     call.respondWithMessageBody(message = "Successfully chose first serve in pair")
                 }.describe {
                     requestBody {
-                        description = "Player ID who serves first in the pair"
+                        description = "Player ID who serves first in the pair and the set number. " +
+                                "Change window: for the first-serving pair of the set - until the set starts; " +
+                                "for the second pair - until the end of the set's first game (inclusive); " +
+                                "in a super tiebreak rallies replace games (the second pair - until its first serve); " +
+                                "before the match starts - set 1 only"
                         schema = jsonSchema<ServeInPairBody>()
                     }
                     responses {
@@ -287,7 +291,8 @@ fun Route.matchRoutes() {
                             schema = jsonSchema<ResponseMessageDto>()
                         }
                         HttpStatusCode.BadRequest {
-                            description = "Invalid request body, match ID, or not a doubles match"
+                            description = "Invalid request body or match ID, not a doubles match, " +
+                                "set number is not the current one, or the serve change window is closed"
                             ContentType.Text.Plain()
                         }
                         HttpStatusCode.Unauthorized {
