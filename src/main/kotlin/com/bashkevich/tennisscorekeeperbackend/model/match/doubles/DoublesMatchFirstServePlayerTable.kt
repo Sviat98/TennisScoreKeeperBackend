@@ -13,6 +13,13 @@ object DoublesMatchFirstServePlayerTable : CompositeIdTable("doubles_match_first
     val serveOrder = integer("serve_order")
     val player = reference("player_id", PlayerTable)
 
+    // граница redo в doubles_match_log: redo доступен до этого номера включительно; это
+    // строка ПЕРЕД первой проекцией игрока пары в сете. Следующая за ней строка (limit + 1)
+    // сверяется isRedoBlockedByServeChange с очередью, ее тип задает механику сверки
+    // (GAME - партнер первого подающего, розыгрыш - сам первый подающий). Чистится
+    // при усечении хвоста
+    val pointNumberRedoLimit = integer("point_number_redo_limit").nullable()
+
     init {
         addIdColumn(match)
         addIdColumn(participant)

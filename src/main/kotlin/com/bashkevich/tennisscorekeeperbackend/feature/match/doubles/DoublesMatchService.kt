@@ -517,6 +517,14 @@ class DoublesMatchService(
             doublesMatchRepository.updatePointShift(matchId = matchId, newPointShift = 0)
 
             doublesMatchLogRepository.removeEvents(matchId = matchId, pointNumber = lastPointNumber)
+
+            // обнуляем висячие redo-лимиты: граница стоит перед строкой первой подачи пары,
+            // поэтому limit >= lastPointNumber означает удаленную (или заменяемую новой
+            // строкой) строку первой подачи
+            doublesMatchRepository.clearServeRecordLimitsFrom(
+                matchId = matchId,
+                fromPointNumber = lastPointNumber
+            )
         }
 
         val setsToWin = matchEntity.setsToWin
@@ -775,6 +783,40 @@ class DoublesMatchService(
 
         doublesMatchLogRepository.insertMatchLogEvent(doublesMatchLogEvent)
 
+        // фиксируем redo-лимит пары: redo доступен до лимита включительно, поэтому лимит -
+        // строка ПЕРЕД первой проекцией игрока пары. Первой проекцией бывают:
+        // - розыгрыш: несет подающего текущего гейма своей пары;
+        // - в сете без розыгрышей (внешний ввод) - GAME-строка с 3-м или 4-м игроком
+        //   ротации (вторые подающие пар). GAME первого гейма несет 2-го игрока (первую
+        //   подачу второй пары) и мутируется при смене подачи на границе - пропускаем
+        val redoLimitParticipant = participantOfPlayer(matchEntity, currentServePlayerToInsert)
+
+        if (redoLimitParticipant != null) {
+            val redoLimitRecord = serveRecords.firstOrNull { it.participantId == redoLimitParticipant.id.value }
+
+            val isRally = scoreType == ScoreType.POINT || scoreType == ScoreType.TIEBREAK_POINT
+
+            val serveRotationIndex =
+                currentServePlayerToInsert?.let { playerServingOrder.indexOf(it) } ?: -1
+
+            // розыгрышей в сете еще не было: перед строкой ничего нет, либо SET-строка
+            // (начало нового сета), либо предыдущий переключенный гейм
+            val isGameSwitchWithoutRallies = scoreType == ScoreType.GAME &&
+                    (lastPoint == null || lastPoint.scoreType in listOf(ScoreType.GAME, ScoreType.SET)) &&
+                    serveRotationIndex >= 2
+
+            if (redoLimitRecord != null && redoLimitRecord.pointNumberRedoLimit == null &&
+                (isRally || isGameSwitchWithoutRallies)
+            ) {
+                doublesMatchRepository.setServeRecordLimit(
+                    matchId = matchId,
+                    participantId = redoLimitParticipant.id.value,
+                    setNumber = setNumber,
+                    pointNumber = pointNumber - 1,
+                )
+            }
+        }
+
         val matchDto = buildMatchById(matchId = matchId, lastPointNumber = pointNumber)
 
         MatchObserver.notifyChange(matchDto)
@@ -854,26 +896,51 @@ class DoublesMatchService(
         else -> null
     }
 
-    // redo запрещен, если следующая строка хвоста несет подающего, не совпадающего
-    // с текущей очередью подающих (подача была изменена после того, как эти розыгрыши сыграли)
+    // redo разрешен до point_number_redo_limit включительно - границы, стоящей перед
+    // первой проекцией игрока пары в сете. За границей redo возможен, только если подача
+    // в паре не менялась после того, как строки хвоста сыграли: сверяем запись очереди
+    // (сета следующей строки хвоста) со строкой первой подачи пары (limit + 1). Она
+    // немутируема (окна смены подачи заканчиваются до нее), а ее тип задает механику
+    // сверки: GAME-строка несет партнера первого подающего пары - смена это совпадение
+    // с очередью; розыгрыш (POINT/TIEBREAK_POINT, включая супер-тай-брейк) несет самого
+    // первого подающего - несовпадение
     private suspend fun isRedoBlockedByServeChange(
         matchEntity: DoublesMatchEntity,
         lastPointNumber: Int,
     ): Boolean {
-        val nextRow = doublesMatchLogRepository.getLogRow(
-            matchId = matchEntity.id.value,
-            pointNumber = lastPointNumber + 1,
-        )
+        val matchId = matchEntity.id.value
 
-        val nextRowServingPlayer = nextRow?.currentServeInPair ?: return false
+        // строка, которую восстановил бы следующий шаг redo
+        val nextRow = doublesMatchLogRepository.getLogRow(matchId, lastPointNumber + 1) ?: return false
 
-        val nextRowParticipant = participantOfPlayer(matchEntity, nextRowServingPlayer) ?: return false
+        // пара, чью подачу несет эта строка, и ее запись очереди
+        val doublesServeRecord = nextRow.currentServeInPair
+            ?.let { participantOfPlayer(matchEntity, it) }
+            ?.let { participant ->
+                doublesMatchRepository.getServeRecords(matchId, nextRow.setNumber)
+                    .firstOrNull { it.participantId == participant.id.value }
+            }
 
-        val setServePlayers = doublesMatchRepository.getFirstServePlayers(matchEntity.id.value, nextRow.setNumber)
+        // записи или лимита нет - сверять нечего; до лимита включительно redo разрешен
+        val redoLimit = doublesServeRecord?.pointNumberRedoLimit
 
-        val configuredPlayer = setServePlayers[nextRowParticipant.id.value]
+        if (doublesServeRecord == null || redoLimit == null || lastPointNumber + 1 <= redoLimit) return false
 
-        return configuredPlayer != null && configuredPlayer != nextRowServingPlayer
+        // строка первой подачи пары - сразу за лимитом; пустая проекция - сверять нечего
+        return doublesMatchLogRepository.getLogRow(matchId, redoLimit + 1)?.let { firstServeRow ->
+            val firstServeRowServingPlayer = firstServeRow.currentServeInPair
+
+            when {
+                firstServeRowServingPlayer == null -> false
+
+                // GAME-строка несет подающего следующего гейма - партнера первого подающего
+                // пары, поэтому смена очереди - это совпадение
+                firstServeRow.scoreType == ScoreType.GAME -> doublesServeRecord.playerId == firstServeRowServingPlayer
+
+                // розыгрыш несет первого подающего пары - смена это несовпадение
+                else -> doublesServeRecord.playerId != firstServeRowServingPlayer
+            }
+        } ?: false
     }
 
     private fun findSetTemplate(matchEntity: DoublesMatchEntity, setNumber: Int, setsToWin: Int): SetTemplateEntity {
@@ -962,6 +1029,12 @@ class DoublesMatchService(
             doublesMatchRepository.updatePointShift(matchId = matchId, newPointShift = 0)
 
             doublesMatchLogRepository.removeEvents(matchId = matchId, pointNumber = lastPointNumber)
+
+            // RETIREMENT-строка redo-лимитом не становится; висячие лимиты обнуляем
+            doublesMatchRepository.clearServeRecordLimitsFrom(
+                matchId = matchId,
+                fromPointNumber = lastPointNumber
+            )
         }
 
         var winnerParticipantId: Int

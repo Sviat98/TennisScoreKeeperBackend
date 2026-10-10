@@ -6,4 +6,5 @@ data class DoublesServeRecord(
     val participantId: Int,
     val serveOrder: Int,
     val playerId: Int,
+    val pointNumberRedoLimit: Int? = null,
 )

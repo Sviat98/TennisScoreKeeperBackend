@@ -9,6 +9,7 @@ import com.bashkevich.tennisscorekeeperbackend.model.match.doubles.DoublesMatchT
 import com.bashkevich.tennisscorekeeperbackend.model.match.doubles.DoublesServeRecord
 import org.jetbrains.exposed.v1.core.and
 import org.jetbrains.exposed.v1.core.eq
+import org.jetbrains.exposed.v1.core.greaterEq
 import org.jetbrains.exposed.v1.core.neq
 import org.jetbrains.exposed.v1.jdbc.insertAndGetId
 import org.jetbrains.exposed.v1.jdbc.selectAll
@@ -93,8 +94,38 @@ class DoublesMatchRepository {
                     participantId = row[DoublesMatchFirstServePlayerTable.participant].value,
                     serveOrder = row[DoublesMatchFirstServePlayerTable.serveOrder],
                     playerId = row[DoublesMatchFirstServePlayerTable.player].value,
+                    pointNumberRedoLimit = row[DoublesMatchFirstServePlayerTable.pointNumberRedoLimit],
                 )
             }
+
+    // запоминаем строку redo-лимита очереди подающих пары в сете; заполнение только при
+    // null-значении проверяется вызывающим кодом (updateScore)
+    suspend fun setServeRecordLimit(
+        matchId: Int,
+        participantId: Int,
+        setNumber: Int,
+        pointNumber: Int,
+    ) {
+        DoublesMatchFirstServePlayerTable.update({
+            (DoublesMatchFirstServePlayerTable.match eq matchId) and
+                    (DoublesMatchFirstServePlayerTable.participant eq participantId) and
+                    (DoublesMatchFirstServePlayerTable.set eq setNumber)
+        }) {
+            it[pointNumberRedoLimit] = pointNumber
+        }
+    }
+
+    // обнуляем висячие redo-лимиты: граница стоит перед строкой первой подачи пары,
+    // поэтому limit >= fromPointNumber означает, что эта строка удалена усечением
+    // redo-хвоста (или заменена новой строкой на ее месте)
+    suspend fun clearServeRecordLimitsFrom(matchId: Int, fromPointNumber: Int) {
+        DoublesMatchFirstServePlayerTable.update({
+            (DoublesMatchFirstServePlayerTable.match eq matchId) and
+                    (DoublesMatchFirstServePlayerTable.pointNumberRedoLimit greaterEq fromPointNumber)
+        }) {
+            it[pointNumberRedoLimit] = null
+        }
+    }
 
     suspend fun updatePointShift(matchId: Int, newPointShift: Int) =
         DoublesMatchTable.update({ DoublesMatchTable.id eq matchId }) {
