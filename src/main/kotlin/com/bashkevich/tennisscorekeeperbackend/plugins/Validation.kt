@@ -65,6 +65,7 @@ fun Application.configureValidation() {
 
             when {
                 servingPlayerId == 0 -> ValidationResult.Invalid("Serving player id in pair is wrong!")
+                body.setNumber < 1 -> ValidationResult.Invalid("Set number is wrong!")
                 else -> ValidationResult.Valid
             }
         }
