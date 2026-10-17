@@ -16,6 +16,7 @@ import com.bashkevich.tennisscorekeeperbackend.model.set_template.SetTemplateTab
 import com.bashkevich.tennisscorekeeperbackend.model.set_template.TiebreakMode
 import com.bashkevich.tennisscorekeeperbackend.model.theme.ThemeTable
 import com.bashkevich.tennisscorekeeperbackend.model.player.PlayerTable
+import com.bashkevich.tennisscorekeeperbackend.model.tournament.TournamentApiRelationTable
 import com.bashkevich.tennisscorekeeperbackend.model.tournament.TournamentTable
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -72,7 +73,7 @@ fun configureDatabase() {
         SchemaUtils.createSequence(matchSequence, participantSequence)
 
         SchemaUtils.create(
-            CounterTable, PlayerTable, UserTable, UserAuthTable, RefreshTokenTable, SetTemplateTable, ThemeTable, TournamentTable,
+            CounterTable, PlayerTable, UserTable, UserAuthTable, RefreshTokenTable, SetTemplateTable, ThemeTable, TournamentTable, TournamentApiRelationTable,
             SinglesParticipantTable, SinglesMatchTable, SinglesMatchLogTable,
             DoublesParticipantTable, DoublesMatchTable, DoublesMatchFirstServePlayerTable, DoublesMatchLogTable
         )
