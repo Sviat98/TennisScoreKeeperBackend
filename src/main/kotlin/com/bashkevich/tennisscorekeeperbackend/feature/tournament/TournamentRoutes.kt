@@ -2,6 +2,7 @@ package com.bashkevich.tennisscorekeeperbackend.feature.tournament
 
 import com.bashkevich.tennisscorekeeperbackend.model.auth.JWT_AUTH
 import com.bashkevich.tennisscorekeeperbackend.model.message.ResponseMessageDto
+import com.bashkevich.tennisscorekeeperbackend.model.tournament.TournamentApiDto
 import com.bashkevich.tennisscorekeeperbackend.model.tournament.TournamentDto
 import com.bashkevich.tennisscorekeeperbackend.model.tournament.TournamentRequestDto
 import com.bashkevich.tennisscorekeeperbackend.model.tournament.TournamentStatusBody
@@ -43,6 +44,23 @@ fun Route.tournamentRoutes() {
                 }
             }
         }
+        /**
+         * Tag: Tournament
+         * Get active tournaments (registration open) from the external Liga Tennisa API,
+         * not yet added to the system, sorted by start date ascending.
+         */
+        get("/active") {
+            val activeTournaments = tournamentService.getActiveTournaments()
+
+            call.respond(activeTournaments)
+        }.describe {
+            responses {
+                HttpStatusCode.OK {
+                    description = "Successfully retrieved active tournaments from external API"
+                    schema = jsonSchema<List<TournamentApiDto>>()
+                }
+            }
+        }
         authenticate(JWT_AUTH) {
             /**
              * Tag: Tournament
@@ -70,6 +88,10 @@ fun Route.tournamentRoutes() {
                     }
                     HttpStatusCode.Unauthorized {
                         description = "Missing or invalid JWT token"
+                        ContentType.Text.Plain()
+                    }
+                    HttpStatusCode.Conflict {
+                        description = "Tournament with this api_id has already been added"
                         ContentType.Text.Plain()
                     }
                 }

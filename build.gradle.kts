@@ -46,6 +46,10 @@ dependencies {
 
     implementation(libs.ktor.serialization.kotlinx.json)
 
+    implementation(libs.ktor.client.core)
+    implementation(libs.ktor.client.cio)
+    implementation(libs.ktor.client.content.negotiation)
+
     implementation(libs.exposed.core)
     implementation(libs.exposed.jdbc)
     //implementation(libs.exposed.r2dbc)

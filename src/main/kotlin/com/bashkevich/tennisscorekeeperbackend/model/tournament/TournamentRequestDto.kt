@@ -5,6 +5,8 @@ import kotlinx.serialization.Serializable
 
 @Serializable
 data class TournamentRequestDto(
+    @SerialName("api_id")
+    val apiId: String,
     @SerialName("name")
     val name: String,
     @SerialName("type")

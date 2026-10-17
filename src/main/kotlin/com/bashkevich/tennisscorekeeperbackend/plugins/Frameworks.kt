@@ -2,6 +2,7 @@ package com.bashkevich.tennisscorekeeperbackend.plugins
 
 import com.bashkevich.tennisscorekeeperbackend.di.authModule
 import com.bashkevich.tennisscorekeeperbackend.di.counterModule
+import com.bashkevich.tennisscorekeeperbackend.di.ligaTennisaModule
 import com.bashkevich.tennisscorekeeperbackend.di.matchModule
 import com.bashkevich.tennisscorekeeperbackend.di.participantModule
 import com.bashkevich.tennisscorekeeperbackend.di.playerModule
@@ -15,6 +16,6 @@ import org.koin.logger.slf4jLogger
 fun Application.configureDependencyInjection() {
     install(Koin) {
         slf4jLogger()
-        modules(authModule,counterModule, playerModule, matchModule, setTemplateModule, themeModule, tournamentModule, participantModule)
+        modules(authModule,counterModule, playerModule, matchModule, setTemplateModule, themeModule, tournamentModule, participantModule, ligaTennisaModule)
     }
 }

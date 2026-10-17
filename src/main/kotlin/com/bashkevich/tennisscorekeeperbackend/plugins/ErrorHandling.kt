@@ -35,6 +35,9 @@ fun Application.configureStatusPages(){
         exception<NotFoundException> { call, cause ->
             call.respondWithMessageBody(statusCode = HttpStatusCode.NotFound, message = cause.message ?: "")
         }
+        exception<ConflictException> { call, cause ->
+            call.respondWithMessageBody(statusCode = HttpStatusCode.Conflict, message = cause.message ?: "")
+        }
         exception<EntityNotFoundException>{ call, cause ->
             val entityId = cause.id
             val entityClass = cause.entity.javaClass
@@ -58,6 +61,12 @@ fun Application.configureStatusPages(){
 class UnauthorizedException(message: String = "Token is not valid or has expired!") : Exception(message)
 
 class InvalidBodyException(message: String = "Invalid body format in request!") : Exception(message)
+
+/**
+ * Конфликт с уже существующими данными (например, турнир с таким api_id уже добавлен).
+ * Мапится на HTTP 409.
+ */
+class ConflictException(message: String) : Exception(message)
 
 /**
  * Переданная сущность неверна или не соответствует ожидаемому типу
