@@ -1,10 +1,9 @@
-package com.bashkevich.tennisscorekeeperbackend.feature.tournament
+package com.bashkevich.tennisscorekeeperbackend.feature.tournament.api
 
-import com.bashkevich.tennisscorekeeperbackend.model.tournament.TournamentApiRelationTable
+import com.bashkevich.tennisscorekeeperbackend.model.tournament.api.TournamentApiRelationTable
 import org.jetbrains.exposed.v1.core.eq
 import org.jetbrains.exposed.v1.jdbc.insert
 import org.jetbrains.exposed.v1.jdbc.select
-import org.jetbrains.exposed.v1.jdbc.selectAll
 
 class TournamentApiRelationRepository {
 

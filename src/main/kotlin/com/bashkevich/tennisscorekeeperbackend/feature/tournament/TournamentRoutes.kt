@@ -2,7 +2,7 @@ package com.bashkevich.tennisscorekeeperbackend.feature.tournament
 
 import com.bashkevich.tennisscorekeeperbackend.model.auth.JWT_AUTH
 import com.bashkevich.tennisscorekeeperbackend.model.message.ResponseMessageDto
-import com.bashkevich.tennisscorekeeperbackend.model.tournament.TournamentApiDto
+import com.bashkevich.tennisscorekeeperbackend.model.tournament.api.TournamentApiDto
 import com.bashkevich.tennisscorekeeperbackend.model.tournament.TournamentDto
 import com.bashkevich.tennisscorekeeperbackend.model.tournament.TournamentRequestDto
 import com.bashkevich.tennisscorekeeperbackend.model.tournament.TournamentStatusBody

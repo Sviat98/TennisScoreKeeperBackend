@@ -1,5 +1,6 @@
-package com.bashkevich.tennisscorekeeperbackend.model.tournament
+package com.bashkevich.tennisscorekeeperbackend.model.tournament.api
 
+import com.bashkevich.tennisscorekeeperbackend.model.tournament.TournamentType
 import kotlinx.datetime.LocalDate
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
@@ -11,7 +12,10 @@ const val LT_TOURNAMENT_TYPE_SINGLES = 200
 const val LT_TOURNAMENT_TYPE_DOUBLES = 201
 
 /** Код status во внешнем API Лиги тенниса: турнир ещё не начался, запись открыта. */
-const val LT_TOURNAMENT_STATUS_ACTIVE = 1
+const val LT_TOURNAMENT_STATUS_NOT_STARTED = 1
+
+/** Код status во внешнем API Лиги тенниса: турнир идёт. */
+const val LT_TOURNAMENT_STATUS_IN_PROGRESS = 2
 
 /**
  * Запись турнира из внешнего API Лиги тенниса (ligatennisa.com/api/tournaments).
@@ -33,17 +37,3 @@ data class LigaTennisaTournamentDto(
     val status: Int? = null,
 )
 
-/**
- * Турнир внешнего API в ответе GET /tournaments/active.
- */
-@Serializable
-data class TournamentApiDto(
-    @SerialName("api_id")
-    val apiId: String,
-    @SerialName("name")
-    val name: String,
-    @SerialName("start_date")
-    val startDate: LocalDate,
-    @SerialName("type")
-    val type: TournamentType,
-)
