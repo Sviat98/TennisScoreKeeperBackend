@@ -1,6 +1,6 @@
-package com.bashkevich.tennisscorekeeperbackend.feature.tournament
+package com.bashkevich.tennisscorekeeperbackend.feature.tournament.api
 
-import com.bashkevich.tennisscorekeeperbackend.model.tournament.LigaTennisaTournamentDto
+import com.bashkevich.tennisscorekeeperbackend.model.tournament.api.LigaTennisaTournamentDto
 import io.ktor.client.HttpClient
 import io.ktor.client.call.body
 import io.ktor.client.request.get

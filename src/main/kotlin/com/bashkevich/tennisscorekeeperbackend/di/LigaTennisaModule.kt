@@ -1,12 +1,11 @@
 package com.bashkevich.tennisscorekeeperbackend.di
 
-import com.bashkevich.tennisscorekeeperbackend.feature.tournament.LigaTennisaApiClient
+import com.bashkevich.tennisscorekeeperbackend.feature.tournament.api.LigaTennisaApiClient
 import io.ktor.client.HttpClient
 import io.ktor.client.engine.cio.CIO
 import io.ktor.client.plugins.DefaultRequest
 import io.ktor.client.plugins.HttpTimeout
 import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
-import io.ktor.client.plugins.expectSuccess
 import io.ktor.serialization.kotlinx.json.json
 import kotlinx.serialization.json.Json
 import org.koin.core.module.dsl.singleOf

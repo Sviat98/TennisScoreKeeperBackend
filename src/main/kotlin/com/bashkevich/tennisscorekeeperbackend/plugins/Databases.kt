@@ -11,12 +11,11 @@ import com.bashkevich.tennisscorekeeperbackend.model.participant.singles.Singles
 import com.bashkevich.tennisscorekeeperbackend.model.auth.UserAuthTable
 import com.bashkevich.tennisscorekeeperbackend.model.auth.RefreshTokenTable
 import com.bashkevich.tennisscorekeeperbackend.model.auth.UserTable
-import com.bashkevich.tennisscorekeeperbackend.model.set_template.SetTemplateEntity
 import com.bashkevich.tennisscorekeeperbackend.model.set_template.SetTemplateTable
-import com.bashkevich.tennisscorekeeperbackend.model.set_template.TiebreakMode
 import com.bashkevich.tennisscorekeeperbackend.model.theme.ThemeTable
 import com.bashkevich.tennisscorekeeperbackend.model.player.PlayerTable
-import com.bashkevich.tennisscorekeeperbackend.model.tournament.TournamentApiRelationTable
+import com.bashkevich.tennisscorekeeperbackend.model.tournament.api.TournamentApiRelationTable
+import com.bashkevich.tennisscorekeeperbackend.model.tournament.api.TournamentApiTable
 import com.bashkevich.tennisscorekeeperbackend.model.tournament.TournamentTable
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -26,7 +25,6 @@ import org.jetbrains.exposed.v1.core.Sequence
 import org.jetbrains.exposed.v1.core.StdOutSqlLogger
 import org.jetbrains.exposed.v1.jdbc.Database
 import org.jetbrains.exposed.v1.jdbc.SchemaUtils
-import org.jetbrains.exposed.v1.jdbc.transactions.experimental.newSuspendedTransaction
 import org.jetbrains.exposed.v1.jdbc.transactions.suspendTransaction
 import org.jetbrains.exposed.v1.jdbc.transactions.transaction
 
@@ -73,7 +71,7 @@ fun configureDatabase() {
         SchemaUtils.createSequence(matchSequence, participantSequence)
 
         SchemaUtils.create(
-            CounterTable, PlayerTable, UserTable, UserAuthTable, RefreshTokenTable, SetTemplateTable, ThemeTable, TournamentTable, TournamentApiRelationTable,
+            CounterTable, PlayerTable, UserTable, UserAuthTable, RefreshTokenTable, SetTemplateTable, ThemeTable, TournamentTable, TournamentApiRelationTable, TournamentApiTable,
             SinglesParticipantTable, SinglesMatchTable, SinglesMatchLogTable,
             DoublesParticipantTable, DoublesMatchTable, DoublesMatchFirstServePlayerTable, DoublesMatchLogTable
         )

@@ -4,12 +4,17 @@ import com.bashkevich.tennisscorekeeperbackend.feature.match.doubles.DoublesMatc
 import com.bashkevich.tennisscorekeeperbackend.feature.match.singles.SinglesMatchRepository
 import com.bashkevich.tennisscorekeeperbackend.feature.participant.doubles.DoublesParticipantRepository
 import com.bashkevich.tennisscorekeeperbackend.feature.participant.singles.SinglesParticipantRepository
+import com.bashkevich.tennisscorekeeperbackend.feature.tournament.api.LigaTennisaApiClient
+import com.bashkevich.tennisscorekeeperbackend.feature.tournament.api.TournamentApiRecord
+import com.bashkevich.tennisscorekeeperbackend.feature.tournament.api.TournamentApiRelationRepository
+import com.bashkevich.tennisscorekeeperbackend.feature.tournament.api.TournamentApiRepository
 import com.bashkevich.tennisscorekeeperbackend.model.match.MatchStatus
-import com.bashkevich.tennisscorekeeperbackend.model.tournament.LT_TOURNAMENT_STATUS_ACTIVE
-import com.bashkevich.tennisscorekeeperbackend.model.tournament.LT_TOURNAMENT_TYPE_DOUBLES
-import com.bashkevich.tennisscorekeeperbackend.model.tournament.LT_TOURNAMENT_TYPE_SINGLES
-import com.bashkevich.tennisscorekeeperbackend.model.tournament.LigaTennisaTournamentDto
-import com.bashkevich.tennisscorekeeperbackend.model.tournament.TournamentApiDto
+import com.bashkevich.tennisscorekeeperbackend.model.tournament.api.LT_TOURNAMENT_STATUS_IN_PROGRESS
+import com.bashkevich.tennisscorekeeperbackend.model.tournament.api.LT_TOURNAMENT_STATUS_NOT_STARTED
+import com.bashkevich.tennisscorekeeperbackend.model.tournament.api.LT_TOURNAMENT_TYPE_DOUBLES
+import com.bashkevich.tennisscorekeeperbackend.model.tournament.api.LT_TOURNAMENT_TYPE_SINGLES
+import com.bashkevich.tennisscorekeeperbackend.model.tournament.api.LigaTennisaTournamentDto
+import com.bashkevich.tennisscorekeeperbackend.model.tournament.api.TournamentApiDto
 import com.bashkevich.tennisscorekeeperbackend.model.tournament.TournamentDto
 import com.bashkevich.tennisscorekeeperbackend.model.tournament.TournamentEntity
 import com.bashkevich.tennisscorekeeperbackend.model.tournament.TournamentRequestDto
@@ -27,6 +32,7 @@ import kotlin.time.Instant
 
 class TournamentService(
     private val tournamentRepository: TournamentRepository,
+    private val tournamentApiRepository: TournamentApiRepository,
     private val tournamentApiRelationRepository: TournamentApiRelationRepository,
     private val ligaTennisaApiClient: LigaTennisaApiClient,
     private val singlesMatchRepository: SinglesMatchRepository,
@@ -41,31 +47,43 @@ class TournamentService(
     }
 
     /**
-     * Активные турниры внешнего API Лиги тенниса (status = 1 — запись открыта),
+     * Активные турниры (NOT_STARTED — запись открыта) из кэш-таблицы внешнего API,
      * ещё не добавленные в систему, отсортированные по дате начала по возрастанию.
-     * Турниры без даты/типа из поддерживаемого набора отфильтровываются.
+     * Кэш перечитывается планировщиком раз в час, похода в сеть в момент запроса нет.
      */
     suspend fun getActiveTournaments(): List<TournamentApiDto> {
+        return dbQuery {
+            tournamentApiRepository.getActiveTournaments().map { it.toApiDto() }
+        }
+    }
+
+    /**
+     * Полное обновление кэша турниров внешнего API: старый список удаляется, новый
+     * вставляется — в одной транзакции, поэтому параллельные запросы видят только
+     * закоммиченное состояние (без промежуточного пустого кэша). Падение внешнего API
+     * откатывает транзакцию — в кэше остаётся последний успешный список.
+     */
+    suspend fun refreshApiTournaments() {
         val apiTournaments = ligaTennisaApiClient.getTournaments()
 
-        val addedApiIds = dbQuery {
-            tournamentApiRelationRepository.getApiIds()
-        }
+        val records = apiTournaments.mapNotNull { it.toApiRecordOrNull() }
 
-        return apiTournaments
-            .filter { it.status == LT_TOURNAMENT_STATUS_ACTIVE }
-            .mapNotNull { it.toApiDtoOrNull() }
-            .filter { it.apiId !in addedApiIds }
-            .sortedBy { it.startDate }
+        dbQuery {
+            tournamentApiRepository.replaceAll(records)
+        }
     }
 
     suspend fun addTournament(tournamentRequestDto: TournamentRequestDto): TournamentDto {
         return dbQuery {
+            val cachedApiTournament = tournamentApiRepository.getByApiId(tournamentRequestDto.apiId)
+
             validateRequestConditions {
                 when {
                     tournamentRequestDto.setsToWin > 1 && tournamentRequestDto.regularSetId == null -> "Regular set id is required when sets to win is more than 1"
                     tournamentRequestDto.apiId.isBlank() -> "Api id must not be blank"
                     tournamentRequestDto.apiId.length > 50 -> "Api id must not exceed 50 characters"
+                    cachedApiTournament == null -> "Api id ${tournamentRequestDto.apiId} is not found in tournament api cache"
+                    cachedApiTournament.status != TournamentStatus.NOT_STARTED -> "Tournament ${tournamentRequestDto.apiId} is not in NOT_STARTED status in tournament api cache"
                     else -> ""
                 }
             }
@@ -153,25 +171,39 @@ class TournamentService(
         )
     }
 
-    /** null — турнир пропускается: тип вне поддерживаемого набора или дату начала не удалось разобрать. */
-    private fun LigaTennisaTournamentDto.toApiDtoOrNull(): TournamentApiDto? {
+    /** null — турнир пропускается: статус/тип вне поддерживаемого набора или дату начала не удалось разобрать. */
+    private fun LigaTennisaTournamentDto.toApiRecordOrNull(): TournamentApiRecord? {
         val type = when (tournamentType) {
             LT_TOURNAMENT_TYPE_SINGLES -> TournamentType.SINGLES
             LT_TOURNAMENT_TYPE_DOUBLES -> TournamentType.DOUBLES
             else -> return null
         }
 
+        val status = when (status) {
+            LT_TOURNAMENT_STATUS_NOT_STARTED -> TournamentStatus.NOT_STARTED
+            LT_TOURNAMENT_STATUS_IN_PROGRESS -> TournamentStatus.IN_PROGRESS
+            else -> return null
+        }
+
         val startDateRaw = startDate ?: return null
-        val startLocalDate = runCatching {
+        val dateStart = runCatching {
             Instant.parse(startDateRaw).toLocalDateTime(TimeZone.UTC).date
         }.getOrNull() ?: return null
 
-        return TournamentApiDto(
+        return TournamentApiRecord(
             apiId = id.toString(),
             name = name,
-            startDate = startLocalDate,
+            status = status,
             type = type,
+            dateStart = dateStart,
         )
     }
+
+    private fun TournamentApiRecord.toApiDto(): TournamentApiDto = TournamentApiDto(
+        apiId = apiId,
+        name = name,
+        startDate = dateStart,
+        type = type,
+    )
 
 }
