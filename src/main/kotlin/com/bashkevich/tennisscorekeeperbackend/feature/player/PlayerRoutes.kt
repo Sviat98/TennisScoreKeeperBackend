@@ -1,10 +1,10 @@
 package com.bashkevich.tennisscorekeeperbackend.feature.player
 
 import com.bashkevich.tennisscorekeeperbackend.model.auth.JWT_AUTH
+import com.bashkevich.tennisscorekeeperbackend.model.message.ResponseMessageDto
 import com.bashkevich.tennisscorekeeperbackend.model.player.PlayerBodyDto
 import com.bashkevich.tennisscorekeeperbackend.model.player.PlayerDto
 import com.bashkevich.tennisscorekeeperbackend.plugins.receiveBodyCatching
-import io.ktor.http.ContentType
 import io.ktor.http.HttpStatusCode
 import io.ktor.http.headers
 import io.ktor.openapi.Headers
@@ -49,11 +49,11 @@ fun Route.playerRoutes() {
                     }
                     HttpStatusCode.BadRequest {
                         description = "Invalid request body or validation error"
-                        ContentType.Text.Plain()
+                        schema = jsonSchema<ResponseMessageDto>()
                     }
                     HttpStatusCode.Unauthorized {
                         description = "Missing or invalid JWT token"
-                        ContentType.Text.Plain()
+                        schema = jsonSchema<ResponseMessageDto>()
                     }
                 }
             }

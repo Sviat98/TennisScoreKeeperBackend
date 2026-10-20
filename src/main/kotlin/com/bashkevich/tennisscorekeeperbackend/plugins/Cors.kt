@@ -10,6 +10,10 @@ fun Application.configureCors(){
     install(CORS){
         allowHost("tennisscorekeeper.onrender.com")
         allowHost("tennisscorekeeper.tech")
+        // Собственные публичные адреса API: страницы Swagger на проде шлют такой Origin,
+        // но same-origin за TLS-прокси не распознаётся (сервер видит схему http, а не https)
+        allowHost("api.tennisscorekeeper.tech")
+        allowHost("tennisscorekeeperbackend.onrender.com")
         allowHost("127.0.0.1:8080")
         allowHost("127.0.0.1:8081")
         allowHeader(HttpHeaders.Authorization)

@@ -8,7 +8,6 @@ import com.bashkevich.tennisscorekeeperbackend.model.tournament.TournamentReques
 import com.bashkevich.tennisscorekeeperbackend.model.tournament.TournamentStatusBody
 import com.bashkevich.tennisscorekeeperbackend.plugins.receiveBodyCatching
 import com.bashkevich.tennisscorekeeperbackend.plugins.respondWithMessageBody
-import io.ktor.http.ContentType
 import io.ktor.http.HttpStatusCode
 import io.ktor.openapi.jsonSchema
 import io.ktor.server.auth.authenticate
@@ -84,11 +83,11 @@ fun Route.tournamentRoutes() {
                     }
                     HttpStatusCode.BadRequest {
                         description = "Invalid request body or validation error"
-                        ContentType.Text.Plain()
+                        schema = jsonSchema<ResponseMessageDto>()
                     }
                     HttpStatusCode.Unauthorized {
                         description = "Missing or invalid JWT token"
-                        ContentType.Text.Plain()
+                        schema = jsonSchema<ResponseMessageDto>()
                     }
                     HttpStatusCode.Conflict {
                         description = "Tournament with this api_id has already been added"
@@ -116,11 +115,11 @@ fun Route.tournamentRoutes() {
                     }
                     HttpStatusCode.BadRequest {
                         description = "Invalid tournament ID"
-                        ContentType.Text.Plain()
+                        schema = jsonSchema<ResponseMessageDto>()
                     }
                     HttpStatusCode.NotFound {
                         description = "Tournament not found"
-                        ContentType.Text.Plain()
+                        schema = jsonSchema<ResponseMessageDto>()
                     }
                 }
             }
@@ -149,15 +148,15 @@ fun Route.tournamentRoutes() {
                         }
                         HttpStatusCode.BadRequest {
                             description = "Invalid request body or tournament ID"
-                            ContentType.Text.Plain()
+                            schema = jsonSchema<ResponseMessageDto>()
                         }
                         HttpStatusCode.Unauthorized {
                             description = "Missing or invalid JWT token"
-                            ContentType.Text.Plain()
+                            schema = jsonSchema<ResponseMessageDto>()
                         }
                         HttpStatusCode.NotFound {
                             description = "Tournament not found"
-                            ContentType.Text.Plain()
+                            schema = jsonSchema<ResponseMessageDto>()
                         }
                     }
                 }

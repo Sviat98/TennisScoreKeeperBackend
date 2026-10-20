@@ -1,9 +1,9 @@
 package com.bashkevich.tennisscorekeeperbackend.feature.set_template
 
+import com.bashkevich.tennisscorekeeperbackend.model.message.ResponseMessageDto
 import com.bashkevich.tennisscorekeeperbackend.model.set_template.SetTemplateDto
 import com.bashkevich.tennisscorekeeperbackend.model.set_template.SetTemplateTypeFilter
 import com.bashkevich.tennisscorekeeperbackend.plugins.parseEnumSafe
-import io.ktor.http.ContentType
 import io.ktor.http.HttpStatusCode
 import io.ktor.openapi.jsonSchema
 import io.ktor.server.response.respond
@@ -40,7 +40,7 @@ fun Route.setTemplateRoutes() {
                 }
                 HttpStatusCode.BadRequest {
                     description = "Invalid type filter value. Allowed: ALL, REGULAR, DECIDER"
-                    ContentType.Text.Plain()
+                    schema = jsonSchema<ResponseMessageDto>()
                 }
             }
         }
@@ -64,11 +64,11 @@ fun Route.setTemplateRoutes() {
                     }
                     HttpStatusCode.BadRequest {
                         description = "Invalid set template ID"
-                        ContentType.Text.Plain()
+                        schema = jsonSchema<ResponseMessageDto>()
                     }
                     HttpStatusCode.NotFound {
                         description = "Set template not found"
-                        ContentType.Text.Plain()
+                        schema = jsonSchema<ResponseMessageDto>()
                     }
                 }
             }
