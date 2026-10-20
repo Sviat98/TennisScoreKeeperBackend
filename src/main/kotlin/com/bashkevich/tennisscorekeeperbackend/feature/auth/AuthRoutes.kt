@@ -5,7 +5,6 @@ import com.bashkevich.tennisscorekeeperbackend.model.auth.LoginResponse
 import com.bashkevich.tennisscorekeeperbackend.model.auth.RefreshTokensResponse
 import com.bashkevich.tennisscorekeeperbackend.model.message.ResponseMessageDto
 import com.bashkevich.tennisscorekeeperbackend.plugins.respondWithMessageBody
-import io.ktor.http.ContentType
 import io.ktor.http.HttpStatusCode
 import io.ktor.openapi.jsonSchema
 import io.ktor.server.request.receive
@@ -44,11 +43,11 @@ fun Route.authRoutes() {
             }
             HttpStatusCode.BadRequest {
                 description = "Invalid request body format"
-                ContentType.Text.Plain()
+                schema = jsonSchema<ResponseMessageDto>()
             }
             HttpStatusCode.Unauthorized {
                 description = "Invalid login or password"
-                ContentType.Text.Plain()
+                schema = jsonSchema<ResponseMessageDto>()
             }
         }
     }
@@ -73,7 +72,7 @@ fun Route.authRoutes() {
             }
             HttpStatusCode.BadRequest {
                 description = "Refresh token not provided"
-                ContentType.Text.Plain()
+                schema = jsonSchema<ResponseMessageDto>()
             }
         }
     }
@@ -98,11 +97,11 @@ fun Route.authRoutes() {
             }
             HttpStatusCode.BadRequest {
                 description = "Refresh token not provided"
-                ContentType.Text.Plain()
+                schema = jsonSchema<ResponseMessageDto>()
             }
             HttpStatusCode.Unauthorized {
                 description = "Invalid or expired refresh token"
-                ContentType.Text.Plain()
+                schema = jsonSchema<ResponseMessageDto>()
             }
         }
     }
@@ -127,11 +126,11 @@ fun Route.authRoutes() {
             }
             HttpStatusCode.BadRequest {
                 description = "Refresh token not provided"
-                ContentType.Text.Plain()
+                schema = jsonSchema<ResponseMessageDto>()
             }
             HttpStatusCode.Unauthorized {
                 description = "Invalid or expired refresh token"
-                ContentType.Text.Plain()
+                schema = jsonSchema<ResponseMessageDto>()
             }
         }
     }
