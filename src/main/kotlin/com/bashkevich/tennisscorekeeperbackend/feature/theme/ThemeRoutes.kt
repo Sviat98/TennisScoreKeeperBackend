@@ -6,7 +6,6 @@ import com.bashkevich.tennisscorekeeperbackend.model.theme.ThemeBody
 import com.bashkevich.tennisscorekeeperbackend.model.theme.ThemeDto
 import com.bashkevich.tennisscorekeeperbackend.plugins.receiveBodyCatching
 import com.bashkevich.tennisscorekeeperbackend.plugins.receiveMultipartCatching
-import io.ktor.http.ContentType
 import io.ktor.http.HttpStatusCode
 import io.ktor.openapi.jsonSchema
 import io.ktor.server.auth.authenticate
@@ -68,11 +67,11 @@ fun Route.themeRoutes() {
                     }
                     HttpStatusCode.BadRequest {
                         description = "Invalid request body"
-                        ContentType.Text.Plain()
+                        schema = jsonSchema<ResponseMessageDto>()
                     }
                     HttpStatusCode.Unauthorized {
                         description = "Missing or invalid JWT token"
-                        ContentType.Text.Plain()
+                        schema = jsonSchema<ResponseMessageDto>()
                     }
                 }
             }
@@ -135,11 +134,11 @@ fun Route.themeRoutes() {
                     }
                     HttpStatusCode.BadRequest {
                         description = "Invalid theme ID"
-                        ContentType.Text.Plain()
+                        schema = jsonSchema<ResponseMessageDto>()
                     }
                     HttpStatusCode.NotFound {
                         description = "Theme not found"
-                        ContentType.Text.Plain()
+                        schema = jsonSchema<ResponseMessageDto>()
                     }
                 }
             }
@@ -172,15 +171,15 @@ fun Route.themeRoutes() {
                         }
                         HttpStatusCode.BadRequest {
                             description = "Invalid request body or theme ID"
-                            ContentType.Text.Plain()
+                            schema = jsonSchema<ResponseMessageDto>()
                         }
                         HttpStatusCode.Unauthorized {
                             description = "Missing or invalid JWT token"
-                            ContentType.Text.Plain()
+                            schema = jsonSchema<ResponseMessageDto>()
                         }
                         HttpStatusCode.NotFound {
                             description = "Theme not found"
-                            ContentType.Text.Plain()
+                            schema = jsonSchema<ResponseMessageDto>()
                         }
                     }
                 }

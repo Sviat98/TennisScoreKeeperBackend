@@ -7,7 +7,6 @@ import com.bashkevich.tennisscorekeeperbackend.model.counter.CounterDto
 import com.bashkevich.tennisscorekeeperbackend.model.counter.CounterObserver
 import com.bashkevich.tennisscorekeeperbackend.model.counter.toDto
 import com.bashkevich.tennisscorekeeperbackend.model.message.ResponseMessageDto
-import io.ktor.http.ContentType
 import io.ktor.http.HttpStatusCode
 import io.ktor.openapi.jsonSchema
 import io.ktor.server.request.receive
@@ -78,7 +77,7 @@ fun Route.counterRoutes() {
                 }
                 HttpStatusCode.BadRequest {
                     description = "Invalid request body"
-                    ContentType.Text.Plain()
+                    schema = jsonSchema<ResponseMessageDto>()
                 }
             }
         }
@@ -101,11 +100,11 @@ fun Route.counterRoutes() {
                     }
                     HttpStatusCode.BadRequest {
                         description = "Invalid counter ID"
-                        ContentType.Text.Plain()
+                        schema = jsonSchema<ResponseMessageDto>()
                     }
                     HttpStatusCode.NotFound {
                         description = "Counter not found"
-                        ContentType.Text.Plain()
+                        schema = jsonSchema<ResponseMessageDto>()
                     }
                 }
             }
@@ -133,11 +132,11 @@ fun Route.counterRoutes() {
                     }
                     HttpStatusCode.BadRequest {
                         description = "Invalid request body or counter ID"
-                        ContentType.Text.Plain()
+                        schema = jsonSchema<ResponseMessageDto>()
                     }
                     HttpStatusCode.NotFound {
                         description = "Counter not found"
-                        ContentType.Text.Plain()
+                        schema = jsonSchema<ResponseMessageDto>()
                     }
                 }
             }

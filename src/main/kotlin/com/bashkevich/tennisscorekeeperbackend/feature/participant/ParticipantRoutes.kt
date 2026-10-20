@@ -1,9 +1,9 @@
 package com.bashkevich.tennisscorekeeperbackend.feature.participant
 
 import com.bashkevich.tennisscorekeeperbackend.model.auth.JWT_AUTH
+import com.bashkevich.tennisscorekeeperbackend.model.message.ResponseMessageDto
 import com.bashkevich.tennisscorekeeperbackend.model.participant.ParticipantDto
 import com.bashkevich.tennisscorekeeperbackend.plugins.receiveMultipartCatching
-import io.ktor.http.ContentType
 import io.ktor.http.HttpStatusCode
 import io.ktor.openapi.jsonSchema
 import io.ktor.server.auth.authenticate
@@ -41,11 +41,11 @@ fun Route.participantRoutes() {
                 }
                 HttpStatusCode.BadRequest {
                     description = "Invalid tournament ID"
-                    ContentType.Text.Plain()
+                    schema = jsonSchema<ResponseMessageDto>()
                 }
                 HttpStatusCode.NotFound {
                     description = "Tournament not found"
-                    ContentType.Text.Plain()
+                    schema = jsonSchema<ResponseMessageDto>()
                 }
             }
         }
@@ -76,15 +76,15 @@ fun Route.participantRoutes() {
                     }
                     HttpStatusCode.BadRequest {
                         description = "Invalid tournament ID, missing file, or wrong file type"
-                        ContentType.Text.Plain()
+                        schema = jsonSchema<ResponseMessageDto>()
                     }
                     HttpStatusCode.Unauthorized {
                         description = "Missing or invalid JWT token"
-                        ContentType.Text.Plain()
+                        schema = jsonSchema<ResponseMessageDto>()
                     }
                     HttpStatusCode.NotFound {
                         description = "Tournament not found"
-                        ContentType.Text.Plain()
+                        schema = jsonSchema<ResponseMessageDto>()
                     }
                 }
             }
