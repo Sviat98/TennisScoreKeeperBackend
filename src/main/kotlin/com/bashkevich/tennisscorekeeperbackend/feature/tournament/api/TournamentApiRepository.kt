@@ -53,11 +53,11 @@ class TournamentApiRepository {
             .singleOrNull()
 
     /**
-     * Активные (NOT_STARTED) турниры кэша, ещё не добавленные в систему, — одним
+     * Предстоящие (NOT_STARTED) турниры кэша, ещё не добавленные в систему, — одним
      * запросом: LEFT JOIN с tournament_api_relation по api_id, неразвёрнутая связь
      * (id IS NULL) означает, что турнир ещё не добавлен.
      */
-    suspend fun getActiveTournaments(): List<TournamentApiRecord> =
+    suspend fun getUpcomingTournaments(): List<TournamentApiRecord> =
         TournamentApiTable
             .join(
                 TournamentApiRelationTable,

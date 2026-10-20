@@ -45,17 +45,17 @@ fun Route.tournamentRoutes() {
         }
         /**
          * Tag: Tournament
-         * Get active tournaments (registration open) from the external Liga Tennisa API,
-         * not yet added to the system, sorted by start date ascending.
+         * Get upcoming tournaments (not started yet, registration open) from the external
+         * Liga Tennisa API, not yet added to the system, sorted by start date ascending.
          */
-        get("/active") {
-            val activeTournaments = tournamentService.getActiveTournaments()
+        get("/upcoming") {
+            val upcomingTournaments = tournamentService.getUpcomingTournaments()
 
-            call.respond(activeTournaments)
+            call.respond(upcomingTournaments)
         }.describe {
             responses {
                 HttpStatusCode.OK {
-                    description = "Successfully retrieved active tournaments from external API"
+                    description = "Successfully retrieved upcoming tournaments from external API"
                     schema = jsonSchema<List<TournamentApiDto>>()
                 }
             }
@@ -91,7 +91,7 @@ fun Route.tournamentRoutes() {
                     }
                     HttpStatusCode.Conflict {
                         description = "Tournament with this api_id has already been added"
-                        ContentType.Text.Plain()
+                        schema = jsonSchema<ResponseMessageDto>()
                     }
                 }
             }

@@ -47,13 +47,13 @@ class TournamentService(
     }
 
     /**
-     * Активные турниры (NOT_STARTED — запись открыта) из кэш-таблицы внешнего API,
+     * Предстоящие турниры (NOT_STARTED — запись открыта) из кэш-таблицы внешнего API,
      * ещё не добавленные в систему, отсортированные по дате начала по возрастанию.
      * Кэш перечитывается планировщиком раз в час, похода в сеть в момент запроса нет.
      */
-    suspend fun getActiveTournaments(): List<TournamentApiDto> {
+    suspend fun getUpcomingTournaments(): List<TournamentApiDto> {
         return dbQuery {
-            tournamentApiRepository.getActiveTournaments().map { it.toApiDto() }
+            tournamentApiRepository.getUpcomingTournaments().map { it.toApiDto() }
         }
     }
 
