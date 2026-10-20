@@ -16,7 +16,6 @@ import com.bashkevich.tennisscorekeeperbackend.model.match.body.VideoLinkBody
 import com.bashkevich.tennisscorekeeperbackend.model.message.ResponseMessageDto
 import com.bashkevich.tennisscorekeeperbackend.plugins.receiveBodyCatching
 import com.bashkevich.tennisscorekeeperbackend.plugins.respondWithMessageBody
-import io.ktor.http.ContentType
 import io.ktor.http.HttpStatusCode
 import io.ktor.openapi.jsonSchema
 import io.ktor.server.auth.authenticate
@@ -67,11 +66,11 @@ fun Route.matchRoutes() {
                 }
                 HttpStatusCode.BadRequest {
                     description = "Invalid tournament ID"
-                    ContentType.Text.Plain()
+                    schema = jsonSchema<ResponseMessageDto>()
                 }
                 HttpStatusCode.NotFound {
                     description = "Tournament not found"
-                    ContentType.Text.Plain()
+                    schema = jsonSchema<ResponseMessageDto>()
                 }
             }
         }
@@ -100,15 +99,15 @@ fun Route.matchRoutes() {
                     }
                     HttpStatusCode.BadRequest {
                         description = "Invalid request body or tournament not in progress"
-                        ContentType.Text.Plain()
+                        schema = jsonSchema<ResponseMessageDto>()
                     }
                     HttpStatusCode.Unauthorized {
                         description = "Missing or invalid JWT token"
-                        ContentType.Text.Plain()
+                        schema = jsonSchema<ResponseMessageDto>()
                     }
                     HttpStatusCode.NotFound {
                         description = "Tournament not found"
-                        ContentType.Text.Plain()
+                        schema = jsonSchema<ResponseMessageDto>()
                     }
                 }
             }
@@ -135,11 +134,11 @@ fun Route.matchRoutes() {
                     }
                     HttpStatusCode.BadRequest {
                         description = "Invalid match ID"
-                        ContentType.Text.Plain()
+                        schema = jsonSchema<ResponseMessageDto>()
                     }
                     HttpStatusCode.NotFound {
                         description = "Match not found"
-                        ContentType.Text.Plain()
+                        schema = jsonSchema<ResponseMessageDto>()
                     }
                 }
             }
@@ -216,15 +215,15 @@ fun Route.matchRoutes() {
                         }
                         HttpStatusCode.BadRequest {
                             description = "Invalid request body, match ID, theme id, or match is completed"
-                            ContentType.Text.Plain()
+                            schema = jsonSchema<ResponseMessageDto>()
                         }
                         HttpStatusCode.Unauthorized {
                             description = "Missing or invalid JWT token"
-                            ContentType.Text.Plain()
+                            schema = jsonSchema<ResponseMessageDto>()
                         }
                         HttpStatusCode.NotFound {
                             description = "Match not found"
-                            ContentType.Text.Plain()
+                            schema = jsonSchema<ResponseMessageDto>()
                         }
                     }
                 }
@@ -252,15 +251,15 @@ fun Route.matchRoutes() {
                         }
                         HttpStatusCode.BadRequest {
                             description = "Invalid request body or match ID"
-                            ContentType.Text.Plain()
+                            schema = jsonSchema<ResponseMessageDto>()
                         }
                         HttpStatusCode.Unauthorized {
                             description = "Missing or invalid JWT token"
-                            ContentType.Text.Plain()
+                            schema = jsonSchema<ResponseMessageDto>()
                         }
                         HttpStatusCode.NotFound {
                             description = "Match not found"
-                            ContentType.Text.Plain()
+                            schema = jsonSchema<ResponseMessageDto>()
                         }
                     }
                 }
@@ -293,15 +292,15 @@ fun Route.matchRoutes() {
                         HttpStatusCode.BadRequest {
                             description = "Invalid request body or match ID, not a doubles match, " +
                                 "set number is not the current one, or the serve change window is closed"
-                            ContentType.Text.Plain()
+                            schema = jsonSchema<ResponseMessageDto>()
                         }
                         HttpStatusCode.Unauthorized {
                             description = "Missing or invalid JWT token"
-                            ContentType.Text.Plain()
+                            schema = jsonSchema<ResponseMessageDto>()
                         }
                         HttpStatusCode.NotFound {
                             description = "Match not found"
-                            ContentType.Text.Plain()
+                            schema = jsonSchema<ResponseMessageDto>()
                         }
                     }
                 }
@@ -329,15 +328,15 @@ fun Route.matchRoutes() {
                         }
                         HttpStatusCode.BadRequest {
                             description = "Invalid request body or status transition"
-                            ContentType.Text.Plain()
+                            schema = jsonSchema<ResponseMessageDto>()
                         }
                         HttpStatusCode.Unauthorized {
                             description = "Missing or invalid JWT token"
-                            ContentType.Text.Plain()
+                            schema = jsonSchema<ResponseMessageDto>()
                         }
                         HttpStatusCode.NotFound {
                             description = "Match not found"
-                            ContentType.Text.Plain()
+                            schema = jsonSchema<ResponseMessageDto>()
                         }
                     }
                 }
@@ -365,15 +364,15 @@ fun Route.matchRoutes() {
                         }
                         HttpStatusCode.BadRequest {
                             description = "Invalid request body or score change"
-                            ContentType.Text.Plain()
+                            schema = jsonSchema<ResponseMessageDto>()
                         }
                         HttpStatusCode.Unauthorized {
                             description = "Missing or invalid JWT token"
-                            ContentType.Text.Plain()
+                            schema = jsonSchema<ResponseMessageDto>()
                         }
                         HttpStatusCode.NotFound {
                             description = "Match not found"
-                            ContentType.Text.Plain()
+                            schema = jsonSchema<ResponseMessageDto>()
                         }
                     }
                 }
@@ -401,15 +400,15 @@ fun Route.matchRoutes() {
                         }
                         HttpStatusCode.BadRequest {
                             description = "Invalid request body or match ID"
-                            ContentType.Text.Plain()
+                            schema = jsonSchema<ResponseMessageDto>()
                         }
                         HttpStatusCode.Unauthorized {
                             description = "Missing or invalid JWT token"
-                            ContentType.Text.Plain()
+                            schema = jsonSchema<ResponseMessageDto>()
                         }
                         HttpStatusCode.NotFound {
                             description = "Match or participant not found"
-                            ContentType.Text.Plain()
+                            schema = jsonSchema<ResponseMessageDto>()
                         }
                     }
                 }
@@ -431,15 +430,15 @@ fun Route.matchRoutes() {
                         }
                         HttpStatusCode.BadRequest {
                             description = "Nothing to undo"
-                            ContentType.Text.Plain()
+                            schema = jsonSchema<ResponseMessageDto>()
                         }
                         HttpStatusCode.Unauthorized {
                             description = "Missing or invalid JWT token"
-                            ContentType.Text.Plain()
+                            schema = jsonSchema<ResponseMessageDto>()
                         }
                         HttpStatusCode.NotFound {
                             description = "Match not found"
-                            ContentType.Text.Plain()
+                            schema = jsonSchema<ResponseMessageDto>()
                         }
                     }
                 }
@@ -461,15 +460,15 @@ fun Route.matchRoutes() {
                         }
                         HttpStatusCode.BadRequest {
                             description = "Nothing to redo"
-                            ContentType.Text.Plain()
+                            schema = jsonSchema<ResponseMessageDto>()
                         }
                         HttpStatusCode.Unauthorized {
                             description = "Missing or invalid JWT token"
-                            ContentType.Text.Plain()
+                            schema = jsonSchema<ResponseMessageDto>()
                         }
                         HttpStatusCode.NotFound {
                             description = "Match not found"
-                            ContentType.Text.Plain()
+                            schema = jsonSchema<ResponseMessageDto>()
                         }
                     }
                 }
@@ -499,15 +498,15 @@ fun Route.matchRoutes() {
                         }
                         HttpStatusCode.BadRequest {
                             description = "Invalid request body or match ID"
-                            ContentType.Text.Plain()
+                            schema = jsonSchema<ResponseMessageDto>()
                         }
                         HttpStatusCode.Unauthorized {
                             description = "Missing or invalid JWT token"
-                            ContentType.Text.Plain()
+                            schema = jsonSchema<ResponseMessageDto>()
                         }
                         HttpStatusCode.NotFound {
                             description = "Match not found"
-                            ContentType.Text.Plain()
+                            schema = jsonSchema<ResponseMessageDto>()
                         }
                     }
                 }
