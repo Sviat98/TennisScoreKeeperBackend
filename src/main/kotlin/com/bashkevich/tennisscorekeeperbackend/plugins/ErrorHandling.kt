@@ -40,9 +40,8 @@ fun Application.configureStatusPages(){
         }
         exception<EntityNotFoundException>{ call, cause ->
             val entityId = cause.id
-            val entityClass = cause.entity.javaClass
 
-            call.respondWithMessageBody(statusCode = HttpStatusCode.NotFound, "Entity $entityClass with id = $entityId not found")
+            call.respondWithMessageBody(statusCode = HttpStatusCode.NotFound, "Entity with id = $entityId not found")
         }
         exception<WrongEntityException> { call, cause ->
             call.respondWithMessageBody(statusCode = HttpStatusCode.UnprocessableEntity, message = cause.message ?: "")
@@ -104,7 +103,7 @@ inline fun <reified T : Enum<T>> String.parseEnumSafe(): T {
     return try {
         enumValueOf<T>(this)
     } catch (e: IllegalArgumentException) {
-        throw BadRequestException("Error processing value $this for enum class ${T::class.simpleName}")
+        throw BadRequestException("Unsupported value: $this")
     }
 }
 

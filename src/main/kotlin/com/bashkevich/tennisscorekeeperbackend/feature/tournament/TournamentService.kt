@@ -82,14 +82,14 @@ class TournamentService(
                     tournamentRequestDto.setsToWin > 1 && tournamentRequestDto.regularSetId == null -> "Regular set id is required when sets to win is more than 1"
                     tournamentRequestDto.apiId.isBlank() -> "Api id must not be blank"
                     tournamentRequestDto.apiId.length > 50 -> "Api id must not exceed 50 characters"
-                    cachedApiTournament == null -> "Api id ${tournamentRequestDto.apiId} is not found in tournament api cache"
-                    cachedApiTournament.status != TournamentStatus.NOT_STARTED -> "Tournament ${tournamentRequestDto.apiId} is not in NOT_STARTED status in tournament api cache"
+                    cachedApiTournament == null -> "Tournament with api_id ${tournamentRequestDto.apiId} not found"
+                    cachedApiTournament.status != TournamentStatus.NOT_STARTED -> "Tournament with api_id ${tournamentRequestDto.apiId} cannot be added because it is not in NOT_STARTED status"
                     else -> ""
                 }
             }
 
             if (tournamentApiRelationRepository.getTournamentIdByApiId(tournamentRequestDto.apiId) != null) {
-                throw ConflictException("Такой турнир уже добавлен")
+                throw ConflictException("Tournament with api_id ${tournamentRequestDto.apiId} has already been added")
             }
 
             val tournament = tournamentRepository.addTournament(tournamentRequestDto)
@@ -130,7 +130,7 @@ class TournamentService(
                         }
 
                         if (incompletedMatchesAmount > 0) {
-                            "Cannot make tournament completed. There are incompleted matches"
+                            "Cannot make tournament completed. There are incomplete matches"
                         } else ""
                     }
 
