@@ -71,7 +71,7 @@ class TournamentService(
                         }
 
                         if (incompletedMatchesAmount > 0) {
-                            "Cannot make tournament completed. There are incompleted matches"
+                            "Cannot make tournament completed. There are incomplete matches"
                         } else ""
                     }
 
