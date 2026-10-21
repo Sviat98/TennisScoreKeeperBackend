@@ -65,7 +65,7 @@ class MatchServiceRouter(
         return dbQuery {
             if (matchId == 0) throw BadRequestException("Wrong format of match id")
             val tournament = tournamentRepository.getTournamentByMatchId(matchId)
-                ?: throw NotFoundException("No tournament found by that id")
+                ?: throw NotFoundException("No match found by that id")
 
             val matchDto = when (tournament.type){
                 TournamentType.SINGLES -> singlesMatchService.getMatchById(matchId)
@@ -80,7 +80,7 @@ class MatchServiceRouter(
         dbQuery {
             if (matchId == 0) throw BadRequestException("Wrong format of match id")
             val tournament = tournamentRepository.getTournamentByMatchId(matchId)
-                ?: throw NotFoundException("No tournament found by that id")
+                ?: throw NotFoundException("No match found by that id")
 
             val theme = themeRepository.getById(updateMatchBody.themeId.toInt())
 
@@ -103,7 +103,7 @@ class MatchServiceRouter(
         dbQuery {
             if (matchId == 0) throw BadRequestException("Wrong format of match id")
             val tournament = tournamentRepository.getTournamentByMatchId(matchId)
-                ?: throw NotFoundException("No tournament found by that id")
+                ?: throw NotFoundException("No match found by that id")
 
             when (tournament.type){
                 TournamentType.SINGLES -> singlesMatchService.updateServe(matchId,serveBody)
@@ -117,7 +117,7 @@ class MatchServiceRouter(
         dbQuery {
             if (matchId == 0) throw BadRequestException("Wrong format of match id")
             val tournament = tournamentRepository.getTournamentByMatchId(matchId)
-                ?: throw NotFoundException("No tournament found by that id")
+                ?: throw NotFoundException("No match found by that id")
 
             when (tournament.type){
                 TournamentType.SINGLES -> throw BadRequestException("Choosing serve in pair is not allowed in singles matches")
@@ -131,7 +131,7 @@ class MatchServiceRouter(
         dbQuery {
             if (matchId == 0) throw BadRequestException("Wrong format of match id")
             val tournament = tournamentRepository.getTournamentByMatchId(matchId)
-                ?: throw NotFoundException("No tournament found by that id")
+                ?: throw NotFoundException("No match found by that id")
 
             when (tournament.type){
                 TournamentType.SINGLES -> singlesMatchService.updateScore(matchId,changeScoreBody)
@@ -145,7 +145,7 @@ class MatchServiceRouter(
         dbQuery {
             if (matchId == 0) throw BadRequestException("Wrong format of match id")
             val tournament = tournamentRepository.getTournamentByMatchId(matchId)
-                ?: throw NotFoundException("No tournament found by that id")
+                ?: throw NotFoundException("No match found by that id")
 
             when (tournament.type){
                 TournamentType.SINGLES -> singlesMatchService.undoPoint(matchId)
@@ -159,7 +159,7 @@ class MatchServiceRouter(
         dbQuery {
             if (matchId == 0) throw BadRequestException("Wrong format of match id")
             val tournament = tournamentRepository.getTournamentByMatchId(matchId)
-                ?: throw NotFoundException("No tournament found by that id")
+                ?: throw NotFoundException("No match found by that id")
 
             when (tournament.type){
                 TournamentType.SINGLES -> singlesMatchService.redoPoint(matchId)
@@ -173,7 +173,7 @@ class MatchServiceRouter(
         dbQuery {
             if (matchId == 0) throw BadRequestException("Wrong format of match id")
             val tournament = tournamentRepository.getTournamentByMatchId(matchId)
-                ?: throw NotFoundException("No tournament found by that id")
+                ?: throw NotFoundException("No match found by that id")
 
             when (tournament.type){
                 TournamentType.SINGLES -> singlesMatchService.updateMatchStatus(matchId, matchStatusBody)
@@ -187,7 +187,7 @@ class MatchServiceRouter(
         dbQuery {
             if (matchId == 0) throw BadRequestException("Wrong format of match id")
             val tournament = tournamentRepository.getTournamentByMatchId(matchId)
-                ?: throw NotFoundException("No tournament found by that id")
+                ?: throw NotFoundException("No match found by that id")
 
             when (tournament.type){
                 TournamentType.SINGLES -> singlesMatchService.setParticipantRetired(matchId, retiredParticipantBody)
@@ -201,7 +201,7 @@ class MatchServiceRouter(
         dbQuery {
             if (matchId == 0) throw BadRequestException("Wrong format of match id")
             val tournament = tournamentRepository.getTournamentByMatchId(matchId)
-                ?: throw NotFoundException("No tournament found by that id")
+                ?: throw NotFoundException("No match found by that id")
 
             when (tournament.type){
                 TournamentType.SINGLES -> singlesMatchService.setVideoLink(matchId, videoLink)

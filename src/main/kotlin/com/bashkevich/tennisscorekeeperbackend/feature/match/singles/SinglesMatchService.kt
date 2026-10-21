@@ -26,7 +26,6 @@ import com.bashkevich.tennisscorekeeperbackend.model.participant.toParticipantIn
 import com.bashkevich.tennisscorekeeperbackend.model.set_template.SetTemplateEntity
 import com.bashkevich.tennisscorekeeperbackend.model.set_template.TiebreakMode
 import com.bashkevich.tennisscorekeeperbackend.plugins.validateRequestConditions
-import io.ktor.server.plugins.BadRequestException
 import io.ktor.server.plugins.NotFoundException
 
 class SinglesMatchService(
@@ -141,7 +140,6 @@ class SinglesMatchService(
     }
 
     suspend fun getMatchById(matchId: Int): MatchDto {
-        if (matchId == 0) throw BadRequestException("Incorrect id")
         val matchEntity = singlesMatchRepository.getMatchById(matchId)
             ?: throw NotFoundException("No match found!")
 
@@ -155,7 +153,6 @@ class SinglesMatchService(
     }
 
     suspend fun updateServe(matchId: Int, serveBody: ServeBody) {
-        if (matchId == 0) throw BadRequestException("Incorrect id")
         val firstServeParticipantId =
             serveBody.servingParticipantId.toInt() // тут будет Int значение, левые значения строк обработаны в RequestValidation
 
@@ -272,7 +269,6 @@ class SinglesMatchService(
     }
 
     suspend fun updateScore(matchId: Int, changeScoreBody: ChangeScoreBody) {
-        if (matchId == 0) throw BadRequestException("Incorrect id")
         val scoringParticipantId =
             changeScoreBody.participantId.toInt() // тут будет Int значение, левые значения строк обработаны в RequestValidation
 
@@ -560,8 +556,6 @@ class SinglesMatchService(
     }
 
     suspend fun setParticipantRetired(matchId: Int, retiredParticipantBody: RetiredParticipantBody) {
-        if (matchId == 0) throw BadRequestException("Incorrect id")
-
         val matchEntity =
             singlesMatchRepository.getMatchById(matchId) ?: throw NotFoundException("No match found!")
 
@@ -653,7 +647,6 @@ class SinglesMatchService(
     }
 
     suspend fun undoPoint(matchId: Int) {
-        if (matchId == 0) throw BadRequestException("Incorrect id")
         val matchEntity =
             singlesMatchRepository.getMatchById(matchId) ?: throw NotFoundException("No match found!")
 
@@ -689,8 +682,6 @@ class SinglesMatchService(
     }
 
     suspend fun redoPoint(matchId: Int) {
-        if (matchId == 0) throw BadRequestException("Incorrect id")
-
         val matchEntity =
             singlesMatchRepository.getMatchById(matchId) ?: throw NotFoundException("No match found!")
 
@@ -747,8 +738,6 @@ class SinglesMatchService(
     }
 
     suspend fun updateMatchStatus(matchId: Int, matchStatusBody: MatchStatusBody) {
-        if (matchId == 0) throw BadRequestException("Incorrect id")
-
         val matchEntity =
             singlesMatchRepository.getMatchById(matchId) ?: throw NotFoundException("No match found!")
 
@@ -800,8 +789,6 @@ class SinglesMatchService(
     }
 
     suspend fun setVideoLink(matchId: Int, videoLink: String) {
-        if (matchId == 0) throw BadRequestException("Incorrect id")
-
         val matchEntity =
             singlesMatchRepository.getMatchById(matchId) ?: throw NotFoundException("No match found!")
 
@@ -819,8 +806,6 @@ class SinglesMatchService(
     }
 
     suspend fun updateMatch(matchId: Int, updateMatchBody: UpdateMatchBody) {
-        if (matchId == 0) throw BadRequestException("Incorrect id")
-
         val matchEntity =
             singlesMatchRepository.getMatchById(matchId) ?: throw NotFoundException("No match found!")
 
