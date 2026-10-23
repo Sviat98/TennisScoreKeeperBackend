@@ -35,5 +35,12 @@ data class LigaTennisaTournamentDto(
     val tournamentType: Int? = null,
     @SerialName("status")
     val status: Int? = null,
+    /**
+     * Зарегистрированные игроки турнира — JSON-строка вида
+     * {"players":[id, ...],"pairs":[[id, id], ...]}. Null, пока на турнир в Лиге тенниса
+     * никто не зарегистрировался. Для одиночного турнира берётся players, для парного — pairs.
+     */
+    @SerialName("players_order")
+    val playersOrder: String? = null,
 )
 

@@ -1,23 +1,20 @@
 package com.bashkevich.tennisscorekeeperbackend.feature.participant.singles
 
-import com.bashkevich.tennisscorekeeperbackend.feature.player.PlayerRepository
+import com.bashkevich.tennisscorekeeperbackend.feature.match.singles.SinglesMatchRepository
+import com.bashkevich.tennisscorekeeperbackend.feature.player.PlayerService
+import com.bashkevich.tennisscorekeeperbackend.feature.player.api.PlayerApiRelationRepository
 import com.bashkevich.tennisscorekeeperbackend.model.participant.ParticipantDto
 import com.bashkevich.tennisscorekeeperbackend.model.participant.SinglesParticipantDto
-import com.bashkevich.tennisscorekeeperbackend.model.participant.singles.SinglesParticipantExcel
+import com.bashkevich.tennisscorekeeperbackend.model.participant.api.SinglesParticipantApi
 import com.bashkevich.tennisscorekeeperbackend.model.participant.toDto
-import com.bashkevich.tennisscorekeeperbackend.model.player.PlayerExcel
+import com.bashkevich.tennisscorekeeperbackend.model.player.api.LigaTennisaPlayerDto
 import com.bashkevich.tennisscorekeeperbackend.model.player.toDto
-import io.ktor.server.plugins.BadRequestException
-import kotlinx.datetime.LocalDateTime
-import org.jetbrains.kotlinx.dataframe.DataFrame
-import org.jetbrains.kotlinx.dataframe.api.first
-import org.jetbrains.kotlinx.dataframe.api.map
-import org.jetbrains.kotlinx.dataframe.io.readExcel
-import java.io.ByteArrayInputStream
 
 class SinglesParticipantService(
-    private val playerRepository: PlayerRepository,
+    private val playerService: PlayerService,
+    private val playerApiRelationRepository: PlayerApiRelationRepository,
     private val singlesParticipantRepository: SinglesParticipantRepository,
+    private val singlesMatchRepository: SinglesMatchRepository,
 ) {
 
     fun getParticipantsByTournament(tournamentId: Int) : List<ParticipantDto> {
@@ -26,36 +23,58 @@ class SinglesParticipantService(
         return participants
     }
 
-    suspend fun uploadParticipants(tournamentId: Int, excelBytes: ByteArray): List<ParticipantDto> {
-        val (numberOfSeededParticipants, participants) = parseParticipantListFromBytes(excelBytes)
+    suspend fun uploadParticipants(
+        tournamentId: Int,
+        seedAmount: Int,
+        apiPlayerIds: List<Int>,
+        playersByApiId: Map<Int, LigaTennisaPlayerDto>,
+    ): List<ParticipantDto> {
+        val existingSeedByPlayerId = singlesParticipantRepository.getParticipantsByTournament(tournamentId)
+            .associate { it.player.id.value to it.seed }
+
+        // пока у турнира нет матчей, посев при каждой загрузке пересчитывается у всех заново
+        val tournamentHasMatches = singlesMatchRepository.getMatches(tournamentId).isNotEmpty()
+        // идущий турнир: новые участники занимают посевы после максимального занятого
+        var nextSeed = existingSeedByPlayerId.values.filterNotNull().maxOrNull()?.plus(1) ?: 1
+
+        val linkedPlayerIds = playerApiRelationRepository
+            .getPlayerIdsByApiIds(playersByApiId.keys)
+            .associate { it.first to it.second }
+
+        val participants = apiPlayerIds
+            .mapNotNull { apiPlayerId -> playersByApiId[apiPlayerId] }
+            .map { apiPlayer ->
+                SinglesParticipantApi(
+                    player = playerService.resolvePlayerByApiId(apiPlayer, linkedPlayerIds[apiPlayer.id]),
+                    rating = apiPlayer.eloPoints ?: 0,
+                )
+            }
+            .sortedByDescending { it.rating }
 
         val registeredParticipants = mutableListOf<ParticipantDto>()
         val registeredParticipantIds = mutableListOf<Int>()
 
-
         participants.forEachIndexed { index, participant ->
-            var seed: Int? = null
+            val currentSeed = existingSeedByPlayerId[participant.player.id.value]
 
-            val player = playerRepository.searchPlayer(
-                surname = participant.player.surname,
-                name = participant.player.name,
-                dateBirth = participant.player.dateBirth
-            )
-                ?: playerRepository.addPlayer(
-                    playerSurname = participant.player.surname,
-                    playerName = participant.player.name,
-                    playerDateBirth = participant.player.dateBirth
-                )
-
-            if (index < numberOfSeededParticipants) {
-                seed = index + 1
+            val seed = when {
+                !tournamentHasMatches -> if (index < seedAmount) index + 1 else null
+                // у уже добавленного участника посев сохраняется
+                currentSeed != null -> currentSeed
+                // новый участник идёт в конец: посев достаётся ему, только если свободные слоты ещё есть
+                nextSeed <= seedAmount -> nextSeed++
+                else -> null
             }
 
-            val participantId = singlesParticipantRepository.upsertParticipant(tournamentId = tournamentId,participantSeed = seed, playerId = player.id.value)
+            val participantId = singlesParticipantRepository.upsertParticipant(
+                tournamentId = tournamentId,
+                participantSeed = seed,
+                playerId = participant.player.id.value
+            )
 
             registeredParticipantIds.add(participantId)
 
-            val registeredParticipant = SinglesParticipantDto(participantId.toString(),seed, player.toDto())
+            val registeredParticipant = SinglesParticipantDto(participantId.toString(), seed, participant.player.toDto())
 
             registeredParticipants.add(registeredParticipant)
         }
@@ -66,42 +85,5 @@ class SinglesParticipantService(
         )
 
         return registeredParticipants
-    }
-
-    private fun parseParticipantListFromBytes(excelBytes: ByteArray): Pair<Int, List<SinglesParticipantExcel>> {
-        try {
-
-            val seedDf = DataFrame.readExcel(ByteArrayInputStream(excelBytes), firstRowIsHeader = false).first()
-
-            val numberOfSeededParticipantsSplit = seedDf[0].toString().split(":").map { it.trim() }
-
-            val numberOfSeededParticipants =
-                if (numberOfSeededParticipantsSplit.size > 1) numberOfSeededParticipantsSplit[1].toIntOrNull()
-                    ?: 0 else throw Exception("There should be a delimiter of ':' to define number of seeded participants")
-
-            val playersDf = DataFrame.readExcel(
-                inputStream = ByteArrayInputStream(excelBytes),
-                skipRows = 1,
-                firstRowIsHeader = true
-            )
-
-            val participants = playersDf.map { row ->
-                val name = row[0]?.toString()?.trim() ?: ""
-                val surname = row[1]?.toString()?.trim() ?: ""
-                val dateBirth = LocalDateTime.parse(row[2]?.toString()?.trim() ?: "").date
-                val rating = (row[3] as? Double)?.toInt() ?: 0
-
-
-                SinglesParticipantExcel(
-                    player = PlayerExcel(name = name, surname = surname, dateBirth = dateBirth),
-                    rating = rating
-                )
-            }.sortedByDescending { it.rating }
-
-            return Pair(numberOfSeededParticipants, participants)
-
-        } catch (e: Exception) {
-            throw BadRequestException("Error processing Excel file: ${e.message}", e)
-        }
     }
 }

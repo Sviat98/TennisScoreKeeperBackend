@@ -3,7 +3,8 @@ package com.bashkevich.tennisscorekeeperbackend.feature.participant
 import com.bashkevich.tennisscorekeeperbackend.model.auth.JWT_AUTH
 import com.bashkevich.tennisscorekeeperbackend.model.message.ResponseMessageDto
 import com.bashkevich.tennisscorekeeperbackend.model.participant.ParticipantDto
-import com.bashkevich.tennisscorekeeperbackend.plugins.receiveMultipartCatching
+import com.bashkevich.tennisscorekeeperbackend.model.participant.ParticipantUploadRequestDto
+import com.bashkevich.tennisscorekeeperbackend.plugins.receiveBodyCatching
 import io.ktor.http.HttpStatusCode
 import io.ktor.openapi.jsonSchema
 import io.ktor.server.auth.authenticate
@@ -55,19 +56,20 @@ fun Route.participantRoutes() {
         authenticate(JWT_AUTH) {
             /**
              * Tag: Participant
-             * Upload participants from an Excel file.
+             * Upload participants from the League of Tennis API registration list.
              */
             post("/upload") {
                 val tournamentId = call.pathParameters["id"]?.toIntOrNull() ?: 0
 
-                val file = call.receiveMultipartCatching()
+                val uploadRequest = call.receiveBodyCatching<ParticipantUploadRequestDto>()
 
-                val participants = participantServiceRouter.uploadParticipants(tournamentId, file)
+                val participants = participantServiceRouter.uploadParticipants(tournamentId, uploadRequest)
 
                 call.respond(HttpStatusCode.Created, participants)
             }.describe {
                 requestBody {
-                    description = "Excel file with participant data (.xlsx)"
+                    description = "Optional seed amount for participants"
+                    schema = jsonSchema<ParticipantUploadRequestDto>()
                 }
                 responses {
                     HttpStatusCode.Created {
@@ -75,7 +77,7 @@ fun Route.participantRoutes() {
                         schema = jsonSchema<List<ParticipantDto>>()
                     }
                     HttpStatusCode.BadRequest {
-                        description = "Invalid tournament ID, missing file, or wrong file type"
+                        description = "Invalid tournament ID, tournament is completed or is not linked to the League of Tennis API, or no players registered for the tournament in the League of Tennis API"
                         schema = jsonSchema<ResponseMessageDto>()
                     }
                     HttpStatusCode.Unauthorized {

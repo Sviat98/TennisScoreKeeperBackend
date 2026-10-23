@@ -22,6 +22,14 @@ class TournamentApiRelationRepository {
             .map { it[TournamentApiRelationTable.tournamentId] }
             .singleOrNull()
 
+    /** api_id турнира внешнего API, связанного с данным турниром нашей системы, или null, если связи нет. */
+    suspend fun getApiIdByTournamentId(tournamentId: Int): String? =
+        TournamentApiRelationTable
+            .select(TournamentApiRelationTable.apiId)
+            .where { TournamentApiRelationTable.tournamentId eq tournamentId }
+            .map { it[TournamentApiRelationTable.apiId] }
+            .singleOrNull()
+
     suspend fun addRelation(tournamentId: Int, apiId: String) {
         TournamentApiRelationTable.insert {
             it[TournamentApiRelationTable.tournamentId] = tournamentId
