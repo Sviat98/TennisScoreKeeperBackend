@@ -14,6 +14,7 @@ import com.bashkevich.tennisscorekeeperbackend.model.auth.UserTable
 import com.bashkevich.tennisscorekeeperbackend.model.set_template.SetTemplateTable
 import com.bashkevich.tennisscorekeeperbackend.model.theme.ThemeTable
 import com.bashkevich.tennisscorekeeperbackend.model.player.PlayerTable
+import com.bashkevich.tennisscorekeeperbackend.model.player.api.PlayerApiRelationTable
 import com.bashkevich.tennisscorekeeperbackend.model.tournament.api.TournamentApiRelationTable
 import com.bashkevich.tennisscorekeeperbackend.model.tournament.api.TournamentApiTable
 import com.bashkevich.tennisscorekeeperbackend.model.tournament.TournamentTable
@@ -71,7 +72,7 @@ fun configureDatabase() {
         SchemaUtils.createSequence(matchSequence, participantSequence)
 
         SchemaUtils.create(
-            CounterTable, PlayerTable, UserTable, UserAuthTable, RefreshTokenTable, SetTemplateTable, ThemeTable, TournamentTable, TournamentApiRelationTable, TournamentApiTable,
+            CounterTable, PlayerTable, PlayerApiRelationTable, UserTable, UserAuthTable, RefreshTokenTable, SetTemplateTable, ThemeTable, TournamentTable, TournamentApiRelationTable, TournamentApiTable,
             SinglesParticipantTable, SinglesMatchTable, SinglesMatchLogTable,
             DoublesParticipantTable, DoublesMatchTable, DoublesMatchFirstServePlayerTable, DoublesMatchLogTable
         )

@@ -61,9 +61,6 @@ dependencies {
     implementation(libs.ktor.server.netty)
     implementation(libs.logback.classic)
 
-    implementation(libs.dataframe.core)
-    implementation(libs.dataframe.excel)
-
     implementation(libs.koog.agents)
     implementation(libs.color.thief)
 

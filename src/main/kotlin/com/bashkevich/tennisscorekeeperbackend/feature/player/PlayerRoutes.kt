@@ -4,6 +4,7 @@ import com.bashkevich.tennisscorekeeperbackend.model.auth.JWT_AUTH
 import com.bashkevich.tennisscorekeeperbackend.model.message.ResponseMessageDto
 import com.bashkevich.tennisscorekeeperbackend.model.player.PlayerBodyDto
 import com.bashkevich.tennisscorekeeperbackend.model.player.PlayerDto
+import com.bashkevich.tennisscorekeeperbackend.model.player.api.PlayerApiPrefillResultDto
 import com.bashkevich.tennisscorekeeperbackend.plugins.receiveBodyCatching
 import io.ktor.http.HttpStatusCode
 import io.ktor.http.headers
@@ -50,6 +51,28 @@ fun Route.playerRoutes() {
                     HttpStatusCode.BadRequest {
                         description = "Invalid request body or validation error"
                         schema = jsonSchema<ResponseMessageDto>()
+                    }
+                    HttpStatusCode.Unauthorized {
+                        description = "Missing or invalid JWT token"
+                        schema = jsonSchema<ResponseMessageDto>()
+                    }
+                }
+            }
+
+            /**
+             * Tag: Player
+             * One-off operation: prefill player relations to the League of Tennis API
+             * by matching players against name and surname.
+             */
+            post("/prefill-api-relations") {
+                val result = playerService.prefillApiRelations()
+
+                call.respond(result)
+            }.describe {
+                responses {
+                    HttpStatusCode.OK {
+                        description = "Relations prefilled, counters returned"
+                        schema = jsonSchema<PlayerApiPrefillResultDto>()
                     }
                     HttpStatusCode.Unauthorized {
                         description = "Missing or invalid JWT token"

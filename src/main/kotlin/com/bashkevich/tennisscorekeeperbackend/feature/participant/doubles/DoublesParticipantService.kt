@@ -1,25 +1,20 @@
 package com.bashkevich.tennisscorekeeperbackend.feature.participant.doubles
 
-import com.bashkevich.tennisscorekeeperbackend.feature.player.PlayerRepository
+import com.bashkevich.tennisscorekeeperbackend.feature.match.doubles.DoublesMatchRepository
+import com.bashkevich.tennisscorekeeperbackend.feature.player.PlayerService
+import com.bashkevich.tennisscorekeeperbackend.feature.player.api.PlayerApiRelationRepository
 import com.bashkevich.tennisscorekeeperbackend.model.participant.DoublesParticipantDto
 import com.bashkevich.tennisscorekeeperbackend.model.participant.ParticipantDto
-import com.bashkevich.tennisscorekeeperbackend.model.participant.doubles.DoublesParticipantExcel
+import com.bashkevich.tennisscorekeeperbackend.model.participant.api.DoublesParticipantApi
 import com.bashkevich.tennisscorekeeperbackend.model.participant.toDto
-import com.bashkevich.tennisscorekeeperbackend.model.player.PlayerExcel
+import com.bashkevich.tennisscorekeeperbackend.model.player.api.LigaTennisaPlayerDto
 import com.bashkevich.tennisscorekeeperbackend.model.player.toDto
-import io.ktor.server.plugins.BadRequestException
-import kotlinx.datetime.LocalDateTime
-import org.jetbrains.kotlinx.dataframe.DataFrame
-import org.jetbrains.kotlinx.dataframe.api.first
-import org.jetbrains.kotlinx.dataframe.api.map
-import org.jetbrains.kotlinx.dataframe.io.readExcel
-import java.io.ByteArrayInputStream
-import kotlin.collections.map
-
 
 class DoublesParticipantService(
-    private val playerRepository: PlayerRepository,
+    private val playerService: PlayerService,
+    private val playerApiRelationRepository: PlayerApiRelationRepository,
     private val doublesParticipantRepository: DoublesParticipantRepository,
+    private val doublesMatchRepository: DoublesMatchRepository,
 ) {
     fun getParticipantsByTournament(tournamentId: Int) : List<ParticipantDto> {
         val participants = doublesParticipantRepository.getParticipantsByTournament(tournamentId = tournamentId).map { it.toDto() }
@@ -28,49 +23,69 @@ class DoublesParticipantService(
         return participants
     }
 
-    suspend fun uploadParticipants(tournamentId: Int, excelBytes: ByteArray): List<ParticipantDto> {
-        val (numberOfSeededParticipants, participants) = parseParticipantListFromBytes(excelBytes)
+    suspend fun uploadParticipants(
+        tournamentId: Int,
+        seedAmount: Int,
+        apiPairs: List<Pair<Int, Int>>,
+        playersByApiId: Map<Int, LigaTennisaPlayerDto>,
+    ): List<ParticipantDto> {
+        // пара в БД хранится по возрастанию id игроков — для сверки с уже добавленными ключ тоже нормализуем
+        val existingSeedByPlayerIds = doublesParticipantRepository.getParticipantsByTournament(tournamentId)
+            .associate {
+                Pair(
+                    minOf(it.firstPlayer.id.value, it.secondPlayer.id.value),
+                    maxOf(it.firstPlayer.id.value, it.secondPlayer.id.value),
+                ) to it.seed
+            }
+
+        // пока у турнира нет матчей, посев при каждой загрузке пересчитывается у всех заново
+        val tournamentHasMatches = doublesMatchRepository.getMatches(tournamentId).isNotEmpty()
+        // идущий турнир: новые участники занимают посевы после максимального занятого
+        var nextSeed = existingSeedByPlayerIds.values.filterNotNull().maxOrNull()?.plus(1) ?: 1
+
+        val linkedPlayerIds = playerApiRelationRepository
+            .getPlayerIdsByApiIds(playersByApiId.keys)
+            .associate { it.first to it.second }
+
+        val pairs = apiPairs
+            .mapNotNull { (firstApiId, secondApiId) ->
+                val firstApiPlayer = playersByApiId[firstApiId] ?: return@mapNotNull null
+                val secondApiPlayer = playersByApiId[secondApiId] ?: return@mapNotNull null
+
+                DoublesParticipantApi(
+                    firstPlayer = playerService.resolvePlayerByApiId(firstApiPlayer, linkedPlayerIds[firstApiPlayer.id]),
+                    secondPlayer = playerService.resolvePlayerByApiId(secondApiPlayer, linkedPlayerIds[secondApiPlayer.id]),
+                    // рейтинг пары — сумма эло обоих игроков
+                    rating = (firstApiPlayer.doublesEloPoints ?: 0) + (secondApiPlayer.doublesEloPoints ?: 0),
+                )
+            }
+            .sortedByDescending { it.rating }
 
         val registeredParticipants = mutableListOf<ParticipantDto>()
         val registeredParticipantIds = mutableListOf<Int>()
 
-        participants.forEachIndexed { index, participant ->
-            var seed: Int? = null
+        pairs.forEachIndexed { index, pair ->
+            val firstPlayerId = pair.firstPlayer.id.value
+            val secondPlayerId = pair.secondPlayer.id.value
 
-            // игрок, указанный в файле первым
-            val firstPlayerInitial = playerRepository.searchPlayer(
-                surname = participant.firstPlayer.surname,
-                name = participant.firstPlayer.name,
-                dateBirth = participant.firstPlayer.dateBirth
-            )
-                ?: playerRepository.addPlayer(
-                    playerSurname = participant.firstPlayer.surname,
-                    playerName = participant.firstPlayer.name,
-                    playerDateBirth = participant.firstPlayer.dateBirth
-                )
+            val currentSeed = existingSeedByPlayerIds[
+                Pair(minOf(firstPlayerId, secondPlayerId), maxOf(firstPlayerId, secondPlayerId))
+            ]
 
-            // игрок, указанный в файле вторым
-            val secondPlayerInitial = playerRepository.searchPlayer(
-                surname = participant.secondPlayer.surname,
-                name = participant.secondPlayer.name,
-                dateBirth = participant.secondPlayer.dateBirth
-            )
-                ?: playerRepository.addPlayer(
-                    playerSurname = participant.secondPlayer.surname,
-                    playerName = participant.secondPlayer.name,
-                    playerDateBirth = participant.secondPlayer.dateBirth
-                )
+            val seed = when {
+                !tournamentHasMatches -> if (index < seedAmount) index + 1 else null
+                // у уже добавленной пары посев сохраняется
+                currentSeed != null -> currentSeed
+                // новая пара идёт в конец: посев достаётся ей, только если свободные слоты ещё есть
+                nextSeed <= seedAmount -> nextSeed++
+                else -> null
+            }
 
             // если id первого меньше второго, то порядок отображения сохраняется, в противном случае мы его меняем
-            val saveOrderAtDisplay = firstPlayerInitial.id.value < secondPlayerInitial.id.value
+            val saveOrderAtDisplay = firstPlayerId < secondPlayerId
 
-            val firstPlayerToInsert = if (saveOrderAtDisplay) firstPlayerInitial else secondPlayerInitial
-            val secondPlayerToInsert = if (saveOrderAtDisplay) secondPlayerInitial else firstPlayerInitial
-
-
-            if (index < numberOfSeededParticipants) {
-                seed = index + 1
-            }
+            val firstPlayerToInsert = if (saveOrderAtDisplay) pair.firstPlayer else pair.secondPlayer
+            val secondPlayerToInsert = if (saveOrderAtDisplay) pair.secondPlayer else pair.firstPlayer
 
             val participantId = doublesParticipantRepository.upsertParticipant(
                 tournamentId = tournamentId,
@@ -84,8 +99,8 @@ class DoublesParticipantService(
                 DoublesParticipantDto(
                     id = participantId.toString(),
                     seed = seed,
-                    firstPlayer = firstPlayerInitial.toDto(),
-                    secondPlayer = secondPlayerInitial.toDto()
+                    firstPlayer = pair.firstPlayer.toDto(),
+                    secondPlayer = pair.secondPlayer.toDto()
                 )
             registeredParticipantIds.add(participantId)
             registeredParticipants.add(registeredParticipant)
@@ -97,58 +112,5 @@ class DoublesParticipantService(
         )
 
         return registeredParticipants
-    }
-
-    private fun parseParticipantListFromBytes(excelBytes: ByteArray): Pair<Int, List<DoublesParticipantExcel>> {
-        try {
-
-            val seedDf = DataFrame.readExcel(ByteArrayInputStream(excelBytes), firstRowIsHeader = false).first()
-
-            val numberOfSeededParticipantsSplit = seedDf[0].toString().split(":").map { it.trim() }
-
-            val numberOfSeededParticipants =
-                if (numberOfSeededParticipantsSplit.size > 1) numberOfSeededParticipantsSplit[1].toIntOrNull()
-                    ?: 0 else throw Exception("There should be a delimiter of ':' to define number of seeded participants")
-
-            val playersDf = DataFrame.readExcel(
-                inputStream = ByteArrayInputStream(excelBytes),
-                skipRows = 1,
-                firstRowIsHeader = true
-            )
-
-            val participants = playersDf.map { row ->
-                val firstPlayerName = row[0]?.toString()?.trim() ?: ""
-                val firstPlayerSurname = row[1]?.toString()?.trim() ?: ""
-                val firstPlayerDateBirth = LocalDateTime.parse(row[2]?.toString()?.trim() ?: "").date
-
-                val secondPlayerName = row[3]?.toString()?.trim() ?: ""
-                val secondPlayerSurname = row[4]?.toString()?.trim() ?: ""
-                val secondPlayerDateBirth = LocalDateTime.parse(row[5]?.toString()?.trim() ?: "").date
-
-                val firstPlayerRating = (row[6] as? Double)?.toInt() ?: 0
-                val secondPlayerRating = (row[7] as? Double)?.toInt() ?: 0
-
-
-                DoublesParticipantExcel(
-                    firstPlayer = PlayerExcel(
-                        name = firstPlayerName,
-                        surname = firstPlayerSurname,
-                        dateBirth = firstPlayerDateBirth
-                    ),
-                    secondPlayer = PlayerExcel(
-                        name = secondPlayerName,
-                        surname = secondPlayerSurname,
-                        dateBirth = secondPlayerDateBirth
-                    ),
-
-                    rating = firstPlayerRating + secondPlayerRating
-                )
-            }.sortedByDescending { it.rating }
-
-            return Pair(numberOfSeededParticipants, participants)
-
-        } catch (e: Exception) {
-            throw BadRequestException("Error processing Excel file: ${e.message}", e)
-        }
     }
 }
