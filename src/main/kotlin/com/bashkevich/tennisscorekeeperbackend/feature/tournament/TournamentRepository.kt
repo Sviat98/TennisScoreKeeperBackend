@@ -24,6 +24,7 @@ class TournamentRepository {
             regularSetTemplate = tournamentRequestDto.regularSetId?.let { SetTemplateEntity[it.toInt()] }
             decidingSetTemplate = SetTemplateEntity[tournamentRequestDto.decidingSetId.toInt()]
             theme = ThemeEntity[tournamentRequestDto.themeId.toInt()]
+            seededParticipantsAmount = 0
         }
 
     fun getTournaments() = TournamentEntity.all().sortedBy { it.id.value }
@@ -46,5 +47,10 @@ class TournamentRepository {
             it[status] = tournamentStatus
         }
     }
+
+    suspend fun updateSeededParticipantsAmount(tournamentId: Int, newSeededParticipantsAmount: Int) =
+        TournamentEntity.findByIdAndUpdate(tournamentId) {
+            it.seededParticipantsAmount = newSeededParticipantsAmount
+        }
 
 }
