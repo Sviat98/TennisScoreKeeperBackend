@@ -67,7 +67,7 @@ class ParticipantServiceRouter(
                 throw BadRequestException("Tournament is completed")
             }
 
-            when (tournamentType) {
+            val participants = when (tournamentType) {
                 TournamentType.SINGLES -> {
                     if (playersOrder.players.isEmpty()) {
                         throw BadRequestException("No players registered for this tournament in the League of Tennis API")
@@ -93,6 +93,12 @@ class ParticipantServiceRouter(
                     doublesParticipantService.uploadParticipants(tournamentId, seedAmount, apiPairs, playersByApiId)
                 }
             }
+
+            // количество сеяных берём из тела запроса (seed_amount), а не из фактического состава:
+            // участников может быть меньше заявленного, остальные добавятся позже
+            tournamentRepository.updateSeededParticipantsAmount(tournamentId, seedAmount)
+
+            participants
         }
     }
 
