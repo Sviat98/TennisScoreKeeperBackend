@@ -17,4 +17,5 @@ class TournamentEntity (id: EntityID<Int>) : IntEntity(id) {
     var regularSetTemplate by SetTemplateEntity optionalReferencedOn TournamentTable.regularSetTemplate
     var decidingSetTemplate by SetTemplateEntity referencedOn TournamentTable.decidingSetTemplate
     var theme by ThemeEntity referencedOn TournamentTable.theme
+    var seededParticipantsAmount by TournamentTable.seededParticipantsAmount
 }

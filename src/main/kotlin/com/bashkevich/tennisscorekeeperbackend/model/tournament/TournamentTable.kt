@@ -13,6 +13,7 @@ object TournamentTable : IntIdTable("tournament") {
     val regularSetTemplate = reference("regular_set_id", SetTemplateTable).nullable()
     val decidingSetTemplate = reference("deciding_set_id", SetTemplateTable)
     val theme = reference("theme_id", ThemeTable)
+    val seededParticipantsAmount = integer("seeded_participants_amount").default(0)
 }
 
 enum class TournamentType{

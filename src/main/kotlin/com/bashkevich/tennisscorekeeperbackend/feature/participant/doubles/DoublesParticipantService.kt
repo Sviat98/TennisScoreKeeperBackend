@@ -28,7 +28,7 @@ class DoublesParticipantService(
         return participants
     }
 
-    suspend fun uploadParticipants(tournamentId: Int, excelBytes: ByteArray): List<ParticipantDto> {
+    suspend fun uploadParticipants(tournamentId: Int, excelBytes: ByteArray): Pair<Int, List<ParticipantDto>> {
         val (numberOfSeededParticipants, participants) = parseParticipantListFromBytes(excelBytes)
 
         val registeredParticipants = mutableListOf<ParticipantDto>()
@@ -96,7 +96,7 @@ class DoublesParticipantService(
             registeredParticipantIds = registeredParticipantIds.toList()
         )
 
-        return registeredParticipants
+        return Pair(numberOfSeededParticipants, registeredParticipants)
     }
 
     private fun parseParticipantListFromBytes(excelBytes: ByteArray): Pair<Int, List<DoublesParticipantExcel>> {
