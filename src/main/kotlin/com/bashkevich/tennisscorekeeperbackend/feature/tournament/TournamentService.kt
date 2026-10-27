@@ -166,6 +166,7 @@ class TournamentService(
             decidingSetId = decidingSetTemplate.id.value.toString(),
             themeId = theme.id.value.toString(),
             totalParticipants = participants.size,
+            seededParticipants = seededParticipantsAmount,
             totalMatches = matches.size,
             uncompletedMatches = uncompletedMatches,
         )
