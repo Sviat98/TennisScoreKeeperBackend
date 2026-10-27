@@ -30,7 +30,7 @@ class ParticipantServiceRouter(
             val excelBytes = loadExcelBytesFromMultipart(fileData)
                 ?: throw BadRequestException("No Excel file found in request or incorrect part name/content type. Please use 'excelFile' as field name and application/vnd.openxmlformats-officedocument.spreadsheetml.sheet as content type.")
 
-            val participants = when (tournament.type) {
+            val (seededParticipantsAmount, participants) = when (tournament.type) {
                 TournamentType.SINGLES -> {
                     singlesParticipantService.uploadParticipants(tournamentId, excelBytes)
                 }
@@ -39,6 +39,10 @@ class ParticipantServiceRouter(
                     doublesParticipantService.uploadParticipants(tournamentId, excelBytes)
                 }
             }
+
+            // количество сеяных берём из тела запроса (заявлено в Excel), а не из фактического состава:
+            // участников может быть меньше заявленного, остальные добавятся позже
+            tournamentRepository.updateSeededParticipantsAmount(tournamentId, seededParticipantsAmount)
 
             participants
         }

@@ -23,6 +23,8 @@ data class TournamentDto(
     val themeId: String,
     @SerialName("total_participants")
     val totalParticipants: Int,
+    @SerialName("seeded_participants")
+    val seededParticipants: Int,
     @SerialName("total_matches")
     val totalMatches: Int,
     @SerialName("uncompleted_matches")
