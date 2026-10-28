@@ -23,7 +23,7 @@ class DoublesParticipantService(
         return participants
     }
 
-    suspend fun uploadParticipants(
+    suspend fun downloadParticipants(
         tournamentId: Int,
         seedAmount: Int,
         apiPairs: List<Pair<Int, Int>>,
