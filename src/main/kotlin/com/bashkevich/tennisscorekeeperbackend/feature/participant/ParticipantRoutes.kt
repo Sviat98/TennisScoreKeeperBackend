@@ -3,7 +3,7 @@ package com.bashkevich.tennisscorekeeperbackend.feature.participant
 import com.bashkevich.tennisscorekeeperbackend.model.auth.JWT_AUTH
 import com.bashkevich.tennisscorekeeperbackend.model.message.ResponseMessageDto
 import com.bashkevich.tennisscorekeeperbackend.model.participant.ParticipantDto
-import com.bashkevich.tennisscorekeeperbackend.model.participant.ParticipantUploadRequestDto
+import com.bashkevich.tennisscorekeeperbackend.model.participant.ParticipantDownloadRequestDto
 import com.bashkevich.tennisscorekeeperbackend.plugins.receiveBodyCatching
 import io.ktor.http.HttpStatusCode
 import io.ktor.openapi.jsonSchema
@@ -56,24 +56,24 @@ fun Route.participantRoutes() {
         authenticate(JWT_AUTH) {
             /**
              * Tag: Participant
-             * Upload participants from the League of Tennis API registration list.
+             * Download participants from the League of Tennis API registration list.
              */
-            post("/upload") {
+            post("/download") {
                 val tournamentId = call.pathParameters["id"]?.toIntOrNull() ?: 0
 
-                val uploadRequest = call.receiveBodyCatching<ParticipantUploadRequestDto>()
+                val downloadRequest = call.receiveBodyCatching<ParticipantDownloadRequestDto>()
 
-                val participants = participantServiceRouter.uploadParticipants(tournamentId, uploadRequest)
+                val participants = participantServiceRouter.downloadParticipants(tournamentId, downloadRequest)
 
                 call.respond(HttpStatusCode.Created, participants)
             }.describe {
                 requestBody {
                     description = "Optional seed amount for participants"
-                    schema = jsonSchema<ParticipantUploadRequestDto>()
+                    schema = jsonSchema<ParticipantDownloadRequestDto>()
                 }
                 responses {
                     HttpStatusCode.Created {
-                        description = "Participants uploaded successfully"
+                        description = "Participants downloaded successfully"
                         schema = jsonSchema<List<ParticipantDto>>()
                     }
                     HttpStatusCode.BadRequest {

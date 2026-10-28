@@ -23,7 +23,7 @@ class SinglesParticipantService(
         return participants
     }
 
-    suspend fun uploadParticipants(
+    suspend fun downloadParticipants(
         tournamentId: Int,
         seedAmount: Int,
         apiPlayerIds: List<Int>,

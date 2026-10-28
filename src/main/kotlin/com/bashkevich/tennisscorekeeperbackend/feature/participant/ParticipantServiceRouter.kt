@@ -6,7 +6,7 @@ import com.bashkevich.tennisscorekeeperbackend.feature.tournament.TournamentRepo
 import com.bashkevich.tennisscorekeeperbackend.feature.tournament.api.LigaTennisaApiClient
 import com.bashkevich.tennisscorekeeperbackend.feature.tournament.api.TournamentApiRelationRepository
 import com.bashkevich.tennisscorekeeperbackend.model.participant.ParticipantDto
-import com.bashkevich.tennisscorekeeperbackend.model.participant.ParticipantUploadRequestDto
+import com.bashkevich.tennisscorekeeperbackend.model.participant.ParticipantDownloadRequestDto
 import com.bashkevich.tennisscorekeeperbackend.model.player.api.LigaTennisaPlayerDto
 import com.bashkevich.tennisscorekeeperbackend.model.player.api.LigaTennisaPlayersOrderDto
 import com.bashkevich.tennisscorekeeperbackend.model.tournament.TournamentStatus
@@ -27,9 +27,9 @@ class ParticipantServiceRouter(
     private val doublesParticipantService: DoublesParticipantService,
 ) {
 
-    suspend fun uploadParticipants(tournamentId: Int, uploadRequest: ParticipantUploadRequestDto): List<ParticipantDto> {
+    suspend fun downloadParticipants(tournamentId: Int, downloadRequest: ParticipantDownloadRequestDto): List<ParticipantDto> {
         // кривое значение seed_amount трактуется как 0: посевы не выставляются
-        val seedAmount = (uploadRequest.seedAmount ?: 0).coerceAtLeast(0)
+        val seedAmount = (downloadRequest.seedAmount ?: 0).coerceAtLeast(0)
 
         val (tournamentType, tournamentApiId) = dbQuery {
             if (tournamentId == 0) throw BadRequestException("Wrong format of tournament id")
@@ -73,7 +73,7 @@ class ParticipantServiceRouter(
                         throw BadRequestException("No players registered for this tournament in the League of Tennis API")
                     }
 
-                    singlesParticipantService.uploadParticipants(
+                    singlesParticipantService.downloadParticipants(
                         tournamentId,
                         seedAmount,
                         playersOrder.players,
@@ -90,7 +90,7 @@ class ParticipantServiceRouter(
                         throw BadRequestException("No players registered for this tournament in the League of Tennis API")
                     }
 
-                    doublesParticipantService.uploadParticipants(tournamentId, seedAmount, apiPairs, playersByApiId)
+                    doublesParticipantService.downloadParticipants(tournamentId, seedAmount, apiPairs, playersByApiId)
                 }
             }
 
