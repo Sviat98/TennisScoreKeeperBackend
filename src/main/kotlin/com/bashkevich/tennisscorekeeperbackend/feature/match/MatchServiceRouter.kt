@@ -76,8 +76,8 @@ class MatchServiceRouter(
         }
     }
 
-    suspend fun updateMatch(matchId: Int, updateMatchBody: UpdateMatchBody) {
-        dbQuery {
+    suspend fun updateMatch(matchId: Int, updateMatchBody: UpdateMatchBody): MatchDto {
+        return dbQuery {
             if (matchId == 0) throw BadRequestException("Wrong format of match id")
             val tournament = tournamentRepository.getTournamentByMatchId(matchId)
                 ?: throw NotFoundException("No match found by that id")
@@ -91,11 +91,12 @@ class MatchServiceRouter(
                 }
             }
 
-            when (tournament.type){
+            val matchDto = when (tournament.type){
                 TournamentType.SINGLES -> singlesMatchService.updateMatch(matchId, updateMatchBody)
                 TournamentType.DOUBLES -> doublesMatchService.updateMatch(matchId, updateMatchBody)
                 else -> throw IllegalStateException("Unknown tournament type: ${tournament.type}")
             }
+            matchDto
         }
     }
 

@@ -200,9 +200,9 @@ fun Route.matchRoutes() {
 
                     val updateMatchBody = call.receiveBodyCatching<UpdateMatchBody>()
 
-                    matchServiceRouter.updateMatch(matchId, updateMatchBody)
+                    val updatedMatch = matchServiceRouter.updateMatch(matchId, updateMatchBody)
 
-                    call.respondWithMessageBody(message = "Successfully updated the match")
+                    call.respond(updatedMatch)
                 }.describe {
                     requestBody {
                         description = "Updated match data: participants (display names, colors) and theme id"
@@ -211,7 +211,7 @@ fun Route.matchRoutes() {
                     responses {
                         HttpStatusCode.OK {
                             description = "Match updated successfully"
-                            schema = jsonSchema<ResponseMessageDto>()
+                            schema = jsonSchema<MatchDto>()
                         }
                         HttpStatusCode.BadRequest {
                             description = "Invalid request body, match ID, theme id, or match is completed"
