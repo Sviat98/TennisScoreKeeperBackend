@@ -5,6 +5,7 @@ import com.bashkevich.tennisscorekeeperbackend.model.message.ResponseMessageDto
 import com.bashkevich.tennisscorekeeperbackend.model.tournament.TournamentDto
 import com.bashkevich.tennisscorekeeperbackend.model.tournament.TournamentRequestDto
 import com.bashkevich.tennisscorekeeperbackend.model.tournament.TournamentStatusBody
+import com.bashkevich.tennisscorekeeperbackend.model.tournament.UpdateTournamentBody
 import com.bashkevich.tennisscorekeeperbackend.plugins.receiveBodyCatching
 import com.bashkevich.tennisscorekeeperbackend.plugins.respondWithMessageBody
 import io.ktor.http.HttpStatusCode
@@ -17,6 +18,7 @@ import io.ktor.server.routing.get
 import io.ktor.server.routing.openapi.describe
 import io.ktor.server.routing.patch
 import io.ktor.server.routing.post
+import io.ktor.server.routing.put
 import io.ktor.server.routing.route
 import io.ktor.utils.io.ExperimentalKtorApi
 import org.koin.ktor.ext.inject
@@ -102,6 +104,42 @@ fun Route.tournamentRoutes() {
                 }
             }
             authenticate(JWT_AUTH) {
+                /**
+                 * Tag: Tournament
+                 * Update editable tournament fields (name, sets to win, set templates, theme).
+                 */
+                put {
+                    val tournamentId = call.pathParameters["id"]?.toIntOrNull() ?: 0
+
+                    val updateTournamentBody = call.receiveBodyCatching<UpdateTournamentBody>()
+
+                    val updatedTournament = tournamentService.updateTournament(tournamentId, updateTournamentBody)
+
+                    call.respond(updatedTournament)
+                }.describe {
+                    requestBody {
+                        description = "Updated tournament data: name, sets to win, set template ids and theme id"
+                        schema = jsonSchema<UpdateTournamentBody>()
+                    }
+                    responses {
+                        HttpStatusCode.OK {
+                            description = "Tournament updated successfully"
+                            schema = jsonSchema<TournamentDto>()
+                        }
+                        HttpStatusCode.BadRequest {
+                            description = "Invalid request body or validation error"
+                            schema = jsonSchema<ResponseMessageDto>()
+                        }
+                        HttpStatusCode.Unauthorized {
+                            description = "Missing or invalid JWT token"
+                            schema = jsonSchema<ResponseMessageDto>()
+                        }
+                        HttpStatusCode.NotFound {
+                            description = "Tournament not found"
+                            schema = jsonSchema<ResponseMessageDto>()
+                        }
+                    }
+                }
                 /**
                  * Tag: Tournament
                  * Update tournament status.

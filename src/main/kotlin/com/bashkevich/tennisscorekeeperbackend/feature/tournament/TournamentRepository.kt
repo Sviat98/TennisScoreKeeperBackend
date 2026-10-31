@@ -6,6 +6,7 @@ import com.bashkevich.tennisscorekeeperbackend.model.set_template.SetTemplateEnt
 import com.bashkevich.tennisscorekeeperbackend.model.theme.ThemeEntity
 import com.bashkevich.tennisscorekeeperbackend.model.tournament.TournamentEntity
 import com.bashkevich.tennisscorekeeperbackend.model.tournament.TournamentRequestDto
+import com.bashkevich.tennisscorekeeperbackend.model.tournament.UpdateTournamentBody
 import com.bashkevich.tennisscorekeeperbackend.model.tournament.TournamentStatus
 import com.bashkevich.tennisscorekeeperbackend.model.tournament.TournamentTable
 import org.jetbrains.exposed.v1.core.eq
@@ -51,6 +52,15 @@ class TournamentRepository {
     suspend fun updateSeededParticipantsAmount(tournamentId: Int, newSeededParticipantsAmount: Int) =
         TournamentEntity.findByIdAndUpdate(tournamentId) {
             it.seededParticipantsAmount = newSeededParticipantsAmount
+        }
+
+    suspend fun updateTournament(tournamentId: Int, updateTournamentBody: UpdateTournamentBody) =
+        TournamentEntity.findByIdAndUpdate(tournamentId) {
+            it.name = updateTournamentBody.name
+            it.setsToWin = updateTournamentBody.setsToWin
+            it.regularSetTemplate = updateTournamentBody.regularSetId?.let { regularSetId -> SetTemplateEntity[regularSetId.toInt()] }
+            it.decidingSetTemplate = SetTemplateEntity[updateTournamentBody.decidingSetId.toInt()]
+            it.theme = ThemeEntity[updateTournamentBody.themeId.toInt()]
         }
 
 }
