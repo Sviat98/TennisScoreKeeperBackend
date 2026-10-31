@@ -808,7 +808,7 @@ class SinglesMatchService(
         MatchObserver.notifyChange(matchDto)
     }
 
-    suspend fun updateMatch(matchId: Int, updateMatchBody: UpdateMatchBody) {
+    suspend fun updateMatch(matchId: Int, updateMatchBody: UpdateMatchBody): MatchDto {
         val matchEntity =
             singlesMatchRepository.getMatchById(matchId) ?: throw NotFoundException("No match found!")
 
@@ -839,5 +839,7 @@ class SinglesMatchService(
         val matchDto = buildMatchById(matchId = matchId, lastPointNumber = lastPointNumber)
 
         MatchObserver.notifyChange(matchDto)
+
+        return matchDto
     }
 }
