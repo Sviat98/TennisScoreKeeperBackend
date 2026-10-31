@@ -4,6 +4,8 @@ import com.bashkevich.tennisscorekeeperbackend.feature.match.doubles.DoublesMatc
 import com.bashkevich.tennisscorekeeperbackend.feature.match.singles.SinglesMatchRepository
 import com.bashkevich.tennisscorekeeperbackend.feature.participant.doubles.DoublesParticipantRepository
 import com.bashkevich.tennisscorekeeperbackend.feature.participant.singles.SinglesParticipantRepository
+import com.bashkevich.tennisscorekeeperbackend.feature.set_template.SetTemplateRepository
+import com.bashkevich.tennisscorekeeperbackend.feature.theme.ThemeRepository
 import com.bashkevich.tennisscorekeeperbackend.feature.tournament.api.LigaTennisaApiClient
 import com.bashkevich.tennisscorekeeperbackend.feature.tournament.api.TournamentApiRecord
 import com.bashkevich.tennisscorekeeperbackend.feature.tournament.api.TournamentApiRelationRepository
@@ -21,7 +23,9 @@ import com.bashkevich.tennisscorekeeperbackend.model.tournament.TournamentReques
 import com.bashkevich.tennisscorekeeperbackend.model.tournament.TournamentStatus
 import com.bashkevich.tennisscorekeeperbackend.model.tournament.TournamentStatusBody
 import com.bashkevich.tennisscorekeeperbackend.model.tournament.TournamentType
+import com.bashkevich.tennisscorekeeperbackend.model.tournament.UpdateTournamentBody
 import com.bashkevich.tennisscorekeeperbackend.plugins.ConflictException
+import com.bashkevich.tennisscorekeeperbackend.plugins.dbQuery
 import com.bashkevich.tennisscorekeeperbackend.plugins.dbQuery
 import com.bashkevich.tennisscorekeeperbackend.plugins.validateRequestConditions
 import io.ktor.server.plugins.BadRequestException
@@ -39,6 +43,8 @@ class TournamentService(
     private val doublesMatchRepository: DoublesMatchRepository,
     private val singlesParticipantRepository: SinglesParticipantRepository,
     private val doublesParticipantRepository: DoublesParticipantRepository,
+    private val themeRepository: ThemeRepository,
+    private val setTemplateRepository: SetTemplateRepository,
 ) {
     suspend fun getTournaments(): List<TournamentDto> {
         return dbQuery {
@@ -105,6 +111,34 @@ class TournamentService(
             if (tournamentId == 0) throw BadRequestException("Wrong format of tournament id")
 
             tournamentRepository.getTournamentById(tournamentId)?.toDto()
+                ?: throw NotFoundException("No tournament found by that id")
+        }
+    }
+
+    suspend fun updateTournament(tournamentId: Int, updateTournamentBody: UpdateTournamentBody): TournamentDto {
+        return dbQuery {
+            if (tournamentId == 0) throw BadRequestException("Wrong format of tournament id")
+
+            tournamentRepository.getTournamentById(tournamentId)
+                ?: throw NotFoundException("No tournament found by that id")
+
+            val theme = themeRepository.getById(updateTournamentBody.themeId.toIntOrNull() ?: 0)
+            val regularSet = updateTournamentBody.regularSetId?.toIntOrNull()
+                ?.let { setTemplateRepository.getSetTemplateById(it) }
+            val decidingSet = setTemplateRepository.getSetTemplateById(updateTournamentBody.decidingSetId.toIntOrNull() ?: 0)
+
+            validateRequestConditions {
+                when {
+                    updateTournamentBody.name.isBlank() -> "Name must not be blank"
+                    updateTournamentBody.setsToWin > 1 && updateTournamentBody.regularSetId == null -> "Regular set id is required when sets to win is more than 1"
+                    theme == null -> "Theme does not exist"
+                    decidingSet == null -> "Deciding set does not exist"
+                    updateTournamentBody.regularSetId != null && regularSet == null -> "Regular set does not exist"
+                    else -> ""
+                }
+            }
+
+            tournamentRepository.updateTournament(tournamentId, updateTournamentBody)?.toDto()
                 ?: throw NotFoundException("No tournament found by that id")
         }
     }
