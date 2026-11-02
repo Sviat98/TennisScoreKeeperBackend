@@ -7,10 +7,10 @@ name: TennisScoreKeeper Backend
 
 on:
   push:
-    branches: [ "master" ]
+    branches: [ "lt_api_release" ]
     # Publish semver tags as releases.
   pull_request:
-    branches: [ "master" ]
+    branches: [ "lt_api_release" ]
 
 env:
   # Use docker.io for Docker Hub if empty
