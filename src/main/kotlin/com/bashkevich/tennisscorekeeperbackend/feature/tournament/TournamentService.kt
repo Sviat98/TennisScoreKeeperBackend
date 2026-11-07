@@ -79,6 +79,23 @@ class TournamentService(
         }
     }
 
+    /**
+     * Принудительно переводит в COMPLETED турниры, связанные с API Лиги тенниса, которых
+     * больше нет в кэш-таблице tournament_api (внешний API отдаёт только NOT_STARTED и
+     * IN_PROGRESS, завершившийся турнир исчезает из ответа и из кэша после обновления).
+     * Проверки переходов из updateTournamentStatus (незавершённые матчи,
+     * NOT_STARTED → COMPLETED) не применяются — внешнему API доверяем как источнику истины.
+     */
+    suspend fun completeMissingApiTournaments() {
+        dbQuery {
+            tournamentApiRelationRepository.getNotCompletedTournamentsMissingInApiCache()
+                .forEach { (tournamentId, apiId) ->
+                    tournamentRepository.updateStatus(tournamentId, TournamentStatus.COMPLETED)
+                    println("Tournament $tournamentId (api_id $apiId) marked COMPLETED: missing in the League of Tennis API cache")
+                }
+        }
+    }
+
     suspend fun addTournament(tournamentRequestDto: TournamentRequestDto): TournamentDto {
         return dbQuery {
             val cachedApiTournament = tournamentApiRepository.getByApiId(tournamentRequestDto.apiId)
