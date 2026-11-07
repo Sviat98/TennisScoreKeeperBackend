@@ -28,13 +28,19 @@ fun Application.configureScheduler(){
         }
     }
 
-    // Обновление кэша турниров внешнего API (Лиги тенниса): первый прогон сразу при
-    // старте, затем раз в час. Ошибка одного прогона (недоступность внешнего API) не
-    // завершает цикл — в кэше остаётся последний успешный список.
+    // Обновление кэша турниров внешнего API (Лиги тенниса) и принудительное завершение
+    // турниров: первый прогон сразу при старте, затем раз в час. Ошибка одного прогона
+    // (недоступность внешнего API) не завершает цикл — в кэше остаётся последний успешный
+    // список. Завершение идёт строго после обновления кэша, по его свежему состоянию.
     CoroutineScope(Dispatchers.IO).launch {
         while (isActive) {
             runCatching { tournamentService.refreshApiTournaments() }
                 .onFailure { println("Tournament api cache refresh failed: $it") }
+
+            // Связанный с API турнир, исчезнувший из кэша (Лига тенниса отдаёт только
+            // не начавшиеся и идущие турниры), завершился — принудительно ставим COMPLETED.
+            runCatching { tournamentService.completeMissingApiTournaments() }
+                .onFailure { println("Tournament completion by api cache failed: $it") }
 
             delay(1.hours)
         }
